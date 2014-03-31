@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+  This code is free software; you can redistribute it and/or modify it
+  under the terms of the GNU General Public License version 2 only, as
+  published by the Free Software Foundation.  Oracle designates this
+  particular file as subject to the "Classpath" exception as provided
+  by Oracle in the LICENSE file that accompanied this code.
+
+  This code is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+  version 2 for more details (a copy is included in the LICENSE file that
+  accompanied this code).
+
+  You should have received a copy of the GNU General Public License version
+  2 along with this work; if not, write to the Free Software Foundation,
+  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+  or visit www.oracle.com if you need additional information or have any
+  questions.
+-->
+
+<project name="JCov" default="build" basedir=".">
+
+    <property file="release.properties"/>
+    <property file="build.properties"/>
+
+    <!-- Build area -->
+    <property name="build.dir" location="${result.dir}/jcov_${build.version}"/>
+    <property name="jcov.classpath" value="${asmjar5}:${java.home}/lib/tools.jar"/>
+
+    <!-- Temp dir is for files which do not appear in release directory -->
+    <property name="tmp.dir" location="${result.dir}/temp"/>
+
+    <property name="jcov.classes" location="${tmp.dir}/jcov_classes"/>
+    <property name="jcov.src.update" location="${tmp.dir}/jcov_src_update"/>
+
+    <property name="jcov.filesaver.classes" location="${tmp.dir}/jcov_filesaver_classes"/>
+    <property name="jcov.filesaver.src" location="${tmp.dir}/jcov_filesaver_src"/>
+
+    <property name="jcov.networksaver.classes" location="${tmp.dir}/jcov_network_classes"/>
+    <property name="jcov.networksaver.src" location="${tmp.dir}/jcov_network_src"/>
+
+    <property name="jcov.jtobserver.classes" location="${tmp.dir}/jcov_jtobserver_classes"/>
+
+    <patternset id="jcov.files">
+        <include name="com/sun/tdk/jcov/**"/>
+        <include name="resources/**"/>
+    </patternset>
+
+    <patternset id="jcov.file.saver.files">
+        <include name="com/sun/tdk/jcov/runtime/Collect.*"/>
+        <include name="com/sun/tdk/jcov/runtime/CollectDetect.*"/>
+        <include name="com/sun/tdk/jcov/runtime/JCovSaver.*"/>
+        <include name="com/sun/tdk/jcov/runtime/SaverDecorator.*"/>
+        <include name="com/sun/tdk/jcov/runtime/PropertyFinder.*"/>
+        <include name="com/sun/tdk/jcov/util/MapHelper.*"/>
+        <include name="com/sun/tdk/jcov/util/RuntimeUtils.*"/>
+        <include name="com/sun/tdk/jcov/runtime/TemplateFileSaver*"/>
+        <include name="com/sun/tdk/jcov/util/MapHelper.*"/>
+        <include name="com/sun/tdk/jcov/constants/MiscConstants*"/>
+    </patternset>
+
+    <patternset id="jcov.network.saver.files">
+        <include name="com/sun/tdk/jcov/runtime/Collect.*"/>
+        <include name="com/sun/tdk/jcov/runtime/CollectDetect.*"/>
+        <include name="com/sun/tdk/jcov/runtime/PropertyFinder.*"/>
+        <include name="com/sun/tdk/jcov/runtime/JCovSocketSaver.*"/>
+        <include name="com/sun/tdk/jcov/runtime/JCovSESocketSaver.*"/>
+        <include name="com/sun/tdk/jcov/runtime/JCovSaver.*"/>
+        <include name="com/sun/tdk/jcov/runtime/NetworkSatelliteDecorator.*"/>
+        <include name="com/sun/tdk/jcov/runtime/SaverDecorator.*"/>
+    </patternset>
+
+    <fileset dir="${src.dir}" id="jcov.resources.files">
+        <include name="com/sun/tdk/jcov/report/html/resources/**"/>
+        <include name="com/sun/tdk/jcov/logging.properties"/>
+        <exclude name="**/*.java"/>
+    </fileset>
+
+    <patternset id="asm.files">
+        <include name="org/objectweb/asm/**"/>
+    </patternset>
+
+    <target name="clean" description="clean build data">
+
+        <delete dir="${build.dir}"/>
+        <delete dir="${tmp.dir}"/>
+
+    </target>
+
+    <target name="prepare" depends="clean" description="checks dependencies">
+
+        <available file="${asmjar5}" property="asm.present"/>
+        <fail unless="asm.present" message="Please, specify asm library"/>
+
+        <condition property="javatest.present">
+            <not>
+                <equals arg1="${javatestjar}" arg2=""/>
+            </not>
+        </condition>
+
+        <mkdir dir="${jcov.src.update}"/>
+        <mkdir dir="${jcov.classes}"/>
+
+    </target>
+
+    <target name="build-date" description="adds bild and date information">
+        <tstamp>
+            <format property="date" pattern="dd MMMM yyyy" locale="en"/>
+        </tstamp>
+        <mkdir dir="${jcov.src.update}/com/sun/tdk/jcov/tools"/>
+        <echo file="${jcov.src.update}/com/sun/tdk/jcov/tools/JcovVersion.java">
+            /*
+            * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+            * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+            *
+            * This code is free software; you can redistribute it and/or modify it
+            * under the terms of the GNU General Public License version 2 only, as
+            * published by the Free Software Foundation.  Oracle designates this
+            * particular file as subject to the "Classpath" exception as provided
+            * by Oracle in the LICENSE file that accompanied this code.
+            *
+            * This code is distributed in the hope that it will be useful, but WITHOUT
+            * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+            * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+            * version 2 for more details (a copy is included in the LICENSE file that
+            * accompanied this code).
+            *
+            * You should have received a copy of the GNU General Public License version
+            * 2 along with this work; if not, write to the Free Software Foundation,
+            * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+            *
+            * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+            * or visit www.oracle.com if you need additional information or have any
+            * questions.
+            */
+
+            package com.sun.tdk.jcov.tools;
+
+            public class JcovVersion{
+            public static final String jcovVersion = "${build.version}";
+            public static final String jcovMilestone = "${build.milestone}";
+            public static final String jcovBuildNumber = "${build.number}";
+            public static final String jcovBuildDate = "${date}";
+            public static String getJcovVersion() {
+                return String.format("%s%s-%s built: %s", jcovVersion, jcovMilestone, jcovBuildNumber, jcovBuildDate);
+              }
+            }
+        </echo>
+
+    </target>
+
+    <target name="compile"  depends="prepare, build-date"
+            description="compile main tools">
+
+        <javac encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
+               srcdir="${jcov.src.update}"
+               destdir="${jcov.classes}"
+               classpath="${jcov.classpath}">
+        </javac>
+
+        <javac encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
+               srcdir="${src.dir}"
+               destdir="${jcov.classes}"
+               classpath="${jcov.classpath}">
+            <patternset refid="jcov.files"/>
+        </javac>
+
+        <copy todir="${jcov.classes}">
+            <fileset refid="jcov.resources.files"/>
+        </copy>
+    </target>
+
+    <target name="build-jcov" depends="compile" description="build jcov jar">
+        <unjar src="${asmjar5}" dest="${jcov.classes}"/>
+        <jar destfile="${build.dir}/jcov.jar" basedir="${jcov.classes}" index="false">
+            <manifest>
+                <attribute name="Built-By"   value="${user.name}"/>
+                <attribute name="Premain-Class" value="com.sun.tdk.jcov.Agent"/>
+                <attribute name="Boot-Class-Path" value="jcov.jar"/>
+                <attribute name="Main-Class" value="com.sun.tdk.jcov.Helper"/>
+                <attribute name="Can-Retransform-Classes" value="true"/>
+                <attribute name="Can-Set-Native-Method-Prefix" value="true" />
+            </manifest>
+            <patternset refid="jcov.files"/>
+            <patternset refid="asm.files"/>
+        </jar>
+
+    </target>
+
+    <target name="build-file.saver" depends="prepare" description="build file saver jar">
+
+        <mkdir dir="${jcov.filesaver.classes}"/>
+        <mkdir dir="${jcov.filesaver.src}"/>
+
+        <copy todir="${jcov.filesaver.src}">
+            <fileset dir="${src.dir}">
+                <patternset refid="jcov.file.saver.files"/>
+            </fileset>
+            <fileset dir="${jcov.src.update}">
+            </fileset>
+            <filterchain>
+                <tokenfilter>
+                    <replaceregex pattern="\/\*@" replace="@"/>
+                    <replaceregex pattern="@\*\/" replace="@"/>
+                </tokenfilter>
+                <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+                    <param type="propertiesfile" value="filesaver.replace.properties"/>
+                </filterreader>
+            </filterchain>
+        </copy>
+        <javac encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
+               srcdir="${jcov.filesaver.src}"
+               sourcepath=""
+               classpath="${jcov.filesaver.classes}"
+               destdir="${jcov.filesaver.classes}">
+        </javac>
+        <jar destfile="${build.dir}/jcov_file_saver.jar"
+             basedir="${jcov.filesaver.classes}"
+             index="false">
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="build-network.saver" depends="prepare" description="build network saver jar">
+
+        <mkdir dir="${jcov.networksaver.classes}"/>
+        <mkdir dir="${jcov.networksaver.src}"/>
+
+        <copy todir="${jcov.networksaver.src}">
+            <fileset dir="${src.dir}">
+                <patternset refid="jcov.network.saver.files"/>
+            </fileset>
+            <filterchain>
+                <tokenfilter>
+                    <replaceregex pattern="\/\*@" replace="@"/>
+                    <replaceregex pattern="@\*\/" replace="@"/>
+                </tokenfilter>
+                <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+                    <param type="propertiesfile" value="networksaver.replace.properties"/>
+                </filterreader>
+            </filterchain>
+        </copy>
+        <javac encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
+               srcdir="${jcov.networksaver.src}"
+               sourcepath=""
+               classpath="${jcov.networksaver.classes}"
+               destdir="${jcov.networksaver.classes}">
+        </javac>
+        <jar destfile="${build.dir}/jcov_network_saver.jar"
+             basedir="${jcov.networksaver.classes}"
+             index="false">
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="build-jt.observer" depends="prepare" if ="javatest.present" description="build jtobserver jar">
+        <mkdir dir="${jcov.jtobserver.classes}"/>
+        <javac encoding="iso-8859-1" debug="true" target="1.6" source="1.6"
+               srcdir="${src.dir}"
+               sourcepath=""
+               destdir="${jcov.jtobserver.classes}" classpath="${javatestjar}">
+            <include name="jcov/*"/>
+        </javac>
+        <jar destfile ="${build.dir}/jtobserver.jar" basedir="${jcov.jtobserver.classes}" index="false"/>
+    </target>
+
+    <target name="build"
+            depends="build-jcov, build-file.saver, build-network.saver, build-jt.observer"
+            description="Creates the build-distribution.">
+    </target>
+
+</project>
