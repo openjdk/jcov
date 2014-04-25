@@ -102,7 +102,7 @@ public class GrabberManager extends JCovCMDTool {
         } catch (UnknownHostException e) {
             throw new Exception("Can't resolve hostname '" + host + "'");
         } catch (IOException e) {
-            if ("Connection refused".equals(e.getMessage())) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Connection refused")) {
                 throw new Exception("Server not responding on command port " + port);
             } else {
                 throw e;

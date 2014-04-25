@@ -220,7 +220,13 @@ public class JavapRepGen {
 
             for (File classFile : files) {
 
-                String className = classFile.getAbsolutePath().replaceFirst(classesPath + "/", "").replace(".class", "");
+                String className = classFile.getAbsolutePath();
+                if (classFile.getAbsolutePath().startsWith(classesPath + File.separator)){
+                    className = className.substring(classesPath.length()+1);
+                }
+                if (className.endsWith(".class")) {
+                    className = className.substring(0, className.lastIndexOf(".class"));
+                }
 
                 if (Utils.accept(Utils.concatFilters(include, exclude), null, "/" + className, null)) {
                     newFiles.add(classFile);

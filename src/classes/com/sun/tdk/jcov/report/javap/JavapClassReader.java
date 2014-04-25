@@ -68,6 +68,20 @@ public class JavapClassReader {
                             Class classToLoad = Class.forName("com.sun.tools.javap.Main", true, classLoader);
                             method = classToLoad.getDeclaredMethod("run", String[].class, PrintWriter.class);
                             instance = classToLoad.newInstance();
+
+                            String[] params = null;
+
+                            if (jarPath == null) {
+                                params = new String[]{"-c", "-p", filePath};
+                            } else {
+                                params = new String[]{"-c", "-p", "-classpath", jarPath, filePath};
+                            }
+                            try {
+                                Object result = method.invoke(instance, params, pw);
+                            } catch (Exception ex) {
+                                printToolsJarError();
+                            }
+
                         } catch (Exception e) {
                             printToolsJarError();
                         }

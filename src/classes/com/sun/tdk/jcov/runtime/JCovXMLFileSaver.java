@@ -73,6 +73,7 @@ public class JCovXMLFileSaver extends FileSaver {
                     root.xmlGen(ctx);
                     ctx.close();
 
+                    channel.truncate(0);
                     channel.write(ByteBuffer.wrap(os.toByteArray()));
                     lock.release();
                     channel.close();
