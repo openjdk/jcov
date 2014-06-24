@@ -496,6 +496,7 @@ public class Agent extends JCovTool {
         if (!grabberSaver) {
             // File saver should perform full merge here, not only insert new classes.
             JCovSaver saver = FileSaver.getFileSaver(root, filename, template, merge, true);
+            loadFileSaverClasses();
             Collect.setSaver(Collect.decorateSaver(new SynchronizedSaverDecorator(saver)));
         } else {
             AgentSocketSaver saver = new AgentSocketSaver(root, filename, host, port);
@@ -503,6 +504,12 @@ public class Agent extends JCovTool {
         }
         CollectDetect.leaveInstrumentationCode();
         PropertyFinder.addAutoShutdownSave();
+    }
+
+    private void loadFileSaverClasses() throws IOException{
+        File file = new File(filename + "_load");
+        new FileOutputStream(file).close();
+        file.delete();
     }
 
     /**
@@ -560,6 +567,7 @@ public class Agent extends JCovTool {
         if (!grabberSaver) {
             // File saver should perform full merge here, not only insert new classes.
             JCovSaver saver = FileSaver.getFileSaver(root, filename, template, merge, true);
+            loadFileSaverClasses();
             Collect.setSaver(Collect.decorateSaver(new SynchronizedSaverDecorator(saver)));
         } else {
             AgentSocketSaver saver = new AgentSocketSaver(root, filename, host, port);
