@@ -24,6 +24,7 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.runtime.Collect;
 import com.sun.tdk.jcov.runtime.FileSaver;
@@ -511,6 +512,9 @@ public class ClassMorph {
 
             Collect.setSlot(r.getCount());
             r.destroy();
+        } catch (FileFormatException ffe) {
+            System.err.println("Wrong format of the output file: "+outputFile+". " +
+                    "Delete output file to receive coverage data");
         } catch (Exception e) {
             throw new Error(e);
         }
