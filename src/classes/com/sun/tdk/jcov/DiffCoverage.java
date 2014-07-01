@@ -42,8 +42,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -156,9 +155,10 @@ public class DiffCoverage extends JCovCMDTool {
 
         int notCovered = 0, covered = 0, nonCode = 0;
         for (DataPackage p : data.getPackages()) {
+            HashMap<String, ArrayList<ClassCoveragePair>> classesMap = new HashMap<String, ArrayList<ClassCoveragePair>>();
             for (DataClass c : p.getClasses()) {
-                ClassCoverage cc = new ClassCoverage(c, null, MemberFilter.ACCEPT_ALL);
-                String className = c.getPackageName() + "/" + c.getSource();
+                String packageName = c.getPackageName();
+                String className = !packageName.isEmpty() ? packageName + "/" + c.getSource() : c.getSource();
                 if (replaceClass != null) {
                     String[] split = replaceClass.split(":");
                     String patt = split[0];
@@ -170,10 +170,25 @@ public class DiffCoverage extends JCovCMDTool {
                     }
                     className = className.replaceAll(patt, with);
                 }
+                if (classesMap.get(className) == null){
+                    classesMap.put(className, new ArrayList<ClassCoveragePair>());
+                }
+                classesMap.get(className).add(new ClassCoveragePair(c));
+            }
 
-                SourceLine lines[] = sources.get(className);
+            for (String cln:classesMap.keySet()) {
+                SourceLine lines[] = sources.get(cln);
                 if (lines != null) {
-                    for (DataMethod m : c.getMethods()) {
+                    ArrayList<DataMethod> methods = new ArrayList<DataMethod>();
+                    String sourceClassName = "";
+                    for (int i=0; i<classesMap.get(cln).size(); i++){
+                        DataClass dc = classesMap.get(cln).get(i).getDataClass();
+                        methods.addAll(dc.getMethods());
+                        if (!dc.getFullname().contains("$")){
+                            sourceClassName = dc.getName();
+                        }
+                    }
+                    for (DataMethod m : methods) {
                         boolean changed = false;
                         LineCoverage lc = new MethodCoverage(m, false).getLineCoverage(); // false is not used
 
@@ -184,18 +199,18 @@ public class DiffCoverage extends JCovCMDTool {
                             if (line.line >= lc.firstLine() && line.line <= lc.lastLine()) {
                                 line.checked = true;
                                 if (!changed && all) {
-                                    System.out.println(String.format("   %s: %s.%s", className, c.getName(), m.getFormattedSignature()));
+                                    System.out.println(String.format("   %s: %s.%s", cln, sourceClassName, m.getFormattedSignature()));
                                     changed = true;
                                 }
-                                if (cc.isLineCovered(line.line)) {
+                                if (isLineCovered(classesMap.get(cln), line.line)) {
                                     ++covered;
                                     if (all) {
                                         System.out.println(String.format("+ %6d |%s", line.line, line.source));
                                     }
                                 } else {
-                                    if (cc.isCode(line.line)) {
+                                    if (isCode(classesMap.get(cln), line.line)) {
                                         if (!changed && !all) {
-                                            System.out.println(String.format("   %s> %s: %s", className, c.getName(), m.getFormattedSignature()));
+                                            System.out.println(String.format("   %s> %s: %s", cln, sourceClassName, m.getFormattedSignature()));
                                             changed = true;
                                         }
                                         ++notCovered;
@@ -222,6 +237,26 @@ public class DiffCoverage extends JCovCMDTool {
         System.out.println(String.format("lines: %d new; %d covered; %d not covered; %d not code", nonCode + notCovered + covered, covered, notCovered, nonCode));
 
         return SUCCESS_EXIT_CODE;
+    }
+
+    private boolean isLineCovered(ArrayList<ClassCoveragePair> classes, int line){
+        for (int i=0; i<classes.size(); i++){
+            ClassCoverage cc = classes.get(i).getClassCoverage();
+            if (cc.isLineCovered(line)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isCode(ArrayList<ClassCoveragePair> classes, int line){
+        for (int i=0; i<classes.size(); i++){
+            ClassCoverage cc = classes.get(i).getClassCoverage();
+            if (cc.isCode(line)){
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -375,6 +410,24 @@ public class DiffCoverage extends JCovCMDTool {
             return line;
         }
     }
+
+    private class ClassCoveragePair{
+        private DataClass dClass;
+        private ClassCoverage cClass;
+        public ClassCoveragePair(DataClass dClass){
+            this.dClass = dClass;
+            this.cClass = new ClassCoverage(dClass, null, MemberFilter.ACCEPT_ALL);
+        }
+
+        public DataClass getDataClass(){
+            return dClass;
+        }
+
+        public ClassCoverage getClassCoverage(){
+            return cClass;
+        }
+    }
+
     static OptionDescr DSC_REPLACE_DIFF = new OptionDescr("replaceDiff", "Manage replacing", OptionDescr.VAL_SINGLE, "Set replacement pattern for diff filenames (e.g. to cut out \"src/classes\" you can specify -replaceDiff src/classes:)");
     static OptionDescr DSC_REPLACE_CLASS = new OptionDescr("replaceClass", "", OptionDescr.VAL_SINGLE, "Set replacement pattern for class filenames (e.g. to cut out \"com/sun\" you can specify -replaceDiff com/sun:)");
     static OptionDescr DSC_ALL = new OptionDescr("all", "Manage output", OptionDescr.VAL_NONE, "Show covered and non-code lines as well as not covered");
