@@ -63,6 +63,7 @@ public class DiffCoverage extends JCovCMDTool {
         private int line;
         private String source;
         boolean checked;
+        boolean codeByDefault = true;
 
         public SourceLine(int line, String source) {
             this.line = line;
@@ -153,7 +154,7 @@ public class DiffCoverage extends JCovCMDTool {
             }
         });
 
-        int notCovered = 0, covered = 0, nonCode = 0;
+        int notCovered = 0, covered = 0, nonCode = 0, noInformation = 0;
         for (DataPackage p : data.getPackages()) {
             HashMap<String, ArrayList<ClassCoveragePair>> classesMap = new HashMap<String, ArrayList<ClassCoveragePair>>();
             for (DataClass c : p.getClasses()) {
@@ -228,13 +229,26 @@ public class DiffCoverage extends JCovCMDTool {
 
                     for (SourceLine line : lines) {
                         if (!line.checked) {
+                            line.codeByDefault = false;
                             ++nonCode;
                         }
                     }
                 }
             }
         }
-        System.out.println(String.format("lines: %d new; %d covered; %d not covered; %d not code", nonCode + notCovered + covered, covered, notCovered, nonCode));
+
+        for (String diffClasses : sources.keySet()){
+            for (SourceLine line: sources.get(diffClasses)){
+                if (!line.checked && line.codeByDefault){
+                    noInformation++;
+                    if (all) {
+                        System.out.println(String.format("? %6d |%s", line.line, line.source));
+                    }
+                }
+            }
+        }
+
+        System.out.println(String.format("lines: %d new; %d covered; %d not covered; %d not code; %d no information", nonCode + notCovered + covered + noInformation, covered, notCovered, nonCode, noInformation));
 
         return SUCCESS_EXIT_CODE;
     }
