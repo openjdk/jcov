@@ -1215,6 +1215,10 @@ public class CoverageReport implements ReportGenerator {
                 List<Test> hitlist = testService != null
                         ? testService.getHitTestByClasses(n)
                         : new ArrayList<Test>();
+                if (isAddTestsInfo || isMergeRepGenMode){
+                    hitlist = testService.getAllTests();
+                }
+
                 int i = 1;
                 for (Test httest : hitlist) {
                     String owner = httest.getTestOwner();

@@ -167,7 +167,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         }
         MethodVisitor mv = visitMethodCoverage(access, name, desc, signature, exceptions);
 
-        if ("<clinit>".equals(name) && !params.isDynamicCollect() && (k.getPackageName().startsWith("java/") || k.getPackageName().startsWith("javax/"))) {
+        if ("<clinit>".equals(name) && !params.isDynamicCollect() && (k.getPackageName().startsWith("java/lang/"))) {
             mv = new MethodVisitor(Opcodes.ASM4, mv) {
                 public void visitCode() {
                     mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/Collect", "init", "()V");

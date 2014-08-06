@@ -97,6 +97,10 @@ public class SmartTestService implements Iterable<Test> {
         return result;
     }
 
+    public List<Test> getAllTests(){
+        return  allTests;
+    }
+
     /**
      * <p> Get number of tests in the STS </p>
      *
