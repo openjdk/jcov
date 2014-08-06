@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="JCov_one_command" default="build" basedir=".">
+
+    <property file="../../tutorial.build.properties"/>
+
+    <target name="build">
+    <mkdir dir="classes"/>
+
+    <!--copy product classes not to touch other examples-->
+    <copy todir="classes">
+        <fileset dir="../../${tutorial.result.dir}/classes/"/>
+    </copy>
+
+    <!--get coverage for test using one jcov command-->
+    <java classname="com.sun.tdk.jcov.JCov" fork="true" failonerror="true">
+        <classpath>
+            <pathelement location="${jcov.jar}"/>
+        </classpath>
+        <arg line="-pro ${basedir}${file.separator}classes -out coverage -command &quot;${java_home}${file.separator}bin${file.separator}java
+ -cp ${jcov.network.saver.jar}${path.separator}${basedir}${file.separator}classes${path.separator}${basedir}${file.separator}..${file.separator}test_classes TestDemoApp1&quot;"/>
+    </java>
+
+    </target>
+
+</project>

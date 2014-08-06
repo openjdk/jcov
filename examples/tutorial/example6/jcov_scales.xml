@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="JCov_scales" default="build" basedir=".">
+    <property file="../../tutorial.build.properties"/>
+
+    <target name="build">
+
+    <!--instrument classes-->
+    <java classname="com.sun.tdk.jcov.Instr" fork="true" failonerror="true">
+        <classpath>
+            <pathelement location="${jcov.jar}"/>
+        </classpath>
+        <arg line="-template template.xml -output instr_classes ../../${tutorial.result.dir}/classes/"/>
+    </java>
+
+    <parallel>
+    <!--start grabber-->
+    <java classname="com.sun.tdk.jcov.Grabber" fork="true" failonerror="true">
+        <classpath>
+            <pathelement location="${jcov.jar}"/>
+        </classpath>
+        <arg line="-template template.xml -outtestlist testlist.txt -o result.xml"/>
+    </java>
+
+    <sequential>
+
+        <!--running tests-->
+        <java classname="TestDemoApp1" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${jcov.network.saver.jar}"/>
+                <pathelement location="../../${tutorial.result.dir}/test_classes"/>
+                <pathelement location="instr_classes"/>
+            </classpath>
+            <jvmarg value="-Djcov.testname=TestDemoApp1"/>
+        </java>
+
+        <java classname="TestDemoApp2" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${jcov.network.saver.jar}"/>
+                <pathelement location="../../${tutorial.result.dir}/test_classes"/>
+                <pathelement location="instr_classes"/>
+            </classpath>
+            <jvmarg value="-Djcov.testname=TestDemoApp2"/>
+        </java>
+
+        <!--stop grabber-->
+        <java classname="com.sun.tdk.jcov.GrabberManager" fork="true">
+            <classpath>
+                <pathelement location="${jcov.jar}"/>
+            </classpath>
+            <arg line="-kill"/>
+        </java>
+
+        <!--generate report-->
+        <java classname="com.sun.tdk.jcov.RepGen" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${jcov.jar}"/>
+            </classpath>
+            <arg line="-output coverage/report -tests testlist.txt -testsinfo -src ${basedir}/../../${tutorial.result.dir}/../src  result.xml"/>
+        </java>
+    </sequential>
+    </parallel>
+
+    </target>
+
+</project>

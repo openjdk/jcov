@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="JCov_static_instr_file" default="build" basedir=".">
+
+    <property file="../../tutorial.build.properties"/>
+
+    <target name="build">
+
+        <!--instrument classes-->
+        <java classname="com.sun.tdk.jcov.Instr" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${jcov.jar}"/>
+            </classpath>
+            <arg line="-template template.xml -output instr_classes ../../${tutorial.result.dir}/classes/"/>
+        </java>
+
+        <!--running tests-->
+        <java classname="TestDemoApp1" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${jcov.file.saver.jar}"/>
+                <pathelement location="../../${tutorial.result.dir}/test_classes"/>
+                <pathelement location="instr_classes"/>
+            </classpath>
+            <sysproperty key="jcov.template" value="template.xml"/>
+            <sysproperty key="jcov.file" value="result.xml"/>
+        </java>
+
+        <java classname="TestDemoApp2" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${jcov.file.saver.jar}"/>
+                <pathelement location="../../${tutorial.result.dir}/test_classes"/>
+                <pathelement location="instr_classes"/>
+            </classpath>
+            <sysproperty key="jcov.template" value="template.xml"/>
+            <sysproperty key="jcov.file" value="result.xml"/>
+        </java>
+
+        <!--generate report-->
+        <java classname="com.sun.tdk.jcov.RepGen" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${jcov.jar}"/>
+            </classpath>
+            <arg line="-output coverage/report result.xml"/>
+        </java>
+
+    </target>
+
+</project>

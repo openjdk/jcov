@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="DemoApp" default="build" basedir=".">
+
+    <property file="tutorial.build.properties"/>
+
+    <target name="prepare">
+        <delete dir="${tutorial.result.dir}"/>
+        <mkdir dir="${tutorial.result.dir}"/>
+        <mkdir dir="${tutorial.result.dir}/classes"/>
+        <mkdir dir="${tutorial.result.dir}/test_classes"/>
+
+        <copy todir="${tutorial.result.dir}">
+            <fileset dir=".">
+                <include name="example**/*"/>
+            </fileset>
+        </copy>
+
+    </target>
+
+    <target name="build_app"
+            depends="prepare">
+        <javac encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
+               srcdir="src"
+               destdir="${tutorial.result.dir}/classes">
+        </javac>
+
+        <jar destfile="${tutorial.result.dir}/demoapp.jar"
+             basedir="${tutorial.result.dir}/classes"
+             index="false">
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="test_app">
+        <javac encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
+               srcdir="test"
+               destdir="${tutorial.result.dir}/test_classes"
+               classpath="${tutorial.result.dir}/demoapp.jar">
+        </javac>
+
+        <java classname="TestDemoApp1" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${tutorial.result.dir}/test_classes"/>
+                <pathelement location="${tutorial.result.dir}/demoapp.jar"/>
+            </classpath>
+        </java>
+
+        <java classname="TestDemoApp2" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${tutorial.result.dir}/test_classes"/>
+                <pathelement location="${tutorial.result.dir}/demoapp.jar"/>
+            </classpath>
+        </java>
+
+    </target>
+
+    <target name="build"
+            depends="build_app, test_app"
+            description="demo application build.">
+    </target>
+
+</project>

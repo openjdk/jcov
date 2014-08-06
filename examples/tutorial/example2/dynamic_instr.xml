@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="JCov_dynamic_instr" default="build" basedir=".">
+
+    <property file="../../tutorial.build.properties"/>
+
+    <target name="build">
+
+        <!--generate template-->
+        <java classname="com.sun.tdk.jcov.TmplGen" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${jcov.jar}"/>
+            </classpath>
+            <arg line="-template template.xml ../../${tutorial.result.dir}/classes/"/>
+        </java>
+
+        <parallel>
+            <!--start grabber-->
+            <java classname="com.sun.tdk.jcov.Grabber" fork="true" failonerror="true">
+                <classpath>
+                    <pathelement location="${jcov.jar}"/>
+                </classpath>
+                <arg line="-template template.xml -o result.xml"/>
+            </java>
+
+            <sequential>
+                <!--running tests with dynamic instrumantation-->
+                <java classname="TestDemoApp1" fork="true" failonerror="true">
+                    <classpath>
+                        <pathelement location="../../${tutorial.result.dir}/classes"/>
+                        <pathelement location="../../${tutorial.result.dir}/test_classes"/>
+                    </classpath>
+                    <jvmarg value="-javaagent:${jcov.jar}=grabber"/>
+                </java>
+
+                <java classname="TestDemoApp2" fork="true" failonerror="true">
+                    <classpath>
+                        <pathelement location="../../${tutorial.result.dir}/classes"/>
+                        <pathelement location="../../${tutorial.result.dir}/test_classes"/>
+                    </classpath>
+                    <jvmarg value="-javaagent:${jcov.jar}=grabber"/>
+                </java>
+
+                <!--stop grabber-->
+                <java classname="com.sun.tdk.jcov.GrabberManager" fork="true">
+                    <classpath>
+                        <pathelement location="${jcov.jar}"/>
+                    </classpath>
+                    <arg line="-kill"/>
+                </java>
+
+                <!--generate report-->
+                <java classname="com.sun.tdk.jcov.RepGen" fork="true" failonerror="true">
+                    <classpath>
+                        <pathelement location="${jcov.jar}"/>
+                    </classpath>
+                    <arg line="-output coverage/report result.xml"/>
+                </java>
+            </sequential>
+        </parallel>
+
+    </target>
+
+</project>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="JCov_ant_task" default="build" basedir=".">
+
+    <property file="../../tutorial.build.properties"/>
+    <taskdef name="jcovTasks" classname="com.sun.tdk.jcov.ant.AllTasks" classpath="${basedir}${file.separator}${jcov.jar}"/>
+
+    <target name="build">
+
+        <mkdir dir="instr_classes"/>
+
+        <jcovTasks/>
+        <!--instrument classes-->
+        <instrument productdir="../../${tutorial.result.dir}/classes/" destdir="instr_classes" outtemplate="template.xml">
+            <implantTo path="." implantRT="${jcov.network.saver.jar}"/>
+        </instrument>
+
+        <!--start grabber-->
+        <grabber output="result.xml" template="template.xml"/>
+
+
+        <!--running tests-->
+        <java classname="TestDemoApp1" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${jcov.network.saver.jar}"/>
+                <pathelement location="../../${tutorial.result.dir}/test_classes"/>
+                <pathelement location="instr_classes"/>
+            </classpath>
+        </java>
+
+        <java classname="TestDemoApp2" fork="true" failonerror="true">
+            <classpath>
+                <pathelement location="${jcov.network.saver.jar}"/>
+                <pathelement location="../../${tutorial.result.dir}/test_classes"/>
+                <pathelement location="instr_classes"/>
+            </classpath>
+        </java>
+
+        <!--stop grabber-->
+        <grabber-manager command="kill"/>
+        <report output="coverage/report" jcovfile="result.xml"/>
+
+    </target>
+
+</project>
