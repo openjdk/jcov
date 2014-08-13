@@ -25,9 +25,8 @@
 </table>
 <br>
 <p>
-This tutorial describes
-typical methods of using JCov to get and analyze code coverage
-information for java. It covers the following topics:
+This tutorial describes some typical methods for using JCov to get and analyze code coverage
+information for Java. It covers the following topics:
 </p>
 
 <p class="nav-link">[<a href="#_top">Top</a>]</p>
@@ -38,19 +37,19 @@ information for java. It covers the following topics:
 </ul>
 
 <a name="overview" id="_overview"></a>
-<h2>Tutorial Overview</h2>
+<h2>Tutorial overview</h2>
 <p class="nav-link">[<a href="#_top">Top</a>]</p>
-<p> The tutorial demonstrate the typical usage of JCov: different ways how you can receive code coverage data using JCov and some JCov features, which could give more useful information about tested code.
+<p> This tutorial demonstrate the typical usage of JCov, including different ways to receive code coverage data using JCov, and some JCov features that give more useful information about tested code.
 The procedure to receive code coverage information for any product contains 3 general steps:
 <ul>
-  <li>instrumentation of product code (that means adding invocations of code coverage tool methods in all product methods), </li>  
+  <li>instrumentation of the product code (that means adding invocations of code coverage tool methods in all product methods), </li>
   <li>running tests using already instrumented product, </li>
-  <li>save and display received CC results.</li> 
+  <li>save and display received code coverage results.</li>
 </ul>
-With JCov you can perform these steps separately which is called static instrumentation, and simultaneously which is dynamic instrumentation mode.
-Different approaches of coverage measurement are shown in this tutorial: </p>
+With JCov you can perform these steps separately (called static instrumentation mode) or simultaneously (called dynamic instrumentation mode).
+Some of the different approaches of coverage measurement shown in this tutorial are: </p>
 <ul>
-  <li>Static instrumentation with grabber</li>  
+  <li>Static instrumentation with grabber (a small server utility for gathering coverage information from another machine over a network connection)</li>
   <li>Dynamic instrumentation with grabber</li>
   <li>Static instrumentation with file</li> 
   <li>One command to get coverage</li>
@@ -72,7 +71,7 @@ Different approaches of coverage measurement are shown in this tutorial: </p>
     </tr>
       <tr valign="top">
       <td scope="row">tutorial</td>
-      <td>JCov tutorial. Consisting of the following:</td>
+      <td>JCov tutorial, consisting of the following:</td>
     </tr>
     </tr>
     <tr valign="top">
@@ -81,7 +80,7 @@ Different approaches of coverage measurement are shown in this tutorial: </p>
     </tr>
     <tr valign="top">
       <td scope="row"><p><tt>tutorial.build.xml, tutorial.build.properties</tt></p></td>
-      <td><p>The file <code>tutorial.build.xml</code> should be used to build demo application and run tutorial examples. Default properties can be found at <code>tutorial.build.properties file</code>. Without any changes in properties (after building jcov binaries with default values) <code>tutorial.build.xml</code> will create <code>DEMOAPP_BUILD</code> directory with the following structure:
+      <td><p>The file <code>tutorial.build.xml</code> should be used to build the demo application and run the tutorial examples. Default properties can be found in the <code>tutorial.build.properties file</code>. Without any changes in properties (after building jcov binaries with default values) <code>tutorial.build.xml</code> will create <code>DEMOAPP_BUILD</code> directory with the following structure:
       	<ul>
 		  <li><code>classes</code> of demo application</li>  
 		  <li><code>example#</code> contains <code>build.xml</code> file to run each example</li>
@@ -97,7 +96,7 @@ Different approaches of coverage measurement are shown in this tutorial: </p>
     </tr> 
     <tr valign="top">
       <td scope="row"><p><tt>/example</tt></p></td>
-      <td><p>There is <code>build.xml</code> in each example directory. During the demo application build these examples will be added to <code>DEMOAPP_BUILD</code> directory.</p></td>
+      <td><p>There is <code>build.xml</code> in each example directory. During the demo application build, these examples will be added to <code>DEMOAPP_BUILD</code> directory.</p></td>
     </tr>    
     <tr valign="top">
       <td scope="row"><p><tt>/src</tt></p></td>
@@ -116,9 +115,9 @@ Different approaches of coverage measurement are shown in this tutorial: </p>
 
 
 <a name="stepping" id="_stepping"></a>
-<h2>Stepping Through the Tutorial</h2>
+<h2>Stepping through the tutorial</h2>
 <p class="nav-link">[<a href="#_top">Top</a>]</p>
-<p> The tutorial contains basic steps which are discussed in their own section as follows. The each step contains a short description: </p>
+<p> The tutorial contains basic steps which are discussed in their own section as follows: </p>
 <ul>
   <li><p class="nav-link"><a href="#_compile">Compile the Source Code</a></p></li>  
   <li><p class="nav-link"><a href="#_run_example">Run JCov example</a></p></li>
@@ -136,28 +135,28 @@ Different approaches of coverage measurement are shown in this tutorial: </p>
 
 <a name="compile" id="_compile"></a>
 <h4>Compile the Source Code</h4>
-To compile source code of the example application and tests tutorial contains <code>tutorial.build.xml</code> file in <code>tutorial</code> directory. Execution of the ant command:
+To compile source code of the example application and tests, execute <code>ant</code> in the <code>tutorial</code> directory:
 <p><code><b>ant -f tutorial.build.xml</b></code></p>
- will create <code>DEMOAPP_BUILD</code> directory with all jcov examples for this application. The <code>tutorial.build.properties</code> file contains properties which are used in building demo application and running jcov examples. This simple demo application allows users to create two types of figures (square and disc), add these figures to the plane and count the area of the figures on the plane depending on there color. Tutorial contains two tests in the directory <code>test</code> (<code>TestDemoApp1, TestDemoApp2</code>) for this demo application. All the jcov examples will show how to receive code coverage data for this demo application - how well the demo application is covered by these tests.
+ This will create the <code>DEMOAPP_BUILD</code> directory with all jcov examples for this application. The <code>tutorial.build.properties</code> file contains properties which are used in building the demo application and running jcov examples. This simple demo application allows users to create two types of figures (square and disc); add these figures to the plane, and count the area of the figures on the plane depending on their color. There are two tests in the directory <code>test</code> (<code>TestDemoApp1, TestDemoApp2</code>) for this demo application. All the JCov examples will show how to receive code coverage data for this demo application - which describes how well the demo application is covered by these tests.
 
 <a name="run_example" id="_run_example"></a>
 <h4>Run JCov example</h4>
-After building tutorial demo application (previous step) user can see <code>example#</code> directories in the created <code>DEMOAPP_BUILD</code> directory. Each of these directories contains <code>build.xml</code> file for independent jcov example. Execution of the ant command (in the corresponding <code>example#</code> directory):
+After building the tutorial demo application (previous step), you can see the <code>example#</code> directories in the created <code>DEMOAPP_BUILD</code> directory. Each of these directories contains a <code>build.xml</code> file for independent JCov examples. Execution of the <code>ant</code> command (in the corresponding <code>example#</code> directory):
 <p><code><b>ant -f build.xml</b></code></p>
-will run jcov example and create in the <code>example#</code> directory <code>coverage</code> directory with the code coverage report for the executed tests.
+will run a JCov example and create a <code>coverage</code> directory in the <code>example#</code> with the code coverage report for the executed tests.
 
 <a name="static_instr" id="_static_instr"></a>
 <h4>Static instrumentation with grabber</h4>
-This example is using jcov static instrumentation, it means that there are 5 separate steps to receive code coverage information:
+This example is using JCov static instrumentation, it means that there are 5 separate steps to receive code coverage information:
 <ol>
  <li><p>instrumenting the application</p><p><code><b>java -jar jcov.jar instr -t template.xml -o instr_classes $path_to_classes</b></code></p></li>
- <li><p>starting grabber to receive code coverage results</p><p><code><b>java -jar jcov.jar grabber -t template.xml -o result.xml</b></code></p><p><i>(separate process)</i></p></li>
+ <li><p>starting a grabber to receive code coverage results</p><p><code><b>java -jar jcov.jar grabber -t template.xml -o result.xml</b></code></p><p><i>(separate process)</i></p></li>
  <li><p>running tests</p><p><i>(as usual just adding jcov_network_saver.jar in classpath)</i></p></li>
  <li><p>saving code coverage results (stopping the grabber)</p><p><code><b>java -jar jcov.jar grabbermanager -kill</b></code></p></li>
  <li><p>generating report for received code coverage results</p><p><code><b>java -jar jcov.jar repgen -o report result.xml</b></code></p></li>
 </ol>
-All these steps are presented in the <code>static_instr.xml</code> file, the same steps could be executed from the command line.
-The static instrumentation could be more universal, easy to setup for complicated cases (eg. loading large API sets, things that require a large set of Java classes to be loaded), also static instrumentation will give minor overhead on test execution.
+All these steps are presented in the <code>static_instr.xml</code> file. These are the same steps that can be executed from the command line.
+The static instrumentation may be generally easier to setup for complicated cases (eg. loading large API sets, things that require a large set of Java classes to be loaded). Static instrumentation typically adds only minor overhead on test execution.
 
 <a name="dynamic_instr" id="_dynamic_instr"></a>
 <h4>Dynamic instrumentation with grabber</h4>
@@ -165,49 +164,49 @@ The general procedure to receive code coverage information for any product conta
 <ol>
 <li>instrument product code</li>
 <li>running tests</li>
-<li>save and display received CC results</li> 
+<li>save and display received code coverage results</li>
 </ol>
-Step1 and Step2 could be combined together if javaagent is used. In this case application classes will be instrumented on loading, and a <code>template.xml</code> is creating in memory. This example is using jcov dynamic instrumentation:
+Step1 and Step2 could be combined together if <code>javaagent</code> is used. In this case, application classes will be instrumented on loading, and a <code>template.xml</code> file is created in memory. This example is using JCov dynamic instrumentation:
 
 <ol>
- <li><p>generate template</p><p><code><b>java -jar jcov.jar tmplgen -t template.xml $path_to_classes</b></code></p><p><i>(this step is needed to include not touched application classes to final code coverage report)</i></p></li>
- <li><p>starting grabber to receive code coverage results</p><p><code><b>java -jar jcov.jar grabber -t template.xml -o result.xml</b></code></p><p><i>(separate process)</i></p></li>
- <li><p>running tests</p><p><i>adding javaagent option:</i> <b>"-javaagent:jcov.jar=grabber"</b></p></li>
- <li><p>saving code coverage results (stopping the grabber)</p><p><code><b>java -jar jcov.jar grabbermanager -kill</b></code></p></li>
- <li><p>generating report for received code coverage results</p><p><code><b>java -jar jcov.jar repgen -o report result.xml</b></code></p></li>
+ <li><p>generate template</p><p><code><b>java -jar jcov.jar tmplgen -t template.xml $path_to_classes</b></code></p><p><i>(this step is needed to include unmodified application classes to the final code coverage report)</i></p></li>
+ <li><p>start the grabber to receive code coverage results</p><p><code><b>java -jar jcov.jar grabber -t template.xml -o result.xml</b></code></p><p><i>(separate process)</i></p></li>
+ <li><p>run the tests</p><p><i>adding javaagent option:</i> <b>"-javaagent:jcov.jar=grabber"</b></p></li>
+ <li><p>save the code coverage results (stopping the grabber)</p><p><code><b>java -jar jcov.jar grabbermanager -kill</b></code></p></li>
+ <li><p>generate the report for received code coverage results</p><p><code><b>java -jar jcov.jar repgen -o report result.xml</b></code></p></li>
 </ol>
-All these steps are presented in the <code>dynamic_instr.xml</code> file, the same steps could be executed from the command line. The dynamic instrumentation is good for small and simple cases (eg. small apps, limited API, things that don't require a large set of Java classes to be loaded). Without tmplgen command the report will not include unused classes in dynamic mode.
+All these steps are presented in the <code>dynamic_instr.xml</code> file, the same steps could be executed from the command line. The dynamic instrumentation is good for small and simple cases (eg. small apps, limited API, things that don't require a large set of Java classes to be loaded). Without the <code>tmplgen</code> command the report will not include unused classes in dynamic mode.
 
 <a name="static_instr_file" id="_static_instr_file"></a>
 <h4>Static instrumentation with file</h4>
-This example is using jcov static instrumentation without grabber. This approach (or dynamic instrumentation without grabber) could be used for fast results in small and simple cases:
+This example is using jcov static instrumentation without a grabber. This approach (or dynamic instrumentation without grabber) could be used for fast results in small and simple cases:
 <ol>
- <li><p>instrumenting the application</p><p><code><b>java -jar jcov.jar instr -t template.xml -o instr_classes $path_to_classes</b></code></p></li>
- <li><p>running tests</p><p><i>(adding jcov_file_saver.jar in classpath, setting jcov.template and jcov.file properties)</i></p></li>
- <li><p>generating report for received code coverage results</p><p><code><b>java -jar jcov.jar repgen -o report result.xml</b></code></p></li>
+ <li><p>instrument the application</p><p><code><b>java -jar jcov.jar instr -t template.xml -o instr_classes $path_to_classes</b></code></p></li>
+ <li><p>run tests</p><p><i>(adding jcov_file_saver.jar in classpath, setting jcov.template and jcov.file properties)</i></p></li>
+ <li><p>generate a report for received code coverage results</p><p><code><b>java -jar jcov.jar repgen -o report result.xml</b></code></p></li>
 </ol>
 All these steps are presented in the <code>static_instr_file.xml</code> file, the same steps could be executed from the command line.
 <a name="one_command" id="_one_command"></a>
 <h4>One command to get coverage</h4>
-This example is using jcov one command feature to get coverage data without understanding any JCov inner processes. To get coverage with JCov one command user needs to specify the application classes and the command to run tests:
+This example is using JCov <code>'one command'</code> feature to get coverage data without understanding any JCov inner processes. For this, a user needs to specify the application classes and the command to run tests:
 <ol>
  <li><p>get coverage for tests using one jcov command</p><p><code><b>java -jar jcov.jar jcov -pro $path_to_classes -out report -command "java -cp jcov_network_saver.jar MainTestsExecuter"</b></code></p></li>
 </ol>
-With this approach JCov will perform static instrumentation with grabber in background mode. All these steps are presented in the <code>one_command.xml</code> file, the same steps could be executed from the command line.
+With this approach JCov will perform static instrumentation with a grabber in background mode. All these steps are presented in the <code>one_command.xml</code> file, the same steps could be executed from the command line.
 <a name="jcov_ant_tasks" id="_jcov_ant_tasks"></a>
 <h4>JCov ant tasks to get coverage</h4>
-This example shows one of the possibilities to add regular code coverage support to the existing application ant build. JCov ant tasks can be used in application ant build to add static instrumentation with grabber in more convenient way. To be able to use <code>instrument, grabber, grabber-manager, report</code> tasks user needs to add jcov tasks in the application <code>build.xml</code> file:
+This example shows how to add regular code coverage support to an existing applications' ant build. JCov ant tasks can be used in an applications' ant build to add static instrumentation with a grabber in a more convenient way. To be able to use <code>instrument, grabber, grabber-manager</code> or <code>report</code> tasks, a user needs to add JCov tasks in the application <code>build.xml</code> file:
 <p><code><b>&#60;taskdef name="jcovTasks" classname="com.sun.tdk.jcov.ant.AllTasks" classpath="jcov.jar"/&#62;</b></code></p>
 Usage of the jcov ant tasks is presented in the <code>jcov_ant_tasks.xml</code> file.
 <a name="jcov_scales" id="_jcov_scales"></a>
 <h4>Individual test coverage</h4>
-This example is using jcov static instrumentation with grabber and additional information for each test:
+This example is using JCov static instrumentation with grabber and additional information for each test:
 <ol>
- <li><p>instrumenting the application</p><p><code><b>java -jar jcov.jar instr -t template.xml -o instr_classes $path_to_classes</b></code></p></li>
- <li><p>starting grabber to receive code coverage results with tests information</p><p><code><b>java -jar jcov.jar grabber -t template.xml -outtestlist testlist.txt -o result.xml</b></code></p><p><i>(separate process)</i></p></li>
- <li><p>running tests</p><p><i>(adding jcov_network_saver.jar in classpath, setting jcov.testname property for each test)</i></p></li>
- <li><p>saving code coverage results (stopping the grabber)</p><p><code><b>java -jar jcov.jar grabbermanager -kill</b></code></p></li>
- <li><p>generating report for received code coverage results with tests' information</p><p><code><b>java -jar jcov.jar repgen -o report -tests testlist.txt -testsinfo -src $path_to_src result.xml</b></code></p></li>
+ <li><p>instrument the application</p><p><code><b>java -jar jcov.jar instr -t template.xml -o instr_classes $path_to_classes</b></code></p></li>
+ <li><p>start the grabber to receive code coverage results with tests information</p><p><code><b>java -jar jcov.jar grabber -t template.xml -outtestlist testlist.txt -o result.xml</b></code></p><p><i>(separate process)</i></p></li>
+ <li><p>run the tests</p><p><i>(adding jcov_network_saver.jar in classpath, setting jcov.testname property for each test)</i></p></li>
+ <li><p>save code coverage results (stopping the grabber)</p><p><code><b>java -jar jcov.jar grabbermanager -kill</b></code></p></li>
+ <li><p>generate a report for received code coverage results with tests' information</p><p><code><b>java -jar jcov.jar repgen -o report -tests testlist.txt -testsinfo -src $path_to_src result.xml</b></code></p></li>
 </ol>
 All these steps are presented in the <code>jcov_scales.xml</code> file, the same steps could be executed from the command line.
 </body>
