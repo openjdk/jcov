@@ -29,11 +29,8 @@ import com.sun.tdk.jcov.data.Result;
 import com.sun.tdk.jcov.processing.ProcessingException;
 import com.sun.tdk.jcov.report.DefaultReportGeneratorSPI;
 import com.sun.tdk.jcov.report.ReportGeneratorSPI;
-import com.sun.tdk.jcov.report.html.CoverageReport;
-import com.sun.tdk.jcov.runtime.Collect;
+import com.sun.tdk.jcov.report.javap.JavapRepGen;
 import com.sun.tdk.jcov.runtime.PropertyFinder;
-import com.sun.tdk.jcov.tools.EnvHandler;
-import com.sun.tdk.jcov.tools.JCovTool.EnvHandlingException;
 import com.sun.tdk.jcov.util.Utils;
 import java.io.File;
 import java.io.IOException;
@@ -74,6 +71,16 @@ public class Report extends Task implements DynamicAttribute {
     public File propfile = null;
     public File filename;
     public File testlist;
+
+    public String getJavap() {
+        return javap;
+    }
+
+    public void setJavap(String javap) {
+        this.javap = javap;
+    }
+
+    public String javap;
     public boolean rewrite;
     public File fmlist;
     public LinkedList<FM> fm = new LinkedList<FM>();
@@ -163,6 +170,15 @@ public class Report extends Task implements DynamicAttribute {
             }
 
             if (filename != null) {
+
+                if (javap != null) {
+                    new JavapRepGen(repGen.getInclude(), repGen.getExclude()).run(filename.getPath(), javap, destdir.getPath());
+                    if (propfile != null) {
+                        PropertyFinder.cleanProperties();
+                    }
+                    return;
+                }
+
                 repGen.generateReport(format, destdir.getPath(), new Result(filename.getPath(), testlist != null ? testlist.getPath() : null), srcRootPath != null ? srcRootPath.getPath() : repGen.getSrcRootPath());
             } else {
                 throw new BuildException("Input jcov file needed to generate report");

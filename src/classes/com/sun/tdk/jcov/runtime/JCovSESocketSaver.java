@@ -45,14 +45,14 @@ public class JCovSESocketSaver extends JCovSocketSaver {
     static {
 
         File file = null;
-
+        String urlString = "";
         try {
-            String urlString = ClassLoader.getSystemClassLoader().getResource(JCovSESocketSaver.class.getCanonicalName().replaceAll("\\.", "/") + ".class").toString();
+            urlString = ClassLoader.getSystemClassLoader().getResource(JCovSESocketSaver.class.getCanonicalName().replaceAll("\\.", "/") + ".class").toString();
             urlString = urlString.substring(urlString.indexOf("file:"), urlString.indexOf('!'));
             URL url = new URL(urlString);
             file = new File(url.toURI());
         } catch (Exception e) {
-            System.err.println("Error while finding " + NETWORK_DEF_PROPERTIES_FILENAME + " file: " + e);
+            System.err.println("Error while finding " + urlString + " file: " + e);
         }
 
         if (file != null && file.exists()) {

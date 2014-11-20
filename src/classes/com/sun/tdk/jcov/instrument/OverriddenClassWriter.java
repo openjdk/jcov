@@ -148,11 +148,10 @@ public class OverriddenClassWriter extends ClassWriter {
             return loaded;
         }
         try {
-            ClassReader cr = openClassReader(clName, loader);
-
-            String superName = cr.getSuperName();
+            ClassInfo ci = getClassInfo(clName, loader);
+            String superName = ci.getSuperName();
             class_superclass.put(clName, superName);
-            detectInterfaces(clName, cr, loader);
+            detectInterfaces(clName, ci, loader);
             return superName;
         } catch (IOException e) {
             System.err.println("Failed to read class: " + clName + ". Reason: " + e.getMessage());
@@ -166,22 +165,22 @@ public class OverriddenClassWriter extends ClassWriter {
      * also updated to avoid multiple loading.
      *
      * @param clName
-     * @param cr
+     * @param ci
      * @throws IOException
      */
-    static void detectInterfaces(String clName, ClassReader cr, final ClassLoader loader)
+    static void detectInterfaces(String clName, ClassInfo ci, final ClassLoader loader)
             throws IOException {
         if (class_interfaces.get(clName) != null) {
             return;
         }
-        if (cr == null) {
-            cr = openClassReader(clName, loader);
-            String superName = cr.getSuperName();
+        if (ci == null) {
+            ci = getClassInfo(clName, loader);
+            String superName = ci.getSuperName();
             class_superclass.put(clName, superName);
         }
 
         ArrayList list = new ArrayList();
-        String[] interfaces = cr.getInterfaces();
+        String[] interfaces = ci.getInterfaces();
         if (interfaces != null) {
             for (String itf : interfaces) {
                 list.add(itf);
@@ -194,6 +193,7 @@ public class OverriddenClassWriter extends ClassWriter {
         } else {
             class_interfaces.put(clName, list);
         }
+
     }
 
     /**
@@ -206,7 +206,9 @@ public class OverriddenClassWriter extends ClassWriter {
      * @throws IOException when class can not be read (not found in loader or
      * can't be read by ClassReader)
      */
-    public static ClassReader openClassReader(final String clName, final ClassLoader loader) throws IOException {
+    public static ClassInfo getClassInfo(final String clName, final ClassLoader loader) throws IOException {
+
+        ClassInfo classInfo;
 
         if (loader instanceof JREInstr.StaticJREInstrClassLoader) {
             InputStream in = getInputStreamForName(clName, loader, false, ".class");
@@ -218,10 +220,22 @@ public class OverriddenClassWriter extends ClassWriter {
                     throw new IOException("Can't read class " + clName + " from classloader " + loader);
                 }
 
-                return new OffsetLabelingClassReader(in);
+                ClassReader cr = new OffsetLabelingClassReader(in);
+                classInfo = new ClassInfo(cr.getSuperName(), cr.getInterfaces());
+                try{
+                    in.close();
+                }
+                catch (Throwable ignore){}
+                return classInfo;
             }
 
-            return new OffsetLabelingClassReader(in);
+            ClassReader cr = new OffsetLabelingClassReader(in);
+            classInfo = new ClassInfo(cr.getSuperName(), cr.getInterfaces());
+            try{
+                in.close();
+            }
+            catch (Throwable ignore){}
+            return classInfo;
         }
 
         InputStream in = getInputStreamForName(clName, ClassLoader.getSystemClassLoader(), false, ".class");
@@ -234,7 +248,13 @@ public class OverriddenClassWriter extends ClassWriter {
                 if (!ClassLoader.getSystemClassLoader().equals(loader)) {
                     in = getInputStreamForName(clName, loader, false, ".class");
                     if (in != null) {
-                        return new OffsetLabelingClassReader(in);
+                        ClassReader cr = new OffsetLabelingClassReader(in);
+                        classInfo = new ClassInfo(cr.getSuperName(), cr.getInterfaces());
+                        try{
+                            in.close();
+                        }
+                        catch (Throwable ignore){}
+                        return classInfo;
                     } else {
                         throw new IOException("Can't read class " + clName + " from classloader " + loader);
                     }
@@ -245,7 +265,13 @@ public class OverriddenClassWriter extends ClassWriter {
 
         }
 
-        return new OffsetLabelingClassReader(in);
+        ClassReader cr = new OffsetLabelingClassReader(in);
+        classInfo = new ClassInfo(cr.getSuperName(), cr.getInterfaces());
+        try{
+            in.close();
+        }
+        catch (Throwable ignore){}
+        return classInfo;
     }
 
     /**
@@ -284,5 +310,24 @@ public class OverriddenClassWriter extends ClassWriter {
         }
 
         return null;
+    }
+
+    private static class ClassInfo{
+        String superName;
+        String[] interfaces;
+
+        ClassInfo(String superName, String[] interfaces){
+            this.superName = superName;
+            this.interfaces = interfaces;
+        }
+
+        public String getSuperName(){
+            return superName;
+        }
+
+        public String[] getInterfaces(){
+            return interfaces;
+        }
+
     }
 }

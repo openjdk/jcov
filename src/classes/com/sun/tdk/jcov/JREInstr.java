@@ -25,7 +25,6 @@
 package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
-import com.sun.tdk.jcov.runtime.JCovSocketSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
@@ -33,7 +32,6 @@ import com.sun.tdk.jcov.util.Utils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -41,6 +39,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,6 +60,7 @@ public class JREInstr extends JCovCMDTool {
     private Instr instr;
     private File toInstrument;
     private File[] addJars;
+    private File[] addJimages;
     private File[] addTests;
     private File implant;
     private File javac;
@@ -108,7 +108,54 @@ public class JREInstr extends JCovCMDTool {
         StaticJREInstrClassLoader cl = new StaticJREInstrClassLoader(new URL[]{toInstrument.toURI().toURL()});
         instr.setClassLoader(cl);
 
-        instr.instrumentFile(toInstrument.getAbsolutePath(), null, implant.getAbsolutePath());
+        if (toInstrument.getAbsolutePath().endsWith("bootmodules.jimage")){
+
+            ArrayList<File> jdkImages = new ArrayList<File>();
+            jdkImages.add(toInstrument);
+            if (addJimages != null) {
+                Collections.addAll(jdkImages, addJimages);
+            }
+
+            for (File jimageInstr: jdkImages) {
+                String tempDirName = jimageInstr.getName().substring(0, jimageInstr.getName().indexOf(".jimage"));
+
+                expandJimage(jimageInstr, tempDirName);
+
+                File dirtoInstrument = new File(jimageInstr.getParent(), tempDirName);
+                Utils.addToClasspath(new String[]{dirtoInstrument.getAbsolutePath()});
+                if (jimageInstr.equals(toInstrument)) {
+                    instr.instrumentFile(dirtoInstrument.getAbsolutePath(), null, implant.getAbsolutePath());
+                }
+                else{
+                    instr.instrumentFile(dirtoInstrument.getAbsolutePath(), null, null);
+                }
+                createJimage(dirtoInstrument, jimageInstr.getAbsolutePath() + "i");
+
+            }
+            for (File jimageInstr: jdkImages) {
+
+                String tempDirName = jimageInstr.getName().substring(0, jimageInstr.getName().indexOf(".jimage"));
+                File dirtoInstrument = new File(jimageInstr.getParent(), tempDirName);
+                if (!Utils.deleteDirectory(dirtoInstrument)) {
+                    logger.log(Level.SEVERE, "please, delete " + tempDirName + " jimage dir manually");
+                }
+
+                Utils.copyFile(jimageInstr, new File(jimageInstr.getParent(), jimageInstr.getName() + ".bak"));
+
+                if(!jimageInstr.delete()){
+                    logger.log(Level.SEVERE, "please, delete original jimage manually: "+jimageInstr);
+                }
+                else{
+                    Utils.copyFile(new File(jimageInstr.getAbsolutePath()+"i"), jimageInstr);
+                    new File(jimageInstr.getAbsolutePath()+"i").delete();
+                }
+
+            }
+
+        }
+        else {
+            instr.instrumentFile(toInstrument.getAbsolutePath(), null, implant.getAbsolutePath());
+        }
 
         ArrayList<String> srcs = null;
         if (addJars != null) {
@@ -136,6 +183,41 @@ public class JREInstr extends JCovCMDTool {
         return SUCCESS_EXIT_CODE;
     }
 
+
+    private boolean expandJimage(File jimage, String tempDirName){
+        try {
+            String command = jimage.getParentFile().getParentFile().getParent()+File.separator+"bin"+File.separator+"jimage extract --dir "+
+                    jimage.getParent()+File.separator+tempDirName+" "+jimage.getAbsolutePath();
+            Process process = Runtime.getRuntime().exec(command);
+            process.waitFor();
+            if (process.exitValue() != 0) {
+                logger.log(Level.SEVERE, "wrong command for expand jimage: "+command);
+                return false;
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "exception in process(expanding jimage)", e);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean createJimage(File dir, String new_jimage_path){
+        try {
+            String command = dir.getParentFile().getParentFile().getParent()+File.separator+"bin"+File.separator+"jimage recreate --dir "+
+                    dir + " "+ new_jimage_path;
+            Process process = Runtime.getRuntime().exec(command);
+            process.waitFor();
+            if (process.exitValue() != 0) {
+                logger.log(Level.SEVERE, "wrong command for create jimage: "+command);
+                return false;
+            }
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "exception in process(expanding jimage)", e);
+            return false;
+        }
+        return true;
+    }
+
     @Override
     protected EnvHandler defineHandler() {
         Instr.DSC_INCLUDE_RT.usage = "To run instrumented JRE you should implant JCov runtime library both into rt.jar and into 'lib/endorsed' directory.\nWhen instrumenting whole JRE dir with jreinstr tool - these 2 actions will be done automatically.";
@@ -159,6 +241,7 @@ public class JREInstr extends JCovCMDTool {
                     Instr.DSC_SUBSEQUENT,
                     DSC_JAVAC_HACK,
                     DCS_ADD_JAR,
+                    DCS_ADD_JIMAGE,
                     DCS_ADD_TESTS,
                     DSC_HOST,
                     DSC_PORT
@@ -194,6 +277,19 @@ public class JREInstr extends JCovCMDTool {
                 }
                 if (!addJars[i].canRead()) {
                     throw new EnvHandlingException("Can't read additional jar " + jars[i]);
+                }
+            }
+        }
+        if (envHandler.isSet(DCS_ADD_JIMAGE)) {
+            String[] images = envHandler.getValues(DCS_ADD_JIMAGE);
+            addJimages = new File[images.length];
+            for (int i = 0; i < addJimages.length; ++i) {
+                addJimages[i] = new File(images[i]);
+                if (!addJimages[i].exists()) {
+                    throw new EnvHandlingException("Additional jimage " + images[i] + " doesn't exist");
+                }
+                if (!addJimages[i].canRead()) {
+                    throw new EnvHandlingException("Can't read additional jimage " + images[i]);
                 }
             }
         }
@@ -318,62 +414,89 @@ public class JREInstr extends JCovCMDTool {
             if (!lib.exists()) {
                 throw new EnvHandlingException("lib directory was not found in JRE directory");
             }
-            toInstrument = new File(lib, "rt.jar");
+
+            toInstrument = new File(lib, "modules");
             if (!toInstrument.exists()) {
-                throw new EnvHandlingException("rt.jar directory was not found in lib directory");
-            }
-            if (!toInstrument.isFile() || !toInstrument.canRead() || !toInstrument.canWrite()) {
-                throw new EnvHandlingException("Can't read/write rt.jar (or not a file)");
-            }
-            File bak = new File(lib, "rt.jar.bak");
-            if (!bak.exists()) {
-                try {
-                    Utils.copyFile(toInstrument, bak);
-                } catch (FileNotFoundException ex) {
-                    throw new EnvHandlingException("Error while backuping rt.jar: file not found", ex);
-                } catch (IOException ex) {
-                    throw new EnvHandlingException("Error while backuping rt.jar", ex);
+                toInstrument = new File(lib, "rt.jar");
+                if (!toInstrument.exists()) {
+                    throw new EnvHandlingException("rt.jar directory was not found in lib directory");
                 }
-            } else {
-                if (!envHandler.isSet(Instr.DSC_SUBSEQUENT)) {
-                    throw new EnvHandlingException("Backup rt.jar.bak file exisit. It can mean that JRE is already instrumented - nothing to do. Restore initial rt.jar or delete bak file.");
+                if (!toInstrument.isFile() || !toInstrument.canRead() || !toInstrument.canWrite()) {
+                    throw new EnvHandlingException("Can't read/write rt.jar (or not a file)");
                 }
-            }
-
-            File endorsed = new File(lib, "endorsed");
-            if (!endorsed.exists()) {
-                endorsed.mkdir();
-            } else {
-                if (!endorsed.isDirectory()) {
-                    throw new EnvHandlingException("JRE/lib/endorsed is not a directory");
-                }
-            }
-            File implantcopy = new File(endorsed, implant.getName());
-            try {
-                // copy rt to endorsed dir
-                Utils.copyFile(implant, implantcopy);
-
-                if (host != null || port != null) {
-                    Properties prop = new Properties();
+                File bak = new File(lib, "rt.jar.bak");
+                if (!bak.exists()) {
                     try {
-                        if (host != null) {
-                            prop.setProperty(JCovSESocketSaver.HOST_PROPERTIES_NAME, host);
-                        }
-                        if (port != null) {
-                            prop.setProperty(JCovSESocketSaver.PORT_PROPERTIES_NAME, Integer.toString(port));
-                        }
-                        prop.store(new FileOutputStream(endorsed.getAbsolutePath() + File.separator + JCovSESocketSaver.NETWORK_DEF_PROPERTIES_FILENAME), null);
-
+                        Utils.copyFile(toInstrument, bak);
+                    } catch (FileNotFoundException ex) {
+                        throw new EnvHandlingException("Error while backuping rt.jar: file not found", ex);
                     } catch (IOException ex) {
-                        logger.log(Level.WARNING, "Cannot create property file to save host and port: {0}", ex);
+                        throw new EnvHandlingException("Error while backuping rt.jar", ex);
+                    }
+                } else {
+                    if (!envHandler.isSet(Instr.DSC_SUBSEQUENT)) {
+                        throw new EnvHandlingException("Backup rt.jar.bak file exisit. It can mean that JRE is already instrumented - nothing to do. Restore initial rt.jar or delete bak file.");
                     }
                 }
 
+                File endorsed = new File(lib, "endorsed");
+                if (!endorsed.exists()) {
+                    endorsed.mkdir();
+                } else {
+                    if (!endorsed.isDirectory()) {
+                        throw new EnvHandlingException("JRE/lib/endorsed is not a directory");
+                    }
+                }
+                File implantcopy = new File(endorsed, implant.getName());
+                try {
+                    // copy rt to endorsed dir
+                    Utils.copyFile(implant, implantcopy);
 
-            } catch (FileNotFoundException ex) {
-                throw new EnvHandlingException("Error while copying implant file to endorsed dir: file not found", ex);
-            } catch (IOException ex) {
-                throw new EnvHandlingException("Error while copying implant file to endorsed dir", ex);
+                    if (host != null || port != null) {
+                        Properties prop = new Properties();
+                        try {
+                            if (host != null) {
+                                prop.setProperty(JCovSESocketSaver.HOST_PROPERTIES_NAME, host);
+                            }
+                            if (port != null) {
+                                prop.setProperty(JCovSESocketSaver.PORT_PROPERTIES_NAME, Integer.toString(port));
+                            }
+                            prop.store(new FileOutputStream(endorsed.getAbsolutePath() + File.separator + JCovSESocketSaver.NETWORK_DEF_PROPERTIES_FILENAME), null);
+
+                        } catch (IOException ex) {
+                            logger.log(Level.WARNING, "Cannot create property file to save host and port: {0}", ex);
+                        }
+                    }
+
+
+                } catch (FileNotFoundException ex) {
+                    throw new EnvHandlingException("Error while copying implant file to endorsed dir: file not found", ex);
+                } catch (IOException ex) {
+                    throw new EnvHandlingException("Error while copying implant file to endorsed dir", ex);
+                }
+            }
+            else{
+                toInstrument = new File(toInstrument, "bootmodules.jimage");
+                if (!toInstrument.exists()) {
+                    throw new EnvHandlingException("bootmodules.jimage was not found in modules directory");
+                }
+                if (!toInstrument.isFile() || !toInstrument.canRead() || !toInstrument.canWrite()) {
+                    throw new EnvHandlingException("Can't read/write bootmodules.jimage");
+                }
+                File bak = new File(toInstrument.getParent(), "bootmodules.jimage.bak");
+                if (!bak.exists()) {
+                    try {
+                        Utils.copyFile(toInstrument, bak);
+                    } catch (FileNotFoundException ex) {
+                        throw new EnvHandlingException("Error while backuping bootmodules.jimage: file not found", ex);
+                    } catch (IOException ex) {
+                        throw new EnvHandlingException("Error while backuping bootmodules.jimage", ex);
+                    }
+                } else {
+                    if (!envHandler.isSet(Instr.DSC_SUBSEQUENT)) {
+                        throw new EnvHandlingException("Backup bootmodules.jimage.bak file exisit. It can mean that JRE is already instrumented - nothing to do. Restore initial bootmodules.jimage or delete bak file.");
+                    }
+                }
             }
         }
 
@@ -423,6 +546,7 @@ public class JREInstr extends JCovCMDTool {
     }
     public static final OptionDescr DSC_JAVAC_HACK = new OptionDescr("javac", "hack javac", OptionDescr.VAL_SINGLE, "Hack javac to increase minimum VM memory used on initialization. Should be used on Solaris platform or should be done manually. ");
     public static final OptionDescr DCS_ADD_JAR = new OptionDescr("addjar", new String[]{"add"}, "instrument additional jars", OptionDescr.VAL_MULTI, "Instrument additional jars within JRE or JDK. Only jar files are allowed.");
+    public static final OptionDescr DCS_ADD_JIMAGE = new OptionDescr("addjimage", new String[]{"addjimage"}, "instrument additional jimages", OptionDescr.VAL_MULTI, "Instrument additional jimages within JRE or JDK. Only jimage files are allowed.");
     public static final OptionDescr DCS_ADD_TESTS = new OptionDescr("addtests", new String[]{"tests"}, "instrument tests", OptionDescr.VAL_MULTI, "Instrument tests files (classes and jars).");
     final static OptionDescr DSC_HOST =
             new OptionDescr("host", new String[]{"host"}, "sets default host", OptionDescr.VAL_SINGLE, "set the default host for sending jcov data. needed only in network mode");

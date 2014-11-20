@@ -166,6 +166,9 @@ public class JavapClass {
         textLine = textLine + "{";
 
         className = substringBetween(textLine, "\\.", "\\ ", false);
+        if(className != null && className.contains("<") && className.contains(">")){
+            className = className.substring(0, className.indexOf('<'));
+        }
 
     }
 

@@ -38,10 +38,7 @@ import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.util.Utils;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
@@ -202,7 +199,7 @@ public class JavapRepGen {
         }
 
         RepGen rg = new RepGen();
-        rg.configure(null, null, null, null, false, false, false, false, false, false, false, false);
+        rg.configure(include, exclude, null, null, false, false, false, false, false, false, false, false);
 
         try {
             Result res = new Result(templatePath);
@@ -218,16 +215,17 @@ public class JavapRepGen {
         ArrayList<File> newFiles = new ArrayList<File>();
         if (files.size() > 1) {
 
+            classesPath = new File(classesPath+"/").getAbsolutePath().replaceAll("\\\\","/");
             for (File classFile : files) {
 
-                String className = classFile.getAbsolutePath();
-                if (classFile.getAbsolutePath().startsWith(classesPath + File.separator)){
+                String className = classFile.getAbsolutePath().replaceAll("\\\\","/");
+
+                if (className.startsWith(classesPath + "/")){
                     className = className.substring(classesPath.length()+1);
                 }
                 if (className.endsWith(".class")) {
                     className = className.substring(0, className.lastIndexOf(".class"));
                 }
-
                 if (Utils.accept(Utils.concatFilters(include, exclude), null, "/" + className, null)) {
                     newFiles.add(classFile);
                 }
