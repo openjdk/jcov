@@ -716,7 +716,12 @@ public class CoverageReport implements ReportGenerator {
         generateScriptsHeader(pw);
         pw.println("</head>");
         pw.println("<body>");
-        generateNavHeader(pw, theClass.getName() + ".html", "" + theClass.getPackageName().replaceAll("[a-zA-Z0-9]+", "..") + "/index.html?" + srcOutputFilename);
+        if (!theClass.getPackageName().isEmpty()) {
+            generateNavHeader(pw, theClass.getName() + ".html", "" + theClass.getPackageName().replaceAll("[a-zA-Z0-9]+", "..") + "/index.html?" + srcOutputFilename);
+        }
+        else{
+            generateNavHeader(pw, theClass.getName() + ".html", "" + theClass.getName()+"/../index.html?" + srcOutputFilename);
+        }
         //pw.println("<span class=\"title\">" + title + " "
         //  + coverage.getData(ColumnName.PRODUCT) + "</span>");
         if (isGenHitTests) {

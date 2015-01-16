@@ -332,7 +332,7 @@ class Server extends Thread {
     private int totalConnections;           // connections occurred
     int aliveClients = 0;                   // increased on client.start(), decreased in client
     private LinkedList<String> tests;       // accepted testnames
-    private static int MAX_TIMEOUT = 90000; // maximum time to wait for Client working
+    static int MAX_TIMEOUT = 90000;         // maximum time to wait for Client working
     static boolean showMemoryChecks = false; // show memory checks
     final static Runtime rt = Runtime.getRuntime(); // runtime
     private long reservedMemory = 0;        // memory reserved by alive clients - not used yet
@@ -1164,11 +1164,16 @@ class CommandListener extends Thread {
                     switch (command) {
                         case MiscConstants.GRABBER_KILL_COMMAND:
                             Grabber.logger.log(Level.INFO, "Server received kill command.");
+                            BufferedReader inReader = new BufferedReader(new InputStreamReader(in, Charset.defaultCharset()));
+                            int killtimeout = Integer.valueOf(inReader.readLine());
+                            if (killtimeout > 0){
+                                server.setMaxTimeout(killtimeout*1000);
+                            }
                             server.kill(false);
 //                            server.saveData();
                             socket.getOutputStream().write(1);
                             socket.getOutputStream().close();
-                            in.close();
+                            inReader.close();
                             break outer;
                         case MiscConstants.GRABBER_FORCE_KILL_COMMAND:
                             socket.getOutputStream().write(1);

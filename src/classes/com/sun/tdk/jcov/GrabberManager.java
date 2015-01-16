@@ -35,6 +35,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
@@ -53,6 +55,7 @@ public class GrabberManager extends JCovCMDTool {
 
     private LinkedList<ServerCommand> commands;
     private int waittime = 5;
+    private int stoptimeout = 0;
 
     @Override
     protected int run() throws Exception {
@@ -118,6 +121,7 @@ public class GrabberManager extends JCovCMDTool {
                     DSC_PORT,
                     DSC_FILE,
                     DSC_WAITTIME,
+                    DSC_STOPTIMEOUT,
                     COMM_KILL,
                     COMM_KILL_FORCE,
                     COMM_SAVE,
@@ -166,6 +170,9 @@ public class GrabberManager extends JCovCMDTool {
         if (opts.isSet(DSC_WAITTIME)) {
             waittime = Utils.checkedToInt(opts.getValue(DSC_WAITTIME), "time to wait value");
         }
+        if (opts.isSet(DSC_STOPTIMEOUT)) {
+            stoptimeout = Utils.checkedToInt(opts.getValue(DSC_STOPTIMEOUT), "time to wait before stop");
+        }
 
         return SUCCESS_EXIT_CODE;
     }
@@ -189,6 +196,9 @@ public class GrabberManager extends JCovCMDTool {
     final static OptionDescr DSC_PORT =
             new OptionDescr("command_port", new String[]{"port"}, "", OptionDescr.VAL_SINGLE, "Specify servers command port.",
             Integer.toString(MiscConstants.JcovGrabberCommandPort));
+    final static OptionDescr DSC_STOPTIMEOUT =
+            new OptionDescr("stoptimeout", new String[]{"stopt", "killt"}, "", OptionDescr.VAL_SINGLE,
+                    "Max time in seconds for Grabber to save all alive connections before stop.", Integer.toString(Server.MAX_TIMEOUT / 1000));
     final static OptionDescr DSC_FILE =
             new OptionDescr("grabber.props", "", OptionDescr.VAL_SINGLE, "Read server properties from a file. Host should be specified explicitly.");
     final static OptionDescr DSC_WAITTIME =
@@ -240,11 +250,21 @@ public class GrabberManager extends JCovCMDTool {
             socket = new Socket(host, port);
             OutputStream out = socket.getOutputStream();
             out.write(code);
+            BufferedWriter outWriter = null;
+            if (code == COMM_KILL.getCommandCode()){
+                outWriter = new BufferedWriter(new OutputStreamWriter(out, Charset.defaultCharset()));
+                outWriter.write(String.valueOf(stoptimeout));
+                outWriter.newLine();
+                outWriter.flush();
+            }
             socket.getInputStream().read();
             socket.getInputStream().close();
+            if (outWriter != null) {
+                outWriter.close();
+            }
             out.close();
         } finally {
-            if (socket != null) {
+            if (socket != null && !socket.isClosed()) {
                 socket.close();
             }
         }

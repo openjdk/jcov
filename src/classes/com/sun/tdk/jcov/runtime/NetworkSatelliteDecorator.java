@@ -24,11 +24,8 @@
  */
 package com.sun.tdk.jcov.runtime;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.net.ServerSocket;
+import java.io.*;
 import java.net.Socket;
-import java.nio.charset.Charset;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -40,110 +37,98 @@ import java.util.logging.Logger;
  */
 public class NetworkSatelliteDecorator implements SaverDecorator {
 
-    private ServerSocket ss;
     private JCovSaver wrapped;
-    private int port1 = 3337;
+    private int port = 3337;
+    private static String host = "localhost";
     private static Lock lock = new ReentrantLock();
-
-    static {
-        Collect.saveAtShutdownEnabled = false;
-    }
-
-    public NetworkSatelliteDecorator() {
-        System.setProperty("jcov.autosave", "false");
-    }
+    private Thread socketClientThread = null;
+    private volatile String name = null;
 
     public void init(JCovSaver wrap) {
         this.wrapped = wrap;
+        listenObserver();
+    }
 
-        ThreadGroup tg;
-        if (Thread.currentThread().getThreadGroup() != null && Thread.currentThread().getThreadGroup().getParent() != null) {
-            tg = new ThreadGroup(Thread.currentThread().getThreadGroup().getParent(), "JCov");
-        } else {
-            tg = new ThreadGroup("JCov");
-        }
-        tg.setDaemon(true);
-
-        Thread t = new Thread(tg, "JCovSatellite") {
+    private void listenObserver(){
+        socketClientThread = new Thread(new Runnable() {
             @Override
             public void run() {
+                BufferedReader in;
+                PrintWriter out;
                 try {
-                    ss = new ServerSocket(port1);
-                    outer:
+                    Socket socket = new Socket(host, port);
+                    in = new BufferedReader(new InputStreamReader(
+                            socket.getInputStream()));
+                    out = new PrintWriter(socket.getOutputStream(), true);
+
                     while (true) {
-                        Socket sock = null;
+                        String line = null;
                         try {
-                            sock = ss.accept();
-
-                            DataInputStream in = new DataInputStream(sock.getInputStream());
-                            byte buff[] = new byte[4];
-                            for (int i = 0; i < buff.length; ++i) {
-                                buff[i] = in.readByte();
-                            }
-
-                            if (!new String(buff, Charset.defaultCharset()).equals("JCOV")) {
-                                continue;
-                            }
-
-                            int code = in.read();
-                            switch (code) {
-                                case 0: // SAVE
-                                    String name = in.readUTF();
-                                    System.setProperty("jcov.testname", name);
-                                    lock.lock();
-                                    try {
-                                        wrapped.saveResults();
-                                    } finally {
-                                        lock.unlock();
-                                    }
-                                    sock.getOutputStream().write(0);
-                                    break;
-                                case 1: // NAME
-                                    name = in.readUTF();
-                                    System.setProperty("jcov.testname", name);
-                                    sock.getOutputStream().write(0);
-                                    break;
-                                case 2: // EXIT
-                                    sock.getOutputStream().write(0);
-                                    break outer;
-                                default:
-                                    sock.getOutputStream().write(0);
-                            }
-
+                            line = in.readLine();
                         } catch (Exception e) {
-                            e.printStackTrace();
-                        } finally {
+                            lock.lock();
                             try {
-                                if (sock != null) {
-                                    sock.close();
+                                wrapped.saveResults();
+                            }
+                            finally {
+                                lock.unlock();
+                            }
+                        }
+                        if (line != null) {
+                            if (line.startsWith("NAME")) {
+                                name = line.substring(4, line.length());
+                                System.setProperty("jcov.testname", name);
+                                out.println("named " + name);
+                                out.flush();
+                            } else if (line.startsWith("SAVE")) {
+                                name = line.substring(4, line.length());
+                                System.setProperty("jcov.testname", name);
+
+                                lock.lock();
+                                try {
+                                    wrapped.saveResults();
                                 }
-                            } catch (Exception e) {
+                                finally {
+                                    lock.unlock();
+                                }
+                                out.println("saved " + name);
+                                out.flush();
+                                name = null;
                             }
                         }
                     }
-                } catch (IOException ex) {
-                    Logger.getLogger(NetworkSatelliteDecorator.class.getName()).log(Level.SEVERE, null, ex);
-                } finally {
-                    try {
-                        ss.close();
-                    } catch (Throwable e) {
-                    }
+
+                } catch (Exception e) {
+                    Logger.getLogger(NetworkSatelliteDecorator.class.getName()).log(Level.SEVERE, "SocketClient: ", e);
                 }
             }
-        };
-        t.setDaemon(true);
-        t.start();
+
+        });
+        socketClientThread.setDaemon(true);
+        socketClientThread.start();
+
     }
 
     public void saveResults() {
-        if (!lock.tryLock()) {
+
+        while (name == null){
+            try {
+                Thread.currentThread().sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (name != null) {
+            System.setProperty("jcov.testname", name);
             lock.lock();
+            try {
+                wrapped.saveResults();
+            } finally {
+                lock.unlock();
+            }
+            name = null;
         }
-        lock.unlock();
-        try {
-            ss.close();
-        } catch (Exception ex) {
-        }
-//        wrapped.saveResults();
+
     }
 }
