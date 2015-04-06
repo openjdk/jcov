@@ -92,12 +92,13 @@ public class DataRootStAX implements RootReader {
 
     private void readPackage() throws XMLStreamException, FileFormatException {
         String packName = parser.getAttributeValue(null, XmlNames.NAME);
+        String moduleName = parser.getAttributeValue(null, XmlNames.MODULE_NAME);
         int event = parser.getEventType();
         while (true) {
             event = parser.nextTag();
             switch (event) {
                 case XMLStreamConstants.START_ELEMENT:
-                    readClass(packName);
+                    readClass(packName, moduleName);
                     break;
                 case XMLStreamReader.END_ELEMENT://end of package
                     if (parser.getLocalName().equals(XmlNames.PACKAGE)) {//not necessary?!
@@ -108,12 +109,12 @@ public class DataRootStAX implements RootReader {
         }
     }
 
-    private void readClass(String packName) throws FileFormatException {
+    private void readClass(String packName, String moduleName) throws FileFormatException {
         String clName = parser.getAttributeValue(null, XmlNames.NAME);
         String fullName = packName.isEmpty() ? clName
                 : packName.replaceAll("\\.", "/") + "/" + clName;
         String checksum = parser.getAttributeValue(null, XmlNames.CHECKSUM);
-        DataClass clazz = new DataClass(root.rootId(), fullName, checksum == null ? -1
+        DataClass clazz = new DataClass(root.rootId(), fullName, moduleName,checksum == null ? -1
                 : Long.parseLong(checksum), root.isDifferentiateElements());
 
         clazz.setInfo(parser.getAttributeValue(null, XmlNames.FLAGS), parser.getAttributeValue(null, XmlNames.SIGNATURE),

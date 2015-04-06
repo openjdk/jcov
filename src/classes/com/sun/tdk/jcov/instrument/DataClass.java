@@ -60,6 +60,10 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      */
     private final String fullname;
     /**
+     * Module name of associated class
+     */
+    private String moduleName;
+    /**
      * Short name of associated class
      */
     private final String name;
@@ -122,7 +126,7 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      * @param checksum
      * @param differentiateClass
      */
-    public DataClass(int rootId, String fullname, long checksum, boolean differentiateClass) {
+    public DataClass(int rootId, String fullname, String moduleName, long checksum, boolean differentiateClass) {
         super(rootId);
         this.fullname = fullname;
         this.checksum = checksum;
@@ -135,6 +139,15 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
         this.methods = new LinkedList<DataMethod>();
         this.fields = new LinkedList<DataField>();
         this.differentiateClass = differentiateClass; // is always false at the moment
+        this.moduleName = moduleName;
+      }
+
+    public String getModuleName(){
+        return moduleName;
+    }
+
+    public void setModuleName(String moduleName){
+        this.moduleName = moduleName;
     }
 
     /**
@@ -685,7 +698,7 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      * @return clone
      */
     public DataClass clone(int rootId) {
-        DataClass res = new DataClass(rootId, fullname, -1, differentiateClass);
+        DataClass res = new DataClass(rootId, fullname, moduleName, -1, differentiateClass);
         res.access = access;
         res.signature = signature;
         res.superName = superName;
@@ -1055,6 +1068,7 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
     void writeObject(DataOutput out) throws IOException {
         super.writeObject(out);
         out.writeUTF(name);
+        writeString(out, moduleName);
         writeString(out, fullname);
         writeString(out, signature);
         writeString(out, source);
@@ -1096,7 +1110,9 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
 
     DataClass(int rootID, DataInput in) throws IOException {
         super(rootID, in);
+        //moduleName = "test.java.base";
         name = in.readUTF();
+        moduleName = readString(in);
         fullname = readString(in);
         signature = readString(in);
         source = readString(in);

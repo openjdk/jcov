@@ -48,7 +48,10 @@ public class JCovSESocketSaver extends JCovSocketSaver {
         String urlString = "";
         try {
             urlString = ClassLoader.getSystemClassLoader().getResource(JCovSESocketSaver.class.getCanonicalName().replaceAll("\\.", "/") + ".class").toString();
-            urlString = urlString.substring(urlString.indexOf("file:"), urlString.indexOf('!'));
+            if (urlString.contains("file:") && urlString.contains("!")) {
+                urlString = urlString.substring(urlString.indexOf("file:"), urlString.indexOf('!'));
+            }
+            urlString = urlString.replaceAll("jrt:", "file:");
             URL url = new URL(urlString);
             file = new File(url.toURI());
         } catch (Exception e) {

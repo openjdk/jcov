@@ -103,4 +103,6 @@ public class XmlNames {
     public static final String CRT_LINE = "line";
     public static final String CRT_COL = "col";
     public static final String INNER_CLASS = "inner";
+
+    public static final String MODULE_NAME = "moduleName";
 }

@@ -47,6 +47,16 @@ table.report {
 
 tr.report {
 	border: #dcdcdc 1px solid;
+    width: 13%;
+}
+
+tr.report_number {
+    border: #dcdcdc 1px solid;
+    width: 6%;
+}
+
+tr.report:hover {
+    background: #fbfbfb;
 }
 
 table.percentGraph {
@@ -60,6 +70,15 @@ th.report {
 	font-weight: bold;
 	border: #dcdcdc 1px solid;
 	cursor:			default;
+}
+
+th.report_number{
+    background: #F0F0F0;
+    font-size: inherit !important;
+    font-weight: bold;
+    border: #dcdcdc 1px solid;
+    cursor:			default;
+    width: 6%;
 }
 
 
@@ -88,37 +107,45 @@ td.reportText {
 td.reportValue {
 	font-size: inherit !important;
 	border: #dcdcdc 1px solid;
-	text-align: right;
+	text-align: center;
+    width: 13%;
+}
+
+td.reportValue_number {
+    font-size: inherit !important;
+    border: #dcdcdc 1px solid;
+    text-align: center;
+    width: 6%;
 }
 
 td.reportValue_covered {
 	font-size: inherit !important;
 	border: #dcdcdc 1px solid;
 	text-align: right;
-    background: #80ff80;
+    background: #73FF95;
 }
 
 td.reportValue_uncovered {
 	font-size: inherit !important;
 	border: #dcdcdc 1px solid;
 	text-align: right;
-    background: #FF3030;
+    background: #FF4652;
 }
 
 td.spacer {
-	border-left: #FF0000 0px none;
-	border-right: #FF0000 0px none;
+	border-left: #FF4652 0px none;
+	border-right: #FF4652 0px none;
 	height: 30px;
 	padding-top: 15px;
 }
 
 td.percentCovered {
-    background: #00FF00;
+    background: #73FF95;
 	empty-cells: show;
 }
 
 td.percentUnCovered {
-    background: #FF0000;
+    background: #FF4652;
 	empty-cells: show;
 }
 
@@ -130,14 +157,14 @@ td.numLine {
 }
 
 td.numLineCover {
-    background: #80ff80;
+    background: #73FF95;
     border-right: #dcdcdc 1px solid;
     padding-right: 3px;
     text-align: right;
 }
 
 td.numLineUnCover {
-    background: #FF3030;
+    background: #FF4652;
     border-right: #dcdcdc 1px solid;
     padding-right: 3px;
     text-align: right;
@@ -151,14 +178,14 @@ td.nbHits {
 }
 
 td.nbHitsCovered {
-    background: #80ff80;
+    background: #73FF95;
     border-right: #dcdcdc 1px solid;
     padding-right: 3px;
     text-align: left;
 }
 
 td.nbHitsUncovered {
-    background: #FF3030;
+    background: #FF4652;
     border-right: #dcdcdc 1px solid;
     padding-right: 3px;
     text-align: left;
@@ -168,6 +195,20 @@ td.src {
     width: 100%;
 }
 
+td.coverage_left{
+    width : 30%;
+    text-align: right;
+    padding-bottom: 3px;
+    padding-top: 3px;
+}
+
+td.coverage_right{
+    width : 70%;
+    text-align: right;
+    padding-bottom: 3px;
+    padding-top: 3px;
+    padding-right: 3px;
+}
 pre.src {
     background: #ffffff;
     margin-top: 0px;
@@ -175,7 +216,7 @@ pre.src {
 }
 
 span.srcUncovered {
-    background: #FF3030;
+    background: #FF4652;
     border-right: #dcdcdc 1px solid;
     padding-right: 3px;
     text-align: right;
@@ -205,6 +246,10 @@ span.title2 {
 }
 span.text {
 	font-size: 12px;
+}
+span.text_bold {
+    font-size: 12px;
+    font-weight: bold;
 }
 
 span.text_italic {

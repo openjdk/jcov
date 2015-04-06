@@ -48,6 +48,8 @@ public class DataPackage extends DataAbstract implements Comparable<DataPackage>
      * Name of associated package
      */
     private final String name;
+
+    private String moduleName;
     /**
      * Classes in this package
      */
@@ -59,10 +61,19 @@ public class DataPackage extends DataAbstract implements Comparable<DataPackage>
      * @param rootId
      * @param name Associated package name
      */
-    public DataPackage(int rootId, String name) {
+    public DataPackage(int rootId, String name, String modulename) {
         super(rootId);
         this.name = name;
+        this.moduleName = modulename;
         this.classes = new LinkedList<DataClass>();
+    }
+
+    public void setModuleName(String moduleName){
+        this.moduleName = moduleName;
+    }
+
+    public String getModuleName(){
+        return moduleName;
     }
 
     /**
@@ -142,6 +153,7 @@ public class DataPackage extends DataAbstract implements Comparable<DataPackage>
     @Override
     void xmlAttrs(XmlContext ctx) {
         ctx.attr(XmlNames.NAME, name.replace('/', '.'));
+        ctx.attr(XmlNames.MODULE_NAME, moduleName);
     }
 
     /**
@@ -191,6 +203,7 @@ public class DataPackage extends DataAbstract implements Comparable<DataPackage>
 
     void writeObject(DataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeUTF(moduleName);
         out.writeShort(classes.size());
         for (DataClass dc : classes) {
             dc.writeObject(out);
@@ -200,6 +213,7 @@ public class DataPackage extends DataAbstract implements Comparable<DataPackage>
     DataPackage(int rootID, DataInput in) throws IOException {
         super(rootID);
         name = in.readUTF();
+        moduleName = in.readUTF();
         int classNum = in.readUnsignedShort();
         classes = new ArrayList<DataClass>(classNum);
         for (int i = 0; i < classNum; ++i) {

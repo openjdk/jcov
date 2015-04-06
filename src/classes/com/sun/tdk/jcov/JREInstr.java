@@ -29,12 +29,8 @@ import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
+
+import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
@@ -122,7 +118,14 @@ public class JREInstr extends JCovCMDTool {
                 expandJimage(jimageInstr, tempDirName);
 
                 File dirtoInstrument = new File(jimageInstr.getParent(), tempDirName);
+                //still need it
                 Utils.addToClasspath(new String[]{dirtoInstrument.getAbsolutePath()});
+                for (File file:dirtoInstrument.listFiles()){
+                    if (file.isDirectory()){
+                        Utils.addToClasspath(new String[]{file.getAbsolutePath()});
+                    }
+                }
+
                 if (jimageInstr.equals(toInstrument)) {
                     instr.instrumentFile(dirtoInstrument.getAbsolutePath(), null, implant.getAbsolutePath());
                 }
@@ -178,7 +181,6 @@ public class JREInstr extends JCovCMDTool {
             Utils.addToClasspath(srcs.toArray(new String[0]));
             instr.instrumentFiles(srcs.toArray(new String[0]), null, null);
         }
-
         instr.finishWork();
         return SUCCESS_EXIT_CODE;
     }

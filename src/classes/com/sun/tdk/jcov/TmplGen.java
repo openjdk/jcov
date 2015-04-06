@@ -34,8 +34,10 @@ import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.logging.Level;
+import java.util.*;
 
 /**
  * <p> Template generation. </p> <p> JCov Template file should be used to merge
@@ -58,6 +60,7 @@ public class TmplGen extends JCovCMDTool {
     private boolean instrumentAnonymous = true;
     private boolean instrumentSynthetic = true;
     private InstrumentationOptions.InstrumentationMode mode;
+    private HashMap<String, String> moduleInfo = null;
 
     /**
      * Legacy CMD line entry poiny (use 'java -jar jcov.jar TmplGen' from cmd
@@ -97,13 +100,92 @@ public class TmplGen extends JCovCMDTool {
         return SUCCESS_EXIT_CODE;
     }
 
+    private boolean expandJimage(File jimage, String tempDirName){
+        try {
+            String command = jimage.getParentFile().getParentFile().getParent()+File.separator+"bin"+File.separator+"jimage extract --dir "+
+                    jimage.getParent()+File.separator+tempDirName+" "+jimage.getAbsolutePath();
+            Process process = Runtime.getRuntime().exec(command);
+            process.waitFor();
+            if (process.exitValue() != 0) {
+                //logger.log(Level.SEVERE, "wrong command for expand jimage: "+command);
+                return false;
+            }
+        } catch (Exception e) {
+            //logger.log(Level.SEVERE, "exception in process(expanding jimage)", e);
+            return false;
+        }
+        return true;
+    }
+
     public void generateAndSave(String[] files) throws IOException {
         setDefaultInstrumenter();
         for (String root : files) {
-            instrumenter.instrument(new File(root), null);
+            if (root.endsWith(".jimage")){
+                File rootFile = new File(root);
+                String jimagename = getJImageName(rootFile);
+
+                expandJimage(rootFile, "temp_"+jimagename);
+                File tempJimage = new File(rootFile.getParentFile().getAbsolutePath()+File.separator+"temp_"+jimagename);
+                //still need it
+                Utils.addToClasspath(new String[]{tempJimage.getAbsolutePath()});
+                for (File file:tempJimage.listFiles()){
+                    if (file.isDirectory()){
+                        Utils.addToClasspath(new String[]{file.getAbsolutePath()});
+                    }
+                }
+                instrumenter.instrument(new File(rootFile.getParentFile().getAbsolutePath()+File.separator+"temp_"+jimagename), null);
+                File jdata = new File(rootFile.getParentFile().getAbsolutePath()+File.separator+"temp_"+jimagename+File.separator+jimagename+".jdata");
+                if (jdata.exists()){
+                   fillModuleInfo(jdata);
+                }
+            }
+            else {
+                instrumenter.instrument(new File(root), null);
+            }
+        }
+        for (String root : files) {
+            if (root.endsWith(".jimage")) {
+                File rootFile = new File(root);
+                Utils.deleteDirectory(new File(rootFile.getParentFile().getAbsolutePath() + File.separator + "temp_" + getJImageName(rootFile)));
+            }
         }
         instrumenter.finishWork();
         instrumenter = null;
+    }
+
+    private String getJImageName(File jimage){
+        String jimagename = jimage.getName();
+        int pos = jimagename.lastIndexOf(".");
+        if (pos > 0) {
+            jimagename = jimagename.substring(0, pos);
+        }
+        return jimagename;
+    }
+
+    private void fillModuleInfo(File jdata){
+        try {
+            HashMap<String, String> packages = new HashMap<String, String>();
+            Scanner sc = new Scanner(jdata);
+
+            while (sc.hasNextLine()) {
+                String line = sc.nextLine();
+                String[] lineInfo = line.split("\\t");
+                for (int i = 1; i < lineInfo.length; i++){
+                    packages.put(lineInfo[i], lineInfo[0]);
+                }
+            }
+            sc.close();
+
+            if (moduleInfo == null){
+                moduleInfo  = new HashMap<String, String>();
+            }
+
+            moduleInfo.putAll(packages);
+
+        }
+        catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     public void generateTemplate(String[] files) throws IOException {
@@ -140,6 +222,9 @@ public class TmplGen extends JCovCMDTool {
                 }
 
                 public void finishWork() {
+                    if (moduleInfo != null){
+                        morph.updateModuleInfo(moduleInfo);
+                    }
                     morph.saveData(template, InstrumentationOptions.MERGE.MERGE);
                 }
             };

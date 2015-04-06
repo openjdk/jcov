@@ -84,7 +84,7 @@ public class PackageCoverage extends AbstractCoverage implements Iterable<ClassC
 
     private List<ClassCoverage> _getClassCoverageList(DataRoot fileImage, String srcRoots[], List<JavapClass> javapClasses, ProductCoverage.CoverageFilter filter, boolean anonym) {
         List<ClassCoverage> result = new ArrayList<ClassCoverage>();
-        DataPackage pkg = fileImage.findPackage(name);
+        DataPackage pkg = fileImage.findPackage(name, "");
         for (DataClass cls : pkg.getClasses()) {
             ClassCoverage cc = new ClassCoverage(cls, srcRoots, javapClasses, filter, anonym);
             if (filter == null || filter.accept(cc)) {

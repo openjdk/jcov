@@ -224,7 +224,11 @@ public class ClassMorph {
         }
 
         ClassWriter cw = new OverriddenClassWriter(cr, opt, loader);
-        DataClass k = new DataClass(root.rootId(), fullname, checksum, false);
+        String moduleName = getModuleName(fullname);
+        if (moduleName == null){
+            moduleName = "module no_module";
+        }
+        DataClass k = new DataClass(root.rootId(), fullname, moduleName.substring(7), checksum, false);
 //        ClassVisitor cv = shouldFlush ? new TraceClassVisitor
 //                (cw, DebugUtils.getPrintWriter(fullname, Options.getFlushPath())) :
 //                cw;
@@ -252,6 +256,23 @@ public class ClassMorph {
 
             return res;
         }
+    }
+
+    private String getModuleName(String fullname){
+        String result = null;
+        try{
+            if (fullname.contains("$$")){
+                fullname = fullname.substring(0, fullname.indexOf("$$"));
+            }
+            Class cls = Class.forName(fullname.replaceAll("/","."));
+            java.lang.reflect.Method method = Class.class.getDeclaredMethod("getModule", null);
+            Object module = method.invoke(cls, null);
+            result = module.toString();
+
+        }catch(Throwable t){
+
+        }
+        return result;
     }
 
     public static long computeCheckSum(byte[] classfileBuffer) {
@@ -485,6 +506,17 @@ public class ClassMorph {
         adler.update(clone, 0, clone_ptr);
         long checksum = adler.getValue();
         return checksum;
+    }
+
+    public void updateModuleInfo(HashMap<String, String> moduleInfo){
+        if (root != null){
+            for (DataPackage pack : root.getPackages()){
+                String moduleName = moduleInfo.get(pack.getName());
+                if (moduleName != null) {
+                    pack.setModuleName(moduleName);
+                }
+            }
+        }
     }
 
     private void findAlreadyInstrumentedAndSetID() {

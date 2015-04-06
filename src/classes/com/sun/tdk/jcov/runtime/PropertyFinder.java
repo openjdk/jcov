@@ -542,6 +542,7 @@ public final class PropertyFinder {
      * properties
      */
     public static boolean isVMReady() {
-        return System.out != null && Runtime.getRuntime() != null && sun.misc.VM.isBooted();
+
+        return System.out != null && Runtime.getRuntime() != null;//&& sun.misc.VM.isBooted();
     }
 }

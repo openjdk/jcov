@@ -24,21 +24,8 @@
  */
 package com.sun.tdk.jcov.report.html;
 
-import com.sun.tdk.jcov.instrument.DataRoot;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
-import com.sun.tdk.jcov.report.AbstractCoverage;
-import com.sun.tdk.jcov.report.ClassCoverage;
-import com.sun.tdk.jcov.report.DataType;
-import com.sun.tdk.jcov.report.FieldCoverage;
-import com.sun.tdk.jcov.report.ItemCoverage;
-import com.sun.tdk.jcov.report.MemberCoverage;
-import com.sun.tdk.jcov.report.MethodCoverage;
-import com.sun.tdk.jcov.report.PackageCoverage;
-import com.sun.tdk.jcov.report.ProductCoverage;
-import com.sun.tdk.jcov.report.ReportGenerator;
-import com.sun.tdk.jcov.report.SmartTestService;
-import com.sun.tdk.jcov.report.SubpackageCoverage;
-import com.sun.tdk.jcov.report.Test;
+import com.sun.tdk.jcov.report.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -132,7 +119,50 @@ public class CoverageReport implements ReportGenerator {
         generateFrameset(directory);
         generatePackageList(directory);
         generateClassList(directory);
-        generateOverview(directory);
+        HashMap<String, CoverageData[]> modules = getModulesCoverage();
+        if (modules == null || (modules.size() == 1 && "no_module".equals(modules.keySet().iterator().next()))){
+            modules = null;
+        }
+        generateOverview(directory, modules);
+        if (modules != null) {
+            generateModulesList(directory, modules);
+        }
+
+    }
+
+    private void generateModulesList(File directory, HashMap<String, CoverageData[]> modules) throws IOException{
+        List<PackageCoverage> list = coverage.getPackages();
+
+        for (String moduleName: modules.keySet()) {
+            HashMap<String, CoverageData[]> module = new HashMap<String, CoverageData[]>();
+            module.put(moduleName, modules.get(moduleName));
+            generateModuleOverview(directory, list, module);
+        }
+    }
+
+    private HashMap<String, CoverageData[]> getModulesCoverage(){
+        HashMap<String, CoverageData[]> modules = null;
+        List<PackageCoverage> list = coverage.getPackages();
+
+        if (list == null || list.size() == 0 || list.get(0) == null
+                || list.get(0).getClasses() == null || list.get(0).getClasses().get(0).getModuleName() == null){
+            return modules;
+        }
+
+        modules = new HashMap<String, CoverageData[]>();
+        for (PackageCoverage pkg : list) {
+            String moduleName = pkg.getClasses().get(0).getModuleName();
+            if (modules.get(moduleName) == null) {
+                modules.put(moduleName, new CoverageData[]{pkg.getData(DataType.CLASS), pkg.getData(DataType.METHOD),
+                        pkg.getData(DataType.BLOCK), pkg.getData(DataType.BRANCH), pkg.getData(DataType.LINE)});
+            } else {
+                CoverageData[] oldCD = modules.get(moduleName);
+                modules.put(moduleName, new CoverageData[]{oldCD[0].add(pkg.getData(DataType.CLASS)), oldCD[1].add(pkg.getData(DataType.METHOD)),
+                        oldCD[2].add(pkg.getData(DataType.BLOCK)), oldCD[3].add(pkg.getData(DataType.BRANCH)), oldCD[4].add(pkg.getData(DataType.LINE))});
+            }
+        }
+
+        return modules;
     }
 
     public void setVerbose(boolean verbose) {
@@ -248,7 +278,7 @@ public class CoverageReport implements ReportGenerator {
 
         for (PackageCoverage pkg : list) {
             generateClassList(dir, pkg);
-            generateOverview(dir, pkg);
+            generateOverview(dir, pkg, null);
         }
     }
 
@@ -333,11 +363,134 @@ public class CoverageReport implements ReportGenerator {
         pw.close();
     }
 
-    private void generateOverview(File dir) throws IOException {
-        generateOverview(dir, null);
+    private void generateOverview(File dir, HashMap<String, CoverageData[]> modules) throws IOException {
+        generateOverview(dir, null, modules);
     }
 
-    private void generateOverview(File dir, PackageCoverage thePackage)
+    private void generateModuleOverview(File dir, List<PackageCoverage> allPkgList, HashMap<String, CoverageData[]> module) throws IOException {
+        String filename = "overview-summary.html";
+        String rootRef = "../";
+        String moduleName = module.keySet().iterator().next();
+        if (moduleName != null) {
+            filename = moduleName
+                    + "/module-summary.html";
+            rootRef = "../";
+        } else {
+            rootRef = "";
+        }
+
+        File fsFile = new File(dir, filename);
+        if (!fsFile.getParentFile().exists()) {
+            logger.log(Level.INFO, "mkdirs:{0}", fsFile.getParentFile());
+            fsFile.getParentFile().mkdirs();
+        }
+        PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
+                fsFile), Charset.defaultCharset())));
+        pw.println("<html>");
+        pw.println("<head>");
+        pw.println("<title>coverage report</title>");
+        pw.println("<link rel =\"stylesheet\" type=\"text/css\" href=\"" + rootRef
+                + "style.css\" title=\"Style\">");
+        pw.println("<script type=\"text/javascript\" src=\"" + rootRef
+                + "sorttable.js\"></script>");
+        pw.println("</head>");
+        pw.println("<body>");
+        pw.println("<span class=\"title\"> <b>" + title + " "
+                + /*coverage.getData(ColumnName.PRODUCT) + */ "</b> </span>");
+        pw.println("<p>");
+
+        if (module != null) {
+            generateModulesInfo(pw, module, true/*,""*/);
+        }
+
+        pw.println("</tr>");
+        pw.println("</table>");
+        pw.println("<p>");
+
+        List<PackageCoverage> modulesPkgList = new ArrayList<PackageCoverage>();
+        for (PackageCoverage pc : allPkgList){
+            if (pc.getClasses().get(0).getModuleName().equals(moduleName)){
+                modulesPkgList.add(pc);
+            }
+        }
+
+        List<PackageCoverage> pkgList = modulesPkgList;
+        List<ClassCoverage> classes = new ArrayList<ClassCoverage>();
+        for (PackageCoverage thePackage : pkgList) {
+            classes.addAll(thePackage.getClasses());
+        }
+            //PackageCoverage thePackage = pc;
+
+            SubpackageCoverage subCov = new SubpackageCoverage();
+           // if (thePackage != null) {
+
+                //pkgList = getSubPackages(thePackage);
+              //  if (pkgList.size() > 0) {
+                    //subCov.add(thePackage);
+                    pw.println("<span class=\"title2\">Packages</span><br>");
+                    pw.println("<table class=\"report\" cellpadding=\"0\" cellspacing=\"0\" id=\"subpackages\">");
+                    pw.println("<tr class=\"report\">");
+                    pw.println("<th class=\"report\">Name</th>");
+                    pw.println("<th class=\"report_number\">#classes</th>");
+                    pw.println("<th class=\"report\">%class</th>");
+                    printColumnHeaders(pw, "");
+                    //pw.println("<th class=\"report\">%total</th>");
+                    pw.println("</tr>");
+                    for (PackageCoverage pkg : pkgList) {
+                        subCov.add(pkg);
+                        pw.println("<tr class=\"report\">");
+                        String subPkgDir = "../"+pkg.getName()/*.substring(
+                                thePackage.getName().length() + 1)*/.replace('.', '/');
+                        pw
+                                .println("<td class=\"reportText\"><a href=\"" + subPkgDir
+                                        + "/package-summary.html\">" + pkg.getName()
+                                        + "</a></td>");
+                        pw.println("<td class=\"reportValue\">"
+                                + pkg.getData(DataType.CLASS).getTotal() + "</td>");
+                        pw.println("<td class=\"reportValue\">"
+                                + decorate(pkg.getCoverageString(DataType.CLASS)) + "</td>");
+                        printColumnCoverages(pw, pkg, true, "");
+                    /*pw.println("<td class=\"reportValue\">"
+                     + generatePercentResult(pkg.getTotalCoverageString()) + "</td>");*/
+                        pw.println("</tr>");
+                    }
+                    pw.println("</table>");
+                    pw.println("<p>");
+              //  }
+
+
+                logger.log(Level.INFO, "generateOverview:classes.size:{0}", classes.size());
+                if (classes.size() > 0) {
+                    pw.println("<span class=\"title2\">Classes</span><br>");
+                    pw.println("<table class=\"report\" cellpadding=\"0\" cellspacing=\"0\" id=\"classes\">");
+                    pw.println("<tr class=\"report\">");
+                    pw.println("<th class=\"report\">Name</th>");
+                    printColumnHeaders(pw, "");
+                    // pw.println("<th class=\"report\">%total</th>");
+                    pw.println("</tr>");
+                    int i = 0;
+                    for (ClassCoverage cc : classes) {
+                        logger.log(Level.INFO, "{0} generateOverview():cl:{1}", new Object[]{++i, cc.getName()});
+                        String classFilename = cc.getName();
+                        pw.println("<tr class=\"report\">");
+                        pw.println("<td class=\"reportText\"><a href=\"" +"../"+cc.getPackageName().replace('.', '/')+"/"+ classFilename
+                                + ".html\">" + classFilename + "</a></td>");
+                        printColumnCoverages(pw, cc, true, "");
+                        // pw.println("<td class=\"reportValue\">"
+                        //   + generatePercentResult(cc.getTotalCoverageString()) + "</td>");
+                        pw.println("</tr>");
+                    }
+                }
+            //}
+            pw.println("</table>");
+
+        pw.println(generateFooter());
+        pw.println("</body>");
+        pw.println("</html>");
+        pw.close();
+    }
+
+    private void generateOverview(File dir, PackageCoverage thePackage, HashMap<String, CoverageData[]> modules)
             throws IOException {
         String filename = "overview-summary.html";
         String rootRef;
@@ -371,24 +524,24 @@ public class CoverageReport implements ReportGenerator {
         pw.println("<table class=\"report\" cellpadding=\"0\" cellspacing=\"0\">");
         pw.println("<tr class=\"report\">");
         pw.println("<th class=\"report\">&nbsp;</th>");
-        pw.println("<th class=\"report\">#classes</th>");
+        pw.println("<th class=\"report_number\">#classes</th>");
         printColumnHeaders(pw, "");
         // pw.println("<th class=\"report\">%total</th>");
         pw.println("</tr>");
         pw.println("<tr class=\"report\">");
         if (thePackage != null) {
-            pw.println("<td class=\"reportText\">" + thePackage.getName()
-                    + "</td>");
-            pw.println("<td class=\"reportValue\">"
+            pw.println("<td class=\"reportText\"> <b>" + thePackage.getName()
+                    + "</b></td>");
+            pw.println("<td class=\"reportValue_number\">"
                     + thePackage.getData(DataType.CLASS).getTotal() + "</td>");
             printColumnCoverages(pw, thePackage, false, "");
             //  pw.println("<td class=\"reportValue\">"
             //      + generatePercentResult(thePackage.getTotalCoverageString())
             //      + "</td>");
         } else {
-            pw.println("<td class=\"reportText\">"
-                    + "Overall statistics" + "</td>");
-            pw.println("<td class=\"reportValue\">"
+            pw.println("<td class=\"reportText\"> <b>"
+                    + "Overall statistics" + "</b> </td>");
+            pw.println("<td class=\"reportValue_number\">"
                     + coverage.getData(DataType.CLASS).getTotal() + "</td>");
             printColumnCoverages(pw, coverage, false, "");
             //  pw.println("<td class=\"reportValue\">"
@@ -401,14 +554,15 @@ public class CoverageReport implements ReportGenerator {
         List<PackageCoverage> pkgList = null;
         SubpackageCoverage subCov = new SubpackageCoverage();
         if (thePackage != null) {
+            //generateModulesInfo(pw, modules, false, thePackage.getName());
             pkgList = getSubPackages(thePackage);
             if (pkgList.size() > 0) {
                 subCov.add(thePackage);
-                pw.println("<span class=\"title2\">Packages</span><br>");
+                pw.println("<span class=\"title2\">Subpackages</span><br>");
                 pw.println("<table class=\"report\" cellpadding=\"0\" cellspacing=\"0\" id=\"subpackages\">");
                 pw.println("<tr class=\"report\">");
                 pw.println("<th class=\"report\">Name</th>");
-                pw.println("<th class=\"report\">#classes</th>");
+                pw.println("<th class=\"report_number\">#classes</th>");
                 pw.println("<th class=\"report\">%class</th>");
                 printColumnHeaders(pw, "");
                 //pw.println("<th class=\"report\">%total</th>");
@@ -422,7 +576,7 @@ public class CoverageReport implements ReportGenerator {
                             .println("<td class=\"reportText\"><a href=\"" + subPkgDir
                             + "/package-summary.html\">" + pkg.getName()
                             + "</a></td>");
-                    pw.println("<td class=\"reportValue\">"
+                    pw.println("<td class=\"reportValue_number\">"
                             + pkg.getData(DataType.CLASS).getTotal() + "</td>");
                     pw.println("<td class=\"reportValue\">"
                             + decorate(pkg.getCoverageString(DataType.CLASS)) + "</td>");
@@ -461,11 +615,14 @@ public class CoverageReport implements ReportGenerator {
         } else {
             pkgList = coverage.getPackages();
             if (pkgList.size() > 0) {
+                if (modules != null) {
+                    generateModulesInfo(pw, modules, false);
+                }
                 pw.println("<span class=\"title2\">Packages</span><br>");
                 pw.println("<table class=\"report\" cellpadding=\"0\" cellspacing=\"0\" id=\"packages\">");
                 pw.println("<tr class=\"report\">");
                 pw.println("<th class=\"report\">Name</th>");
-                pw.println("<th class=\"report\">#classes</th>");
+                pw.println("<th class=\"report_number\">#classes</th>");
                 printColumnHeaders(pw, "");
                 // pw.println("<th class=\"report\">%total</th>");
                 pw.println("</tr>");
@@ -476,7 +633,7 @@ public class CoverageReport implements ReportGenerator {
                             + pkg.getName().replace('.', '/')
                             + "/package-summary.html\">" + pkg.getName()
                             + "</a></td>");
-                    pw.println("<td class=\"reportValue\">"
+                    pw.println("<td class=\"reportValue_number\">"
                             + pkg.getData(DataType.CLASS).getTotal() + "</td>");
                     printColumnCoverages(pw, pkg, true, "");
                     //  pw.println("<td class=\"reportValue\">"
@@ -493,13 +650,13 @@ public class CoverageReport implements ReportGenerator {
             pw.println("<table class=\"report\" cellpadding=\"0\" cellspacing=\"0\" id=\"subpackages\">");
             pw.println("<tr class=\"report\">");
             pw.println("<th class=\"report\">-</th>");
-            pw.println("<th class=\"report\">#classes</th>");
+            pw.println("<th class=\"report_number\">#classes</th>");
             //pw.println("<th class=\"report\">%total</th>");
             printColumnHeaders(pw, "");
             pw.println("</tr>");
             pw.println("<tr class=\"report\">");
             pw.println("<td class=\"reportValue\"></td>");
-            pw.println("<td class=\"reportValue\">"
+            pw.println("<td class=\"reportValue_number\">"
                     + subCov.getData(DataType.CLASS).getTotal() + "</td>");
             //pw.println("<td class=\"reportValue\">"
             //    + decorate(subCov.getClassCoverageString()) + "</td>");
@@ -513,6 +670,53 @@ public class CoverageReport implements ReportGenerator {
         pw.println("</body>");
         pw.println("</html>");
         pw.close();
+    }
+
+    private void generateModulesInfo(PrintWriter pw, HashMap<String, CoverageData[]> modules, boolean decorate){
+
+        if (modules.keySet().size() > 1) {
+            pw.println("<span class=\"title2\">Modules</span><br>");
+        }
+        else{
+            pw.println("<span class=\"title2\">Module</span><br>");
+        }
+        pw.println("<table class=\"report\" cellpadding=\"0\" cellspacing=\"0\" id=\"modules\">");
+        pw.println("<tr class=\"report\">");
+        pw.println("<th class=\"report\">Name</th>");
+        pw.println("<th class=\"report_number\">#classes</th>");
+        printColumnHeaders(pw, "");
+        pw.println("</tr>");
+
+        for (String module : modules.keySet()) {
+            pw.println("<tr class=\"report\">");
+            if (!decorate) {
+                pw.println("<td class=\"reportText\"><a href=\""
+                        + module
+                        + "/module-summary.html\">" + module
+                        + "</a></td>");
+            }
+            else{
+                pw.println("<td class=\"reportText\"> <b>" + module
+                        + " </b> </a></td>");
+            }
+
+            pw.println("<td class=\"reportValue_number\">"
+                    + modules.get(module)[0].getTotal() + "</td>");
+            for (int i = 1; i< modules.get(module).length; i++) {
+                CoverageData cd = modules.get(module)[i];
+                if (!decorate) {
+                    pw.println("<td class=\"reportValue\">"
+                            + decorate(cd.getFormattedCoverage()) + "</td>");
+                }
+                else{
+                    pw.println("<td class=\"reportValue\">"
+                            +generatePercentResult(cd.getFormattedCoverage()) + "</td>");
+                }
+            }
+            pw.println("</tr>");
+        }
+        pw.println("</table>");
+        pw.println("<p>");
     }
 
     enum columns {
@@ -736,8 +940,8 @@ public class CoverageReport implements ReportGenerator {
         // pw.println(" <th class=\"report\">%total</th>");
         pw.println(" </tr>");
         pw.println(" <tr class=\"report\">");
-        pw.println(" <td class=\"reportText\"><span class=\"text\">"
-                + theClass.getFullClassName() + "</span></td>");
+        pw.println(" <td class=\"reportText\"><span class=\"text\"> <b>"
+                + theClass.getFullClassName() + "</b></span></td>");
 
         printColumnCoverages(pw, theClass, false, " ");
         //  pw.println(" <td class=\"reportValue\">"
@@ -1260,11 +1464,12 @@ public class CoverageReport implements ReportGenerator {
             badNumber = true;
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("<table class=\"percentGraph\" cellpadding=\"0\" cellspacing=\"0\" align=\"right\">");
+        sb.append("<table cellpadding=\"0\" cellspacing=\"0\" align=\"center\">");
         sb.append("<tr>");
         // sb.append("<td><span class=\"text\">" + decorate(percentValue)
         sb.append("<td><span class=\"text\"><b>").append(value.trim()).append("</b>%").append(cov_total.trim()).append("</span></td>");
         if (!badNumber) {
+            sb.append("<tr>");
             sb.append("<td>");
             sb.append("<table class=\"percentGraph\" cellpadding=\"0\" cellspacing=\"0\">");
             sb.append("<tr>");
@@ -1273,6 +1478,7 @@ public class CoverageReport implements ReportGenerator {
             sb.append("</tr>");
             sb.append("</table>");
             sb.append("</td>");
+            sb.append("</tr>");
         }
         sb.append("</tr>");
         sb.append("</table>");
@@ -1292,10 +1498,20 @@ public class CoverageReport implements ReportGenerator {
         int idx = coverageString.indexOf("%");
         if (idx != -1) {
             StringBuilder sb = new StringBuilder();
-            sb.append("<b>");
-            sb.append(coverageString.substring(0, idx));
-            sb.append("</b>");
-            sb.append(coverageString.substring(idx));
+            sb.append("<table class=\"report\">");
+                sb.append("<tr>");
+                sb.append("<td class=\"coverage_left\">");
+                    sb.append("<span class=\"text_bold\">");
+                        sb.append(coverageString.substring(0, idx+1).trim());
+                    sb.append("</span>");
+                sb.append("</td>");
+                sb.append("<td class=\"coverage_right\"> ");
+                    sb.append("<span class=\"text\">");
+                        sb.append(coverageString.substring(idx+1).trim());
+                    sb.append("</span>");
+                sb.append("</td>");
+                sb.append("</tr>");
+            sb.append("</table>");
             return sb.toString();
         }
         return coverageString;

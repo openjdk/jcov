@@ -67,6 +67,7 @@ public class ClassCoverage extends AbstractCoverage {
     private String fullname;
     private String name;
     private String packagename;
+    private String modulename;
 
     /**
      * <p> Creates new ClassCoverage instance. </p>
@@ -88,6 +89,7 @@ public class ClassCoverage extends AbstractCoverage {
         fullname = clz.getFullname();
         name = clz.getName();
         packagename = clz.getPackageName();
+        modulename = clz.getModuleName();
 
         for (DataMethod method : clz.getMethods()) {
             if (filter != null && !filter.accept(clz, method)) {
@@ -275,6 +277,10 @@ public class ClassCoverage extends AbstractCoverage {
      */
     public String getPackageName() {
         return packagename;
+    }
+
+    public String getModuleName() {
+        return modulename;
     }
 
     /**

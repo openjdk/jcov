@@ -398,10 +398,10 @@ public class DataRoot extends DataAbstract {
      * @param name
      * @return package
      */
-    public DataPackage findPackage(String name) {
+    public DataPackage findPackage(String name, String moduleName) {
         DataPackage pack = packages.get(name);
         if (pack == null) {
-            pack = new DataPackage(rootId, name);
+            pack = new DataPackage(rootId, name, moduleName);
             packages.put(pack.getName(), pack);
         }
         return pack;
@@ -463,7 +463,7 @@ public class DataRoot extends DataAbstract {
                 (slash < 0)
                 ? ""
                 : clazz.getFullname().substring(0, slash);
-        this.findPackage(pname).addClass(clazz);
+        this.findPackage(pname, clazz.getModuleName()).addClass(clazz);
     }
 
     /**
@@ -472,7 +472,7 @@ public class DataRoot extends DataAbstract {
      * <code>findPackage()</code> method
      *
      * @param pack
-     * @see #findPackage(java.lang.String)
+     * @see #findPackage(java.lang.String, java.lang.String)
      */
     public void addPackage(DataPackage pack) {
         packages.put(pack.getName(), pack);
@@ -824,6 +824,9 @@ public class DataRoot extends DataAbstract {
                 }
             } else {
                 DataPackage p = packages.get(pOther.getName());
+                if (p.getModuleName() == null || p.getModuleName().equals("no_module")) {
+                    p.setModuleName(pOther.getModuleName());
+                }
                 for (DataClass cl : pOther.getClasses()) {
                     DataClass c = p.findClass(cl.getName());
                     if (c == null) {
@@ -835,6 +838,7 @@ public class DataRoot extends DataAbstract {
                         }
                     } else {
                         c.merge(cl);
+                        c.setModuleName(cl.getModuleName());
                     }
                 }
             }

@@ -68,7 +68,8 @@ public class NetworkSatelliteDecorator implements SaverDecorator {
                         } catch (Exception e) {
                             lock.lock();
                             try {
-                                wrapped.saveResults();
+                                Collect.saveResults();
+                                //wrapped.saveResults();
                             }
                             finally {
                                 lock.unlock();
@@ -86,7 +87,8 @@ public class NetworkSatelliteDecorator implements SaverDecorator {
 
                                 lock.lock();
                                 try {
-                                    wrapped.saveResults();
+                                    Collect.saveResults();
+                                    //wrapped.saveResults();
                                 }
                                 finally {
                                     lock.unlock();

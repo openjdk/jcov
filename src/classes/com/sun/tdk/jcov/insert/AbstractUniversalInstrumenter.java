@@ -155,6 +155,10 @@ public abstract class AbstractUniversalInstrumenter {
         boolean instredFine = true;
         int classLength = (int) f.length();
 
+        if (f.getName().equals("module-info.class")){
+            return true;
+        }
+
         ensureClassBufLength(classLength, false);
         FileInputStream fis = null;
 
