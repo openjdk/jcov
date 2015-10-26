@@ -57,14 +57,20 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
     private boolean inAnonymClass = false;
     private boolean anonymon = false;
     private DataType[] supportedColumns = {METHOD, BLOCK, BRANCH, LINE};
+    private boolean isInAnc = false;
+    protected static String ancInfo;
 
     /**
      * <p> Creates new MethodCoverage instance without counting blocks </p>
      *
      * @param method DataMethod to read data from
      */
-    public MethodCoverage(DataMethod method) {
-        this(method, false);
+    public MethodCoverage(DataMethod method, AncFilter[] ancFilters, String ancReason) {
+        this(method, false, ancFilters, ancReason);
+    }
+
+    public MethodCoverage(DataMethod method, boolean countBlocks) {
+        this(method, countBlocks, null, null);
     }
 
     /**
@@ -73,18 +79,21 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
      * @param method
      * @param countBlocks not used
      */
-    public MethodCoverage(DataMethod method, boolean countBlocks) {
+    public MethodCoverage(DataMethod method, boolean countBlocks,  AncFilter[] ancFilters, String ancReason) {
         modifiers = Arrays.deepToString(method.getAccessFlags());
         name = method.getName();
         scale = method.getScale();
         signature = method.getVmSignature();
         access = method.getAccess();
+        isInAnc = ancReason != null;
+        ancInfo = ancReason;
+
         if (signature == null) {
             signature = "";
         }
         count = method.getCount();
 
-        detectItems(method, items);
+        detectItems(method, items, isInAnc, ancFilters);
 
         List<LineEntry> lineTable = method.getLineTable();
         if (lineTable != null) {
@@ -98,6 +107,11 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
                         if (item.count > 0) {
                             lineCoverage.hitLine(le.line);
                         }
+                        else {
+                            if (isInAnc || item.isInAnc()) {
+                                lineCoverage.markLineAnc(le.line);
+                            }
+                        }
                         if (item.getSourceLine() < 0) { // not set yet
                             item.setSrcLine(le.line);
                         }
@@ -105,6 +119,18 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
                 }
             }
         }
+    }
+
+    private static String isBlockInAnc(DataMethod m, DataBlock b , AncFilter[] filters){
+        if (filters == null){
+            return null;
+        }
+        for (AncFilter filter : filters){
+            if (filter.accept(m , b)){
+                return filter.getAncReason();
+            }
+        }
+        return null;
     }
 
     public void setAnonymOn(boolean anonym) {
@@ -122,7 +148,7 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
     /**
      * Finds coverage items in terms of legacy jcov (blocks and branches)
      */
-    static void detectItems(DataMethod m, List<ItemCoverage> list) {
+    static void detectItems(DataMethod m, List<ItemCoverage> list, boolean isInAnc, AncFilter[] ancFilters) {
         Map<DataBlock, ItemCoverage> added = new HashMap<DataBlock, ItemCoverage>();
 
         for (DataBlock db : m.getBlocks()) {
@@ -136,6 +162,12 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
             } else {
                 item = ItemCoverage.createBranchCoverageItem(db.startBCI(), db.endBCI(), db.getCount(), db.getScale());
             }
+
+            String ancReason = isBlockInAnc(m, db, ancFilters);
+            if (isInAnc || ancReason != null){
+                item.setAncInfo(ancInfo != null ? ancInfo : ancReason);
+            }
+
             boolean isNew = true;
             for (DataBlock d : added.keySet()) {
                 if (d.startBCI() == db.startBCI() && type(d) == type(db) && added.get(d).isBlock()) {
@@ -160,6 +192,12 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
             } else {
                 item = ItemCoverage.createBranchCoverageItem(db.startBCI(), db.endBCI(), db.getCount(), db.getScale());
             }
+
+            String ancReason = isBlockInAnc(m, db, ancFilters);
+            if (isInAnc || ancReason != null){
+                item.setAncInfo(ancInfo != null ? ancInfo : ancReason);
+            }
+
             boolean isNew = true;
             for (DataBlock d : added.keySet()) {
                 if (d.startBCI() == db.startBCI() && type(d) == type(db) && added.get(d).isBlock()) {
@@ -178,6 +216,12 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
             ItemCoverage i = added.get(db);
             if (!i.isBlock()) {
                 ItemCoverage i2 = ItemCoverage.createBlockCoverageItem(i.startLine, i.endLine, i.count, db.getScale());
+
+                String ancReason = isBlockInAnc(m, db, ancFilters);
+                if (isInAnc || ancReason != null){
+                    i2.setAncInfo(ancInfo != null ? ancInfo : ancReason);
+                }
+
                 boolean isNew = true;
                 for (DataBlock d : added.keySet()) {
                     if (d.startBCI() == db.startBCI() && added.get(d).isBlock()) {
@@ -192,6 +236,15 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
                 }
             }
         }
+    }
+
+    public void setAncInfo(String ancInfo){
+        isInAnc = (ancInfo != null && !ancInfo.isEmpty());
+        this.ancInfo = ancInfo;
+    }
+
+    public String getAncInfo(){
+        return ancInfo;
     }
 
     /**
@@ -281,21 +334,35 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
             case METHOD:
 
                 if (inAnonymClass && !anonymon) {
-                    return new CoverageData(0, 0);
+                    return new CoverageData(0, 0, 0);
                 }
 
                 if (testNumber > -1) {
-                    return new CoverageData((count > 0 && isCoveredByTest(testNumber)) ? 1 : 0, 1);
+                    int c = (count > 0 && isCoveredByTest(testNumber)) ? 1 : 0;
+                    if (isInAnc) {
+                        return new CoverageData(c, 1 - c, 1);
+                    }
+                    return new CoverageData(c, 0, 1);
                 }
-                return new CoverageData(count > 0 ? 1 : 0, 1);
+                int c = count > 0 ? 1 : 0;
+                if (isInAnc) {
+                    return new CoverageData(c, 1 - c, 1);
+                }
+                return new CoverageData(c, 0, 1);
             case BLOCK:
             case BRANCH:
-                CoverageData result = new CoverageData(0, 0);
+                CoverageData result = new CoverageData(0, 0, 0);
                 for (ItemCoverage item : items) {
                     if (testNumber < 0 || item.isCoveredByTest(testNumber)) {
                         result.add(item.getData(column));
                     } else {
-                        result.add(new CoverageData(0, item.getData(column).getTotal()));
+                        CoverageData icov = item.getData(column);
+                        if (isInAnc){
+                            result.add(new CoverageData(0, 1, icov.getTotal()));
+                        }
+                        else {
+                            result.add(new CoverageData(0, icov.getAnc(), icov.getTotal()));
+                        }
                     }
                 }
                 return result;

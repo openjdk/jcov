@@ -84,7 +84,7 @@ public class FieldCoverage extends MemberCoverage {
     public CoverageData getData(DataType column, int testNumber) {
         switch (column) {
             case FIELD:
-                return new CoverageData(count > 0 ? 1 : 0, 1);
+                return new CoverageData(count > 0 ? 1 : 0, 0, 1);
             default:
                 return new CoverageData();
         }

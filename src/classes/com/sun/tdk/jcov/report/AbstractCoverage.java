@@ -104,8 +104,12 @@ public abstract class AbstractCoverage implements Comparable {
      * @see CoverageData#getFormattedCoverage()
      */
     public final String getCoverageString(DataType type) {
+        return getCoverageString(type, false);
+    }
+
+    public final String getCoverageString(DataType type, boolean withAnc) {
         CoverageData data = getData(type);
-        return data.getFormattedCoverage();
+        return data.getFormattedCoverage(withAnc);
     }
 
     /**
@@ -121,6 +125,11 @@ public abstract class AbstractCoverage implements Comparable {
     public final String getCoverageString(DataType type, CoverageFormatter f) {
         CoverageData data = getData(type);
         return data.getFormattedCoverage(f);
+    }
+
+    public final String getCoverageString(DataType type, CoverageANCFormatter f, boolean withAnc) {
+        CoverageData data = getData(type);
+        return data.getFormattedCoverage(f, withAnc);
     }
 
     public int compareTo(Object obj) {
@@ -154,17 +163,39 @@ public abstract class AbstractCoverage implements Comparable {
         public String format(CoverageData data);
     }
 
+    public static interface CoverageANCFormatter {
+
+        /**
+         * @param data CoverageData object to format
+         * @param withAnc Show acceptable not covered data
+         * @return formatted coverage data
+         */
+        public String format(CoverageData data, boolean withAnc);
+
+    }
+
     /**
      * Default CoverageFormatter that formats coverage in form of "percent%
      * (covered/total)" or " -" if total is null
      */
-    public static class PercentFormatter implements CoverageFormatter {
+    public static class PercentFormatter implements CoverageFormatter, CoverageANCFormatter {
 
-        public String format(CoverageData data) {
+        public String format(CoverageData data){
             if (data.total == 0) {
                 return " -";
             } else {
                 return String.format("%0$4.0f%% (%d/%d)", (float) data.covered / data.total * 100., data.covered, data.total);
+            }
+        }
+
+        public String format(CoverageData data, boolean withAnc){
+            if (data.total == 0) {
+                return " -";
+            } else {
+                if (!withAnc) {
+                    return String.format("%0$4.0f%% (%d/%d)", (float) data.covered / data.total * 100., data.covered, data.total);
+                }
+                return String.format("%0$4.0f%% (%d/%d/%d)", (float) (data.covered + data.anc) / (data.total) * 100., data.covered, data.anc, data.total);
             }
         }
     }

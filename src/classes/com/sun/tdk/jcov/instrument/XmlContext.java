@@ -162,6 +162,9 @@ public class XmlContext extends PrintWriter {
     }
 
     private void writeEscaped(String str) {
+        if (str == null){
+            return;
+        }
         for (int i = 0, j = str.length(); i < j; i++) {
             int ch = str.charAt(i);
             switch (ch) {

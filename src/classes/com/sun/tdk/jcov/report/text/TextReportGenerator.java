@@ -136,37 +136,37 @@ public class TextReportGenerator implements ReportGenerator {
         }
 
         out.println(String.format(sumFormat,
-                coverage.getCoverageString(DataType.CLASS),
+                coverage.getCoverageString(DataType.CLASS, coverage.isAncFiltersSet()),
                 coverage.getData(DataType.METHOD).add(coverage.getData(DataType.FIELD)).toString(),
-                coverage.getCoverageString(DataType.BLOCK),
-                coverage.getCoverageString(DataType.BRANCH),
-                coverage.getCoverageString(DataType.LINE)));
+                coverage.getCoverageString(DataType.BLOCK, coverage.isAncFiltersSet()),
+                coverage.getCoverageString(DataType.BRANCH, coverage.isAncFiltersSet()),
+                coverage.getCoverageString(DataType.LINE, coverage.isAncFiltersSet())));
         for (PackageCoverage pkgCov : coverage) {
             out.println(String.format(pkgFormat,
                     pkgCov.isCovered() ? "+" : "-",
                     pkgCov.getName(),
-                    pkgCov.getCoverageString(DataType.CLASS),
+                    pkgCov.getCoverageString(DataType.CLASS, coverage.isAncFiltersSet()),
                     pkgCov.getData(DataType.METHOD).add(pkgCov.getData(DataType.FIELD)).toString(),
-                    pkgCov.getCoverageString(DataType.BLOCK),
-                    pkgCov.getCoverageString(DataType.BRANCH),
-                    pkgCov.getCoverageString(DataType.LINE)));
+                    pkgCov.getCoverageString(DataType.BLOCK, coverage.isAncFiltersSet()),
+                    pkgCov.getCoverageString(DataType.BRANCH, coverage.isAncFiltersSet()),
+                    pkgCov.getCoverageString(DataType.LINE, coverage.isAncFiltersSet())));
             for (ClassCoverage clsCov : pkgCov.getClasses()) {
                 out.println(String.format(clsFormat,
                         clsCov.isCovered() ? "+" : "-",
                         clsCov.getName(),
                         clsCov.getData(DataType.METHOD).add(clsCov.getData(DataType.FIELD)).toString(),
-                        clsCov.getCoverageString(DataType.BLOCK),
-                        clsCov.getCoverageString(DataType.BRANCH),
-                        clsCov.getCoverageString(DataType.LINE)));
+                        clsCov.getCoverageString(DataType.BLOCK, coverage.isAncFiltersSet()),
+                        clsCov.getCoverageString(DataType.BRANCH, coverage.isAncFiltersSet()),
+                        clsCov.getCoverageString(DataType.LINE, coverage.isAncFiltersSet())));
                 if (!generateShortFormat && showMethods) {
                     for (MethodCoverage mthCov : clsCov.getMethods()) {
                         out.println(String.format(mthFormat,
                                 mthCov.isCovered() ? "+" : "-",
                                 mthCov.getName() + mthCov.getSignature(),
                                 mthCov.getHitCount(),
-                                mthCov.getCoverageString(DataType.BLOCK),
-                                mthCov.getCoverageString(DataType.BRANCH),
-                                mthCov.getCoverageString(DataType.LINE)));
+                                mthCov.getCoverageString(DataType.BLOCK, coverage.isAncFiltersSet()),
+                                mthCov.getCoverageString(DataType.BRANCH, coverage.isAncFiltersSet()),
+                                mthCov.getCoverageString(DataType.LINE, coverage.isAncFiltersSet())));
                     }
                 }
                 if (!generateShortFormat && showFields) {

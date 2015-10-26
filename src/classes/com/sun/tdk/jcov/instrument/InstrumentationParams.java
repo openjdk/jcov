@@ -63,6 +63,7 @@ public class InstrumentationParams {
     private String[] savesBegin;
     private String[] savesEnd;
     private Pattern[] alls;
+    private Pattern[] all_modules;
     private boolean innerInvocations = true;
 
     public InstrumentationParams(boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, InstrumentationMode mode) {
@@ -71,6 +72,10 @@ public class InstrumentationParams {
 
     public InstrumentationParams(boolean instrumentNative, boolean instrumentFields, boolean instrumentAbstract, String[] includes, String[] excludes, InstrumentationMode mode) {
         this(false, instrumentNative, instrumentFields, false, instrumentAbstract ? ABSTRACTMODE.DIRECT : ABSTRACTMODE.NONE, includes, excludes, null, null, mode, null, null);
+    }
+
+    public InstrumentationParams(boolean instrumentNative, boolean instrumentFields, boolean instrumentAbstract,  String[] includes, String[] excludes, String[] m_includes, String[] m_excludes, InstrumentationMode mode) {
+        this(false, false, false, instrumentNative, instrumentFields, false, instrumentAbstract ? ABSTRACTMODE.DIRECT : ABSTRACTMODE.NONE, includes, excludes, null, null, m_includes, m_excludes, mode, null, null);
     }
 
     public InstrumentationParams(boolean instrumentNative, boolean instrumentFields, boolean instrumentAbstract, String[] includes, String[] excludes, InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
@@ -90,6 +95,10 @@ public class InstrumentationParams {
     }
 
     public InstrumentationParams(boolean innerInvocations, boolean classesReload, boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
+        this(innerInvocations, classesReload, dynamicCollect, instrumentNative, instrumentFields, detectInternal, instrumentAbstract, includes, excludes, callerIncludes, callerExcludes, null, null, mode, saveBegin, saveEnd);
+    }
+
+    public InstrumentationParams(boolean innerInvocations, boolean classesReload, boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, String[] m_includes, String[] m_excludes, InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
 
         this.innerInvocations = innerInvocations;
         this.detectInternal = detectInternal;
@@ -103,6 +112,12 @@ public class InstrumentationParams {
         }
         if (excludes == null) {
             excludes = new String[]{""};
+        }
+        if (m_includes == null) {
+            m_includes = new String[]{""};
+        }
+        if (m_excludes == null) {
+            m_excludes = new String[]{""};
         }
         this.includes = includes;
         this.excludes = excludes;
@@ -123,6 +138,7 @@ public class InstrumentationParams {
         this.callerInclude = InstrumentationOptions.concatRegexps(callerIncludes);
         this.callerExclude = InstrumentationOptions.concatRegexps(callerExcludes);
         this.alls = Utils.concatFilters(includes, excludes);
+        this.all_modules = Utils.concatModuleFilters(m_includes, m_excludes);
     }
 
     public boolean isDetectInternal() {
@@ -174,6 +190,10 @@ public class InstrumentationParams {
 
     public boolean isIncluded(String classname) {
         return Utils.accept(alls, null, "/" + classname, null);
+    }
+
+    public boolean isModuleIncluded(String modulename) {
+        return Utils.accept(all_modules, null, modulename, null);
     }
 
     public boolean isCallerFilterOn() {

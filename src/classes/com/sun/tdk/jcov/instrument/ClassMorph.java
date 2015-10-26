@@ -53,7 +53,7 @@ public class ClassMorph {
 
     private DataRoot root;
     private final String outputFile;
-//    private List<String> instrumented = new ArrayList<String>();
+    //    private List<String> instrumented = new ArrayList<String>();
 //    private HashSet<String> instrumented = new HashSet<String>(); // Set should work better
     private HashMap<String, Long> instrumented = new HashMap<String, Long>(); // Set should work better
     private HashMap<String, byte[]> instrumentedValues = new HashMap<String, byte[]>(); // Set should work better
@@ -61,6 +61,7 @@ public class ClassMorph {
     private final InstrumentationParams params;
     private boolean rtClassesInstrumented = false;
     private static final Logger logger;
+    private String currentModuleName = null;
 
     static {
         Utils.initLogger();
@@ -204,6 +205,23 @@ public class ClassMorph {
             return res;
         }
 
+        String moduleName = null;
+        if (params.isDynamicCollect()) {
+            moduleName = updateClassModule(fullname);
+        }
+        else{
+            if (currentModuleName != null) {
+                moduleName = "module " + currentModuleName;
+            }
+        }
+        if (moduleName == null){
+            moduleName = "module "+XmlNames.NO_MODULE;
+        }
+
+        if (!params.isModuleIncluded(moduleName.substring(7, moduleName.length()))){
+            return null;
+        }
+
         // Checksum should be counted before changing content
         long checksum = params.isDynamicCollect() ? -1
                 : computeCheckSum(classfileBuffer);
@@ -224,10 +242,6 @@ public class ClassMorph {
         }
 
         ClassWriter cw = new OverriddenClassWriter(cr, opt, loader);
-        String moduleName = getModuleName(fullname);
-        if (moduleName == null){
-            moduleName = "module no_module";
-        }
         DataClass k = new DataClass(root.rootId(), fullname, moduleName.substring(7), checksum, false);
 //        ClassVisitor cv = shouldFlush ? new TraceClassVisitor
 //                (cw, DebugUtils.getPrintWriter(fullname, Options.getFlushPath())) :
@@ -258,19 +272,22 @@ public class ClassMorph {
         }
     }
 
-    private String getModuleName(String fullname){
+    public void setCurrentModuleName(String name){
+        currentModuleName = name;
+    }
+
+    private String updateClassModule(String fullname){
         String result = null;
         try{
-            if (fullname.contains("$$")){
-                fullname = fullname.substring(0, fullname.indexOf("$$"));
+            if (fullname.contains("$")){
+                fullname = fullname.substring(0, fullname.indexOf("$"));
             }
             Class cls = Class.forName(fullname.replaceAll("/","."));
-            java.lang.reflect.Method method = Class.class.getDeclaredMethod("getModule", null);
-            Object module = method.invoke(cls, null);
+            java.lang.reflect.Method getModuleMethod = Class.class.getDeclaredMethod("getModule", null);
+            Object module = getModuleMethod.invoke(cls, null);
             result = module.toString();
 
-        }catch(Throwable t){
-
+        }catch(Throwable ignore){
         }
         return result;
     }
@@ -578,9 +595,9 @@ public class ClassMorph {
     }
     public final static OptionDescr DSC_FLUSH_CLASSES =
             new OptionDescr("flush", null, "flush instrumented classes",
-            OptionDescr.VAL_SINGLE, null, "Specify path to directory, where to store instrumented classes.\n"
-            + "Directory should exist. Classes will be saved in respect to their package hierarchy.\n"
-            + "Default value is \"none\". Pushing it means you don't want to flush classes.", "none");
+                    OptionDescr.VAL_SINGLE, null, "Specify path to directory, where to store instrumented classes.\n"
+                    + "Directory should exist. Classes will be saved in respect to their package hierarchy.\n"
+                    + "Default value is \"none\". Pushing it means you don't want to flush classes.", "none");
 
     private boolean isPreVMLoadClass(String fullname) {
         // classes (actually only certain packages needed) which are loaded before

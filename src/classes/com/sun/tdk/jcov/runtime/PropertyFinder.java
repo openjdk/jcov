@@ -343,7 +343,13 @@ public final class PropertyFinder {
             }
         }
 
-        InputStream in = JCovSaver.class.getResourceAsStream(path);
+        InputStream in = null;
+        try {
+            in = JCovSaver.class.getResourceAsStream(path);
+        }
+        catch (Exception e){
+            //in will be null
+        }
         if (in != null) {
             try {
                 Properties p = new Properties();

@@ -37,6 +37,7 @@ import java.util.List;
 public class LineCoverage extends CoverageData {
 
     final HashMap<Long, Boolean> lines_hits = new HashMap<Long, Boolean>();
+    final HashMap<Long, Boolean> lines_ancs = new HashMap<Long, Boolean>();
 
     public LineCoverage() {
     }
@@ -50,6 +51,12 @@ public class LineCoverage extends CoverageData {
     public boolean isLineCovered(long lineNum) {
         Boolean isHit = lines_hits.get(lineNum);
         return isHit != null && isHit.booleanValue();
+
+    }
+
+    public boolean isLineAnc(long lineNum) {
+        Boolean isAnc = lines_ancs.get(lineNum);
+        return isAnc != null && isAnc.booleanValue();
 
     }
 
@@ -75,6 +82,7 @@ public class LineCoverage extends CoverageData {
         for (LineEntry le : lineTable) {
             ++total;
             lines_hits.put((long) le.line, false);
+            lines_ancs.put((long) le.line, false);
         }
     }
 
@@ -91,6 +99,34 @@ public class LineCoverage extends CoverageData {
             if (!was) {
                 ++covered;
             }
+        }
+    }
+
+    public void markLineAnc(long line) {
+        Boolean isAnc = lines_ancs.get(line);
+        if (isAnc != null) {
+            boolean was = lines_ancs.put(line, true);
+            if (!was){
+                ++anc;
+            }
+        }
+    }
+
+    private void markLineAnc(long line, boolean isAnc) {
+        Boolean wasAnc = lines_ancs.get(line);
+        if (wasAnc != null) {
+            if (!wasAnc && isAnc) {
+                ++anc;
+            } else if (wasAnc && !isAnc) {
+                --anc;
+            }
+            lines_ancs.put(line, isAnc || wasAnc);
+        }
+        else{
+            if (isAnc && !isLineCovered(line)) {
+                ++anc;
+            }
+            lines_ancs.put(line, isAnc);
         }
     }
 
@@ -120,6 +156,10 @@ public class LineCoverage extends CoverageData {
     void processLineCoverage(LineCoverage lineCov) {
         for (long line : lineCov.lines_hits.keySet()) {
             hitLine(line, lineCov.lines_hits.get(line));
+        }
+
+        for (long line : lineCov.lines_ancs.keySet()) {
+            markLineAnc(line, lineCov.lines_ancs.get(line));
         }
     }
 

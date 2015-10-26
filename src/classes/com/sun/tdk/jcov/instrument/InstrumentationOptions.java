@@ -52,12 +52,26 @@ public class InstrumentationOptions {
             "Specifies file with xml based template of pre-instrumented classes. Each classfile presented\n"
             + " in this template should be statically instrumented. The instrumentation parameters should be\n"
             + "compatible for static and dynamic instrumentation.", XML_DEFAULT_TEMPLATE);
+    public final static OptionDescr DSC_MINCLUDE =
+            new OptionDescr("include_module", new String[]{"im"}, "Filtering conditions.",
+                    OptionDescr.VAL_MULTI, "Specify included classes by regular expression for modules.");
+    public final static OptionDescr DSC_MEXCLUDE =
+            new OptionDescr("exclude_module", new String[]{"em"}, "", OptionDescr.VAL_MULTI,
+                    "Specify excluded classes by regular expression for modules.");
     public final static OptionDescr DSC_INCLUDE =
             new OptionDescr("include", new String[]{"i"}, "Filtering conditions.",
             OptionDescr.VAL_MULTI, "Specify included classes by regular expression.");
     public final static OptionDescr DSC_EXCLUDE =
             new OptionDescr("exclude", new String[]{"e"}, "", OptionDescr.VAL_MULTI,
             "Specify excluded classes by regular expression.");
+    public final static OptionDescr DSC_MINCLUDE_LIST =
+            new OptionDescr("include_module_list", "", OptionDescr.VAL_SINGLE,
+            "Specify the path to the file containing module include list. The effect will be the same as\n"
+            + "using multiple -include_module options. File should contain one module name mask per line.");
+    public final static OptionDescr DSC_MEXCLUDE_LIST =
+            new OptionDescr("exclude_module_list", "", OptionDescr.VAL_SINGLE,
+            "Specify the path to the file containing module exclude list. The effect will be the same as\n"
+            + "using multiple -exclude_module options. File should contain one module name mask per line.");
     public final static OptionDescr DSC_INCLUDE_LIST =
             new OptionDescr("include_list", "", OptionDescr.VAL_SINGLE,
             "Specify the path to the file containing include list. The effect will be the same as\n"
@@ -209,6 +223,30 @@ public class InstrumentationOptions {
         return includeSet.toArray(new String[includeSet.size()]);
     }
 
+    public static String[] handleMInclude(EnvHandler opts) throws EnvHandlingException {
+        Set<String> includeSet = new TreeSet<String>();
+        String[] s;
+        if (opts.isSet(InstrumentationOptions.DSC_MINCLUDE)) {
+            s = opts.getValues(InstrumentationOptions.DSC_MINCLUDE);
+            if (s != null) {
+                includeSet.addAll(Arrays.asList(s));
+            }
+        }
+
+        if (opts.isSet(InstrumentationOptions.DSC_MINCLUDE_LIST)) {
+            try {
+                s = Utils.readLines(opts.getValue(InstrumentationOptions.DSC_MINCLUDE_LIST));
+                if (s != null) {
+                    includeSet.addAll(Arrays.asList(s));
+                }
+            } catch (IOException ex) {
+                throw new EnvHandlingException("Error while reading module include list " + opts.getValue(InstrumentationOptions.DSC_INCLUDE_LIST), ex);
+            }
+        }
+
+        return includeSet.toArray(new String[includeSet.size()]);
+    }
+
     public static String[] handleExclude(EnvHandler opts) throws EnvHandlingException {
         Set<String> excludeSet = new TreeSet<String>();
         String[] s = opts.getValues(InstrumentationOptions.DSC_EXCLUDE);
@@ -223,6 +261,27 @@ public class InstrumentationOptions {
                 }
             } catch (IOException ex) {
                 throw new EnvHandlingException("Error while reading exclude list " + opts.getValue(InstrumentationOptions.DSC_EXCLUDE_LIST), ex);
+            }
+        }
+
+        return excludeSet.toArray(new String[excludeSet.size()]);
+    }
+
+    public static String[] handleMExclude(EnvHandler opts) throws EnvHandlingException {
+        Set<String> excludeSet = new TreeSet<String>();
+        String[] s = opts.getValues(InstrumentationOptions.DSC_MEXCLUDE);
+        if (s != null) {
+            excludeSet.addAll(Arrays.asList(s));
+        }
+
+        if (opts.isSet(InstrumentationOptions.DSC_MEXCLUDE_LIST)) {
+            try {
+                s = Utils.readLines(opts.getValue(InstrumentationOptions.DSC_MEXCLUDE_LIST));
+                if (s != null) {
+                    excludeSet.addAll(Arrays.asList(s));
+                }
+            } catch (IOException ex) {
+                throw new EnvHandlingException("Error while reading module exclude list " + opts.getValue(InstrumentationOptions.DSC_EXCLUDE_LIST), ex);
             }
         }
 

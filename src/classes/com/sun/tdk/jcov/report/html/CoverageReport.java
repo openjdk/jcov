@@ -25,6 +25,7 @@
 package com.sun.tdk.jcov.report.html;
 
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
+import com.sun.tdk.jcov.instrument.XmlNames;
 import com.sun.tdk.jcov.report.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -68,6 +69,9 @@ public class CoverageReport implements ReportGenerator {
     private boolean isMergeRepGenMode = false;
     private boolean isAnonymOn = false;
     private String title = "Coverage report";
+    private String mainReportTitle;
+    private String overviewListTitle;
+    private String entitiesTitle;
     private String dir;
     private boolean showLines;
     private boolean showFields;
@@ -106,6 +110,9 @@ public class CoverageReport implements ReportGenerator {
         }
         this.setInstrMode(options.getInstrMode());
         this.isAnonymOn = options.isAnonymOn();
+        mainReportTitle = options.getMainReportTitle() == null ? "Coverage report" : options.getMainReportTitle();
+        overviewListTitle = options.getOverviewListTitle() == null ? "Coverage report" : options.getOverviewListTitle();
+        entitiesTitle = options.getEntitiesTitle() == null ? "Coverage report" : options.getEntitiesTitle();
 
         setGenSrc4Zero(true);
         generate();
@@ -120,7 +127,7 @@ public class CoverageReport implements ReportGenerator {
         generatePackageList(directory);
         generateClassList(directory);
         HashMap<String, CoverageData[]> modules = getModulesCoverage();
-        if (modules == null || (modules.size() == 1 && "no_module".equals(modules.keySet().iterator().next()))){
+        if (modules == null || (modules.size() == 1 && XmlNames.NO_MODULE.equals(modules.keySet().iterator().next()))){
             modules = null;
         }
         generateOverview(directory, modules);
@@ -240,7 +247,7 @@ public class CoverageReport implements ReportGenerator {
                 .println("<link rel =\"stylesheet\" type=\"text/css\" href=\"style.css\" title=\"Style\">");
         pw.println("</head>");
         pw.println("<body>");
-        pw.println("<span class=\"title\">" + title + "</span><br>");
+        pw.println("<span class=\"title\">" + overviewListTitle + "</span><br>");
         // pw.println("<span class=\"title2\">" + coverage.getData(ColumnName.PRODUCT)
         //    + "</span>");
         pw.println("<table>");
@@ -325,7 +332,7 @@ public class CoverageReport implements ReportGenerator {
         if (pkg != null) {
             pw.println("<a href=\"package-summary.html\" target=\"classFrame\">"
                     + pkg.getName() + "</a> "
-                    + "<span class=\"text_italic\">&nbsp;" + pkg.getCoverageString(DataType.METHOD)
+                    + "<span class=\"text_italic\">&nbsp;" + pkg.getCoverageString(DataType.METHOD, coverage.isAncFiltersSet())
                     + "</span><br>");
             pw.println("<p>");
         }
@@ -339,7 +346,7 @@ public class CoverageReport implements ReportGenerator {
             logger.log(Level.INFO, "{0} generateClassList:theClass:{1}", new Object[]{++i, theClass.getName()});
             String prc = showFields
                     ? theClass.getData(DataType.METHOD).add(theClass.getData(DataType.FIELD)).toString()
-                    : theClass.getCoverageString(DataType.METHOD);
+                    : theClass.getCoverageString(DataType.METHOD, coverage.isAncFiltersSet());
 
             if (pkg == null) {
                 if (theClass.getFullClassName().lastIndexOf('.') > 0) {
@@ -395,7 +402,7 @@ public class CoverageReport implements ReportGenerator {
                 + "sorttable.js\"></script>");
         pw.println("</head>");
         pw.println("<body>");
-        pw.println("<span class=\"title\"> <b>" + title + " "
+        pw.println("<span class=\"title\"> <b>" + entitiesTitle + " "
                 + /*coverage.getData(ColumnName.PRODUCT) + */ "</b> </span>");
         pw.println("<p>");
 
@@ -448,7 +455,7 @@ public class CoverageReport implements ReportGenerator {
                         pw.println("<td class=\"reportValue\">"
                                 + pkg.getData(DataType.CLASS).getTotal() + "</td>");
                         pw.println("<td class=\"reportValue\">"
-                                + decorate(pkg.getCoverageString(DataType.CLASS)) + "</td>");
+                                + decorate(pkg.getCoverageString(DataType.CLASS, coverage.isAncFiltersSet())) + "</td>");
                         printColumnCoverages(pw, pkg, true, "");
                     /*pw.println("<td class=\"reportValue\">"
                      + generatePercentResult(pkg.getTotalCoverageString()) + "</td>");*/
@@ -518,7 +525,8 @@ public class CoverageReport implements ReportGenerator {
                 + "sorttable.js\"></script>");
         pw.println("</head>");
         pw.println("<body>");
-        pw.println("<span class=\"title\">" + title + " "
+        String otitle = thePackage == null ? mainReportTitle : entitiesTitle;
+        pw.println("<span class=\"title\">" + otitle + " "
                 + /*coverage.getData(ColumnName.PRODUCT) + */ "</span>");
         pw.println("<p>");
         pw.println("<table class=\"report\" cellpadding=\"0\" cellspacing=\"0\">");
@@ -579,7 +587,7 @@ public class CoverageReport implements ReportGenerator {
                     pw.println("<td class=\"reportValue_number\">"
                             + pkg.getData(DataType.CLASS).getTotal() + "</td>");
                     pw.println("<td class=\"reportValue\">"
-                            + decorate(pkg.getCoverageString(DataType.CLASS)) + "</td>");
+                            + decorate(pkg.getCoverageString(DataType.CLASS, coverage.isAncFiltersSet())) + "</td>");
                     printColumnCoverages(pw, pkg, true, "");
                     /*pw.println("<td class=\"reportValue\">"
                      + generatePercentResult(pkg.getTotalCoverageString()) + "</td>");*/
@@ -703,14 +711,15 @@ public class CoverageReport implements ReportGenerator {
             pw.println("<td class=\"reportValue_number\">"
                     + modules.get(module)[0].getTotal() + "</td>");
             for (int i = 1; i< modules.get(module).length; i++) {
-                CoverageData cd = modules.get(module)[i];
-                if (!decorate) {
-                    pw.println("<td class=\"reportValue\">"
-                            + decorate(cd.getFormattedCoverage()) + "</td>");
-                }
-                else{
-                    pw.println("<td class=\"reportValue\">"
-                            +generatePercentResult(cd.getFormattedCoverage()) + "</td>");
+                if (show(columns.valueOf(i))) {
+                    CoverageData cd = modules.get(module)[i];
+                    if (!decorate) {
+                        pw.println("<td class=\"reportValue\">"
+                                + decorate(cd.getFormattedCoverage(coverage.isAncFiltersSet())) + "</td>");
+                    } else {
+                        pw.println("<td class=\"reportValue\">"
+                                + generatePercentResult(cd.getFormattedCoverage(coverage.isAncFiltersSet())) + "</td>");
+                    }
                 }
             }
             pw.println("</tr>");
@@ -719,10 +728,27 @@ public class CoverageReport implements ReportGenerator {
         pw.println("<p>");
     }
 
-    enum columns {
 
-        method, field, block, branch, line
-    };
+    public enum columns {
+        method(1), field(0), block(2), branch(3), line(4);
+
+        private int number;
+
+        private static Map<Integer, columns> map = new HashMap<Integer, columns>();
+
+        static {
+            for (columns column : columns.values()) {
+                map.put(column.number, column);
+            }
+        }
+
+        public static columns valueOf(int number) {
+            return map.get(number);
+        }
+
+        private columns(final int number) { this.number = number; }
+
+    }
 
     /**
      * Returns true if a column needs to be shown
@@ -755,15 +781,15 @@ public class CoverageReport implements ReportGenerator {
     String getColumnData(columns col, AbstractCoverage cc) {
         switch (col) {
             case method:
-                return cc.getCoverageString(DataType.METHOD);
+                return cc.getCoverageString(DataType.METHOD, coverage.isAncFiltersSet());
             case field:
-                return cc.getCoverageString(DataType.FIELD);
+                return cc.getCoverageString(DataType.FIELD, coverage.isAncFiltersSet());
             case block:
-                return cc.getCoverageString(DataType.BLOCK);
+                return cc.getCoverageString(DataType.BLOCK, coverage.isAncFiltersSet());
             case branch:
-                return cc.getCoverageString(DataType.BRANCH);
+                return cc.getCoverageString(DataType.BRANCH, coverage.isAncFiltersSet());
             case line:
-                return cc.getCoverageString(DataType.LINE);
+                return cc.getCoverageString(DataType.LINE, coverage.isAncFiltersSet());
         }
         return "";
     }
@@ -771,13 +797,13 @@ public class CoverageReport implements ReportGenerator {
     String getFormattedColumnData(columns col, AbstractCoverage cc, int testNumber) {
         switch (col) {
             case method:
-                return cc.getData(DataType.METHOD, testNumber).getFormattedCoverage();
+                return cc.getData(DataType.METHOD, testNumber).getFormattedCoverage(coverage.isAncFiltersSet());
             case field:
-                return cc.getData(DataType.FIELD, testNumber).getFormattedCoverage();
+                return cc.getData(DataType.FIELD, testNumber).getFormattedCoverage(coverage.isAncFiltersSet());
             case block:
-                return cc.getData(DataType.BLOCK, testNumber).getFormattedCoverage();
+                return cc.getData(DataType.BLOCK, testNumber).getFormattedCoverage(coverage.isAncFiltersSet());
             case branch:
-                return cc.getData(DataType.BRANCH, testNumber).getFormattedCoverage();
+                return cc.getData(DataType.BRANCH, testNumber).getFormattedCoverage(coverage.isAncFiltersSet());
             case line:
                 return "";
         }
@@ -987,7 +1013,7 @@ public class CoverageReport implements ReportGenerator {
             }
         }
 
-        generateMemberTable(pw, "method", methodList, isGenerate, theClass.isJavapSource());
+        generateMemberTable(pw, theClass, "method", methodList, isGenerate, theClass.isJavapSource());
 
         List<FieldCoverage> fieldList = theClass.getFields();
         //Collections.sort((List) fieldList);
@@ -998,7 +1024,7 @@ public class CoverageReport implements ReportGenerator {
                 methodsForLine.put(new Integer(startLine), fcov);
                 logger.log(Level.FINE, "{0}-{1}", new Object[]{fcov.getName(), startLine});
             }
-            generateMemberTable(pw, "field", fieldList, isGenerate, theClass.isJavapSource());
+            generateMemberTable(pw, theClass, "field", fieldList, isGenerate, theClass.isJavapSource());
         }
 
         if (isGenerate) {
@@ -1058,10 +1084,36 @@ public class CoverageReport implements ReportGenerator {
             MemberCoverage mcov = methodsForLine.get(numLine);
             List<ItemCoverage> items = itemsForLine.get(numLine);
             String lineCov = null;
+            String ancInfo = "";
             if (!theClass.isCode(numLine)) {
                 lineCov = "numLine";
             } else {
-                lineCov = theClass.isLineCovered(numLine) ? "numLineCover" : "numLineUnCover";
+                String unCover = theClass.isLineInAnc(numLine) ? "numLineAnc" : "numLineUnCover";
+                lineCov = theClass.isLineCovered(numLine) ? "numLineCover" : unCover;
+                if (theClass.isLineInAnc(numLine) && !theClass.isLineCovered(numLine)) {
+                    if (theClass.getAncInfo() != null){
+                        ancInfo = "title = \"" + theClass.getAncInfo() + "\" ";
+                    }
+                    else if (mcov instanceof MethodCoverage && ((MethodCoverage) mcov).getAncInfo() != null){
+                        ancInfo = "title = \"" + ((MethodCoverage) mcov).getAncInfo() + "\" ";
+                    }
+                    else {
+                        if (items == null) {
+                            int upLine = numLine;
+                            List<ItemCoverage> upItems;
+                            while ((upItems = itemsForLine.get(upLine)) == null) {
+                                upLine--;
+                            }
+                            for (ItemCoverage i : upItems) {
+                                if (i.isInAnc()) {
+                                    ancInfo = "title = \"" + i.getAncInfo() + "\" ";
+                                    break;
+                                }
+                            }
+
+                        }
+                    }
+                }
             }
             String link = "";
 
@@ -1071,6 +1123,7 @@ public class CoverageReport implements ReportGenerator {
 
             if (items != null) {
                 int allcovered = 0;
+                int allanc = 0;
                 Map<DataType, Integer> covered = new HashMap();
                 Map<DataType, Integer> total = new HashMap();
                 for (DataType kind : ItemCoverage.getAllPossibleTypes()) {
@@ -1084,6 +1137,9 @@ public class CoverageReport implements ReportGenerator {
                         covered.put(kind, covered.get(kind) + 1);
                         allcovered++;
                     }
+                    if (icov.isInAnc()){
+                        allanc++;
+                    }
                 }
 
                 String shortInfo = "";
@@ -1094,8 +1150,46 @@ public class CoverageReport implements ReportGenerator {
                 }
                 boolean isGreen = items.size() == allcovered;
 
-                String nbHitsCov = isGreen ? "nbHitsCovered" : "nbHitsUncovered";
-                pw.println(" <td class=\"" + lineCov + "\">&nbsp;" + numLine + link
+                String nbHitsCov = isGreen ? "nbHitsCovered" : items.size() == allanc ? "nbHitsAnc" : "nbHitsUncovered";
+                ancInfo = "";
+
+                if (!theClass.isLineCovered(numLine)){
+                    if (items.size() == allanc) {
+                        lineCov = "numLineAnc";
+                        if (theClass.getAncInfo() != null){
+                            ancInfo = "title = \"" + theClass.getAncInfo() + "\" ";
+                        }
+                        else if (mcov instanceof MethodCoverage && ((MethodCoverage) mcov).getAncInfo() != null){
+                            ancInfo = "title = \"" + ((MethodCoverage) mcov).getAncInfo() + "\" ";
+                        }
+                        else{
+                            ancInfo = "title = \"" + items.get(0).getAncInfo() + "\" ";
+                        }
+                    }
+                }
+                else{
+                    ancInfo = "";
+
+                    for (ItemCoverage i : items) {
+                        if (!i.isCovered()) {
+                            if (theClass.getAncInfo() != null){
+                                ancInfo = "title = \"" + theClass.getAncInfo() + "\" ";
+                                break;
+                            }
+                            else if (mcov instanceof MethodCoverage && ((MethodCoverage) mcov).getAncInfo() != null){
+                                ancInfo = "title = \"" + ((MethodCoverage) mcov).getAncInfo() + "\" ";
+                                break;
+                            }
+                            else if (i.isInAnc() && i.getAncInfo() != null){
+                                ancInfo = "title = \"" + i.getAncInfo() + "\" ";
+                                break;
+                            }
+                        }
+                    }
+
+                }
+
+                pw.println(" <td "+ancInfo+"class=\"" + lineCov + "\">&nbsp;" + numLine + link
                         + "</td>");
 
                 if (isMergeRepGenMode) {
@@ -1124,12 +1218,16 @@ public class CoverageReport implements ReportGenerator {
                     Iterator<Test> iterator = testService.iterator();
                     while (iterator.hasNext()) {
                         Test test = iterator.next();
-                        String testCovered = "numLineUnCover";
+                        String testCovered = theClass.isLineInAnc(numLine) ? "numLineAnc" : "numLineUnCover";
                         int block = 0;
                         int branch = 0;
                         boolean blocks = false;
                         boolean branches = false;
                         for (ItemCoverage item : itemsForLine.get(numLine)) {
+
+                            if (item.isInAnc()){
+                                testCovered = "numLineAnc";
+                            }
 
                             if (!blocks && item.isBlock()) {
                                 blocks = true;
@@ -1173,7 +1271,7 @@ public class CoverageReport implements ReportGenerator {
                 // just string without any items
             } else {
 
-                pw.println(" <td class=\"" + lineCov + "\">&nbsp;" + numLine + link + "</td>");
+                pw.println(" <td "+ancInfo+"class=\"" + lineCov + "\">&nbsp;" + numLine + link + "</td>");
                 pw.println(" <td class=\"nbHits\">&nbsp;</td>");
                 if (testService != null && (isAddTestsInfo || isMergeRepGenMode)) {
 
@@ -1181,7 +1279,8 @@ public class CoverageReport implements ReportGenerator {
 
                         if (theClass.isCode(numLine)) {
 
-                            String testCovered = "numLineUnCover";
+                            String testCovered = theClass.isLineInAnc(numLine) ? "numLineAnc" : "numLineUnCover";
+                            ancInfo = "";
 
                             if (theClass.isLineCovered(numLine)) {
                                 for (int i = numLine; i >= 0; i--) {
@@ -1190,14 +1289,19 @@ public class CoverageReport implements ReportGenerator {
                                             if (item.isCoveredByTest(k)) {
                                                 testCovered = "numLineCover";
                                             }
+                                            else{
+                                                if (item.isInAnc()){
+                                                    testCovered = "numLineAnc";
+                                                    ancInfo = "title = \""+item.getAncInfo()+"\" ";
+                                                }
+                                            }
                                         }
                                         break;
                                     }
                                 }
 
                             }
-
-                            pw.println(" <td class=\"" + testCovered + "\">&nbsp;</td>");
+                            pw.println(" <td " + ancInfo + "class=\"" + testCovered + "\">&nbsp;</td>");
 
                         } else {
                             pw.println(" <td class=\"nbHits\">&nbsp;</td>");
@@ -1227,7 +1331,8 @@ public class CoverageReport implements ReportGenerator {
 
                 boolean isGreen = ((JavapCodeLine) javapLine).isVisited();
 
-                String nbHitsCov = isGreen ? "nbHitsCovered" : "nbHitsUncovered";
+                String unCover = theClass.isLineInAnc(numLine) ? "nbHitsAnc" : "nbHitsUncovered";
+                String nbHitsCov = isGreen ? "nbHitsCovered" :  unCover;
                 String htmlStr = javapLine.getTextLine().replaceAll("\\<", "&#60;").replaceAll("\\>", "&#62;");
 
                 pw.println(" <td>" + numLine + link + "</td>");
@@ -1246,7 +1351,7 @@ public class CoverageReport implements ReportGenerator {
 
     }
 
-    private void generateMemberTable(PrintWriter pw, String fieldOrMethod,
+    private void generateMemberTable(PrintWriter pw, ClassCoverage theClass, String fieldOrMethod,
             List<? extends MemberCoverage> list, boolean isGenerate, boolean javapReport) {
         pw.println(" <p>");
         pw.println(" <table cellspacing=\"0\" cellpadding=\"0\"class=\"report\" id=\"mcoverage\">");
@@ -1277,8 +1382,24 @@ public class CoverageReport implements ReportGenerator {
                 pw.println(" <td class=\"reportValue_covered\"><span class=\"text\">"
                         + c + "</span></td>");
             } else {
-                pw.println(" <td class=\"reportValue_uncovered\"><span class=\"text\">"
-                        + c + "</span></td>");
+                if (mcov.getData(mcov.getDataType()).getAnc() > 0){
+
+                    String tooltip = "";
+                    if (mcov instanceof MethodCoverage){
+                        String info = theClass.getAncInfo();
+                        if (info == null){
+                            info = ((MethodCoverage)mcov).getAncInfo() != null ? ((MethodCoverage)mcov).getAncInfo() :
+                                    ((MethodCoverage)mcov).getItems().get(0).getAncInfo();
+                        }
+                        tooltip = "title=\"" + info + "\" ";
+                    }
+                    pw.println(" <td class=\"reportValue_anc\""+tooltip+"><span class=\"text\">"
+                            + c + "</span></td>");
+                }
+                else {
+                    pw.println(" <td class=\"reportValue_uncovered\"><span class=\"text\">"
+                            + c + "</span></td>");
+                }
             }
 
             if (testService != null && (isAddTestsInfo || isMergeRepGenMode)) {
@@ -1288,8 +1409,24 @@ public class CoverageReport implements ReportGenerator {
                         pw.println(" <td class=\"numLineCover\"><span class=\"text\">"
                                 + "<center>+</center>" + "</span></td>");
                     } else {
-                        pw.println(" <td class=\"numLineUnCover\"><span class=\"text\">"
-                                + "<center>-</center>" + "</span></td>");
+
+                        if (mcov.getData(mcov.getDataType()).getAnc() > 0){
+                            String tooltip = "";
+                            if (mcov instanceof MethodCoverage){
+                                String info = theClass.getAncInfo();
+                                if (info == null){
+                                    info = ((MethodCoverage)mcov).getAncInfo() != null ? ((MethodCoverage)mcov).getAncInfo() :
+                                            ((MethodCoverage)mcov).getItems().get(0).getAncInfo();
+                                }
+                                tooltip = "title=\"" + info + "\" ";
+                            }
+                            pw.println(" <td class=\"numLineAnc\" "+tooltip+"><span class=\"text\">"
+                                    + "<center>-</center>" + "</span></td>");
+                        }
+                        else {
+                            pw.println(" <td class=\"numLineUnCover\"><span class=\"text\">"
+                                    + "<center>-</center>" + "</span></td>");
+                        }
                     }
                 }
             }
@@ -1450,16 +1587,28 @@ public class CoverageReport implements ReportGenerator {
     private String generatePercentResult(String percentValue) {
         String value = percentValue;
         String cov_total = "";
+        double anc = 0;
         int idx = value.indexOf("%");
         if (idx != -1) {
             value = value.substring(0, idx);
             cov_total = percentValue.substring(idx + 1);
+            String[] ancs = percentValue.split("/");
+            if (ancs.length == 3){
+                try {
+                    anc = Double.parseDouble(ancs[1])/Double.parseDouble(ancs[2].substring(0,ancs[2].indexOf(")")))*100;
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         double rest = 0;
         boolean badNumber = false;
+        double dvalue = 0;
         try {
-            rest = 100d - new Double(value.replace(',', '.')).doubleValue();
+            dvalue = new Double(value.replace(',', '.')).doubleValue();
+            rest = 100d - (dvalue);
         } catch (NumberFormatException e) {
             badNumber = true;
         }
@@ -1473,8 +1622,17 @@ public class CoverageReport implements ReportGenerator {
             sb.append("<td>");
             sb.append("<table class=\"percentGraph\" cellpadding=\"0\" cellspacing=\"0\">");
             sb.append("<tr>");
-            sb.append("<td class=\"percentCovered\" width=\"").append(value).append("\"></td>");
-            sb.append("<td class=\"percentUnCovered\" width=\"").append(String.valueOf(rest)).append("\"></td>");
+            if (anc > 0) {
+                sb.append("<td class=\"percentCovered\" width=\"").append(dvalue - anc).append("\"></td>");
+                sb.append("<td class=\"percentAnc\" width=\"").append(anc).append("\"></td>");
+                if (dvalue < 100) {
+                    sb.append("<td class=\"percentUnCovered\" width=\"").append(String.valueOf(rest)).append("\"></td>");
+                }
+            }
+            else{
+                sb.append("<td class=\"percentCovered\" width=\"").append(value).append("\"></td>");
+                sb.append("<td class=\"percentUnCovered\" width=\"").append(String.valueOf(rest)).append("\"></td>");
+            }
             sb.append("</tr>");
             sb.append("</table>");
             sb.append("</td>");

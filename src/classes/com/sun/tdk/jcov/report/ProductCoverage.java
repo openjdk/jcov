@@ -26,12 +26,9 @@ package com.sun.tdk.jcov.report;
 
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.filter.MemberFilter;
-import com.sun.tdk.jcov.instrument.DataBlock;
-import com.sun.tdk.jcov.instrument.DataBlockTarget;
 import com.sun.tdk.jcov.instrument.DataClass;
 import com.sun.tdk.jcov.instrument.DataField;
 import com.sun.tdk.jcov.instrument.DataMethod;
-import com.sun.tdk.jcov.instrument.DataMethod.LineEntry;
 import com.sun.tdk.jcov.instrument.DataPackage;
 import com.sun.tdk.jcov.instrument.DataRoot;
 import com.sun.tdk.jcov.io.Reader;
@@ -39,7 +36,6 @@ import com.sun.tdk.jcov.report.javap.JavapClass;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.objectweb.asm.Opcodes;
 
 /**
  * <p> The product coverage container serves for accessing coverage information
@@ -84,6 +80,7 @@ public class ProductCoverage extends AbstractCoverage implements Iterable<Packag
         DataType.BLOCK, DataType.BRANCH, DataType.LINE};
     private ArrayList<ClassCoverage> classes;
     private String productName;
+    private AncFilter[] ancfilters = null;
 
     /**
      * <p> Creates a new instance of ProductCoverage which is the top level
@@ -262,8 +259,16 @@ public class ProductCoverage extends AbstractCoverage implements Iterable<Packag
         this(fileImage, srcRootPaths, javapClasses, new DefaultFilter(noAbstract, isPublicAPI), false, false);
     }
 
+    public ProductCoverage(DataRoot fileImage, String srcRootPaths[], List<JavapClass> javapClasses, boolean isPublicAPI, boolean noAbstract, AncFilter[] ancfilters) {
+        this(fileImage, srcRootPaths, javapClasses, new DefaultFilter(noAbstract, isPublicAPI), false, false, ancfilters);
+    }
+
     public ProductCoverage(DataRoot fileImage, String srcRootPaths[], List<JavapClass> javapClasses, boolean isPublicAPI, boolean noAbstract, boolean anonym) {
-        this(fileImage, srcRootPaths, javapClasses, new DefaultFilter(noAbstract, isPublicAPI), false, anonym);
+        this(fileImage, srcRootPaths, javapClasses, new DefaultFilter(noAbstract, isPublicAPI), false, anonym, null);
+    }
+
+    public ProductCoverage(DataRoot fileImage, String srcRootPaths[], List<JavapClass> javapClasses, boolean isPublicAPI, boolean noAbstract, boolean anonym, AncFilter[] ancfilters) {
+        this(fileImage, srcRootPaths, javapClasses, new DefaultFilter(noAbstract, isPublicAPI), false, anonym, ancfilters);
     }
 
     /**
@@ -288,6 +293,9 @@ public class ProductCoverage extends AbstractCoverage implements Iterable<Packag
         this(fileImage, srcRootPaths, null, filter, false, false);
     }
 
+    public ProductCoverage(DataRoot fileImage, String srcRootPaths[], List<JavapClass> javapClasses, CoverageFilter filter, boolean releaseAfter, boolean anonym){
+        this(fileImage, srcRootPaths, null, filter, false, false, null);
+    }
     /**
      * <p> Creates a new instance of ProductCoverage which is the top level
      * coverage object in the coverage objects tree. </p> <p> Note that empty
@@ -304,12 +312,13 @@ public class ProductCoverage extends AbstractCoverage implements Iterable<Packag
      * @see DataRoot
      * @see DataRoot#read(java.lang.String)
      */
-    public ProductCoverage(DataRoot fileImage, String srcRootPaths[], List<JavapClass> javapClasses, CoverageFilter filter, boolean releaseAfter, boolean anonym) {
+    public ProductCoverage(DataRoot fileImage, String srcRootPaths[], List<JavapClass> javapClasses, CoverageFilter filter, boolean releaseAfter, boolean anonym, AncFilter[] ancfilters) {
         packages = new ArrayList<PackageCoverage>();
         classes = new ArrayList<ClassCoverage>();
         if (filter == null) {
             filter = new DefaultFilter(false, false);
         }
+        this.ancfilters = ancfilters;
 
         List<DataPackage> packs = fileImage.getPackages();
         ArrayList<String> packageNames = new ArrayList<String>(packs.size());
@@ -319,7 +328,7 @@ public class ProductCoverage extends AbstractCoverage implements Iterable<Packag
         java.util.Collections.sort(packageNames);
 
         for (String pkg : packageNames) {
-            PackageCoverage pc = new PackageCoverage(fileImage, pkg, srcRootPaths, javapClasses, filter, anonym);
+            PackageCoverage pc = new PackageCoverage(fileImage, pkg, srcRootPaths, javapClasses, filter, ancfilters, anonym);
             List<ClassCoverage> pkgClasses = pc.getClasses();
             classes.addAll(pkgClasses);
             if (filter.accept(pc)) {
@@ -330,6 +339,14 @@ public class ProductCoverage extends AbstractCoverage implements Iterable<Packag
         if (releaseAfter) {
             fileImage.destroy();
         }
+    }
+
+    /**
+     * Determine if the ANC filters were set
+     * @return
+     */
+    public boolean isAncFiltersSet(){
+        return ancfilters != null;
     }
 
     private static DataRoot readFileImage(String filename, boolean useScales)
@@ -381,7 +398,7 @@ public class ProductCoverage extends AbstractCoverage implements Iterable<Packag
     }
 
     public CoverageData getData(DataType column, int testNumber) {
-        CoverageData covered = new CoverageData(0, 0);
+        CoverageData covered = new CoverageData(0, 0, 0);
         switch (column) {
             case PACKAGE:
                 for (PackageCoverage pCoverage : packages) {
@@ -398,7 +415,7 @@ public class ProductCoverage extends AbstractCoverage implements Iterable<Packag
                     if (testNumber < 0 || classCoverage.isCoveredByTest(testNumber)) {
                         covered.add(classCoverage.getData(column));
                     } else {
-                        covered.add(new CoverageData(0, classCoverage.getData(column).getTotal()));
+                        covered.add(new CoverageData(0, 0, classCoverage.getData(column).getTotal()));
                     }
                 }
                 return covered;

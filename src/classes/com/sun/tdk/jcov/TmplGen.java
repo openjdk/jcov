@@ -54,13 +54,15 @@ public class TmplGen extends JCovCMDTool {
     private String template;
     private String[] include;
     private String[] exclude;
+    private String[] m_include;
+    private String[] m_exclude;
     private boolean instrumentAbstract = false;
     private boolean instrumentNative = true;
     private boolean instrumentField = false;
     private boolean instrumentAnonymous = true;
     private boolean instrumentSynthetic = true;
     private InstrumentationOptions.InstrumentationMode mode;
-    private HashMap<String, String> moduleInfo = null;
+    private String currentModule = null;
 
     /**
      * Legacy CMD line entry poiny (use 'java -jar jcov.jar TmplGen' from cmd
@@ -133,10 +135,11 @@ public class TmplGen extends JCovCMDTool {
                         Utils.addToClasspath(new String[]{file.getAbsolutePath()});
                     }
                 }
-                instrumenter.instrument(new File(rootFile.getParentFile().getAbsolutePath()+File.separator+"temp_"+jimagename), null);
-                File jdata = new File(rootFile.getParentFile().getAbsolutePath()+File.separator+"temp_"+jimagename+File.separator+jimagename+".jdata");
-                if (jdata.exists()){
-                   fillModuleInfo(jdata);
+                for (File file:tempJimage.listFiles()){
+                    if (file.isDirectory()){
+                        currentModule = file.getName();
+                        instrumenter.instrument(file, null);
+                    }
                 }
             }
             else {
@@ -162,32 +165,6 @@ public class TmplGen extends JCovCMDTool {
         return jimagename;
     }
 
-    private void fillModuleInfo(File jdata){
-        try {
-            HashMap<String, String> packages = new HashMap<String, String>();
-            Scanner sc = new Scanner(jdata);
-
-            while (sc.hasNextLine()) {
-                String line = sc.nextLine();
-                String[] lineInfo = line.split("\\t");
-                for (int i = 1; i < lineInfo.length; i++){
-                    packages.put(lineInfo[i], lineInfo[0]);
-                }
-            }
-            sc.close();
-
-            if (moduleInfo == null){
-                moduleInfo  = new HashMap<String, String>();
-            }
-
-            moduleInfo.putAll(packages);
-
-        }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void generateTemplate(String[] files) throws IOException {
         if (instrumenter == null) {
             setDefaultInstrumenter();
@@ -209,7 +186,7 @@ public class TmplGen extends JCovCMDTool {
         if (instrumenter == null) {
             instrumenter = new AbstractUniversalInstrumenter(true, true) {
                 ClassMorph morph = new ClassMorph(
-                        new InstrumentationParams(instrumentNative, instrumentField, instrumentAbstract, include, exclude, mode)
+                        new InstrumentationParams(instrumentNative, instrumentField, instrumentAbstract, include, exclude, m_include, m_exclude, mode)
                         .setInstrumentAnonymous(instrumentAnonymous)
                         .setInstrumentSynthetic(instrumentSynthetic), template);
 
@@ -217,14 +194,12 @@ public class TmplGen extends JCovCMDTool {
 //                    byte[] res = Arrays.copyOf(classData, classLen);
                     byte[] res = new byte[classLen];
                     System.arraycopy(classData, 0, res, 0, classLen);
+                    morph.setCurrentModuleName(currentModule);
                     morph.morph(res, null, flushPath); // jdk1.5 support
                     return res;
                 }
 
                 public void finishWork() {
-                    if (moduleInfo != null){
-                        morph.updateModuleInfo(moduleInfo);
-                    }
                     morph.saveData(template, InstrumentationOptions.MERGE.MERGE);
                 }
             };
@@ -242,6 +217,10 @@ public class TmplGen extends JCovCMDTool {
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE_LIST,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE_LIST,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE_LIST,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE_LIST,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_ABSTRACT,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_NATIVE,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FIELD,
@@ -321,6 +300,9 @@ public class TmplGen extends JCovCMDTool {
         include = InstrumentationOptions.handleInclude(opts);
         exclude = InstrumentationOptions.handleExclude(opts);
 
+        m_exclude = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleMExclude(opts);
+        m_include = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleMInclude(opts);
+
         com.sun.tdk.jcov.runtime.CollectDetect.enableInvokeCounts();
 
         return SUCCESS_EXIT_CODE;
@@ -332,6 +314,14 @@ public class TmplGen extends JCovCMDTool {
 
     public void setExclude(String[] exclude) {
         this.exclude = exclude;
+    }
+
+    public String[] getMExclude() {
+        return m_exclude;
+    }
+
+    public void setMExclude(String[] m_exclude) {
+        this.m_exclude = exclude;
     }
 
     public String getFlushPath() {
@@ -348,6 +338,14 @@ public class TmplGen extends JCovCMDTool {
 
     public void setInclude(String[] include) {
         this.include = include;
+    }
+
+    public String[] getMInclude() {
+        return m_include;
+    }
+
+    public void setMInclude(String[] m_include) {
+        this.m_include = m_include;
     }
 
     public boolean isInstrumentAbstract() {

@@ -55,6 +55,8 @@ public class Instr extends JCovCMDTool {
 
     private String[] include = new String[]{".*"};
     private String[] exclude = new String[]{""};
+    private String[] m_include = new String[]{".*"};
+    private String[] m_exclude = new String[]{""};
     private String[] callerInclude;
     private String[] callerExclude;
     private String[] save_beg = null;
@@ -117,7 +119,7 @@ public class Instr extends JCovCMDTool {
      * @throws IOException
      * @see
      * #setInstrumenter(com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter)
-     * @see #setDefaultInstrumenter(java.io.File)
+     * @see #setDefaultInstrumenter()
      */
     public void instrumentAll(File[] files, File outDir) throws IOException {
         instrumentAll(files, outDir, null);
@@ -135,7 +137,7 @@ public class Instr extends JCovCMDTool {
      * @throws IOException
      * @see
      * #setInstrumenter(com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter)
-     * @see #setDefaultInstrumenter(java.io.File)
+     * @see #setDefaultInstrumenter()
      * @see #finishWork()
      */
     public void instrumentFile(File file, File outDir, String includeRTJar) throws IOException {
@@ -155,11 +157,18 @@ public class Instr extends JCovCMDTool {
      * @throws IOException
      * @see
      * #setInstrumenter(com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter)
-     * @see #setDefaultInstrumenter(java.io.File)
+     * @see #setDefaultInstrumenter()
      * @see #finishWork()
      */
     public void instrumentFile(String file, File outDir, String includeRTJar) throws IOException {
         instrumentFile(new File(file), outDir, includeRTJar);
+    }
+
+    public void instrumentFile(String file, File outDir, String includeRTJar, String moduleName) throws IOException {
+        if (morph != null){
+            morph.setCurrentModuleName(moduleName);
+            instrumentFile(new File(file), outDir, includeRTJar);
+        }
     }
 
     /**
@@ -211,7 +220,7 @@ public class Instr extends JCovCMDTool {
     private void setDefaultInstrumenter() {
 
         if (morph == null) {
-            InstrumentationParams params = new InstrumentationParams(gennative, genfield, genabstract, include, exclude, callerInclude, callerExclude, mode, save_beg, save_end)
+            InstrumentationParams params = new InstrumentationParams(innerinvocations, false, false, gennative, genfield, false, genabstract ? InstrumentationOptions.ABSTRACTMODE.DIRECT : InstrumentationOptions.ABSTRACTMODE.NONE, include, exclude, callerInclude, callerExclude, m_include, m_exclude, mode, save_beg, save_end)
                     .setInstrumentSynthetic(gensynthetic)
                     .setInstrumentAnonymous(genanonymous)
                     .setInnerInvocations(innerinvocations);
@@ -337,6 +346,14 @@ public class Instr extends JCovCMDTool {
         this.exclude = exclude;
     }
 
+    public String[] getMExclude() {
+        return m_exclude;
+    }
+
+    public void setMExclude(String[] m_exclude) {
+        this.m_exclude = m_exclude;
+    }
+
     public boolean isGenField() {
         return genfield;
     }
@@ -359,6 +376,14 @@ public class Instr extends JCovCMDTool {
 
     public void setInclude(String[] include) {
         this.include = include;
+    }
+
+    public String[] getMInclude() {
+        return m_include;
+    }
+
+    public void setMInclude(String[] m_include) {
+        this.m_include = m_include;
     }
 
     public void setCallerInclude(String[] callerInclude) {
@@ -450,28 +475,30 @@ public class Instr extends JCovCMDTool {
     @Override
     protected EnvHandler defineHandler() {
         return new EnvHandler(new OptionDescr[]{
-                    DSC_OUTPUT,
-                    DSC_VERBOSE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_TYPE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE_LIST,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_INCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_EXCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE_LIST,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SAVE_BEGIN,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SAVE_AT_END,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_TEMPLATE,
-                    DSC_SUBSEQUENT,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_ABSTRACT,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_NATIVE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FIELD,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SYNTHETIC,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_ANONYM,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INNERINVOCATION,
-                    ClassMorph.DSC_FLUSH_CLASSES,
-                    DSC_INCLUDE_RT,
-                    DSC_RECURSE,}, this);
+                DSC_OUTPUT,
+                DSC_VERBOSE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_TYPE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE_LIST,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_INCLUDE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_EXCLUDE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE_LIST,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SAVE_BEGIN,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SAVE_AT_END,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_TEMPLATE,
+                DSC_SUBSEQUENT,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_ABSTRACT,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_NATIVE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FIELD,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SYNTHETIC,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_ANONYM,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INNERINVOCATION,
+                ClassMorph.DSC_FLUSH_CLASSES,
+                DSC_INCLUDE_RT,
+                DSC_RECURSE,}, this);
     }
 
     private int handleEnv_(EnvHandler opts) throws EnvHandlingException {
@@ -576,9 +603,9 @@ public class Instr extends JCovCMDTool {
     }
     final static OptionDescr DSC_OUTPUT =
             new OptionDescr("instr.output", new String[]{"output", "o"}, "Output directory for instrumented classes",
-            OptionDescr.VAL_SINGLE,
-            "Specifies output directory, default directory is current. Instr command could process different dirs and different jars: \n "
-            + "all classes from input dirs and all jars will be placed in output directory.");
+                    OptionDescr.VAL_SINGLE,
+                    "Specifies output directory, default directory is current. Instr command could process different dirs and different jars: \n "
+                            + "all classes from input dirs and all jars will be placed in output directory.");
     final static OptionDescr DSC_VERBOSE =
             new OptionDescr("verbose", "Verbose mode", "Enable verbose mode.");
     final static OptionDescr DSC_INCLUDE_RT =

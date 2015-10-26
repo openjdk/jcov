@@ -28,6 +28,7 @@ import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.instrument.DataField;
 import com.sun.tdk.jcov.instrument.DataClass;
 import com.sun.tdk.jcov.processing.DataProcessorSPI;
+import com.sun.tdk.jcov.report.AncFilter;
 import com.sun.tdk.jcov.util.Utils;
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.data.Result;
@@ -94,8 +95,11 @@ public class RepGen extends JCovCMDTool {
     private DataProcessorSPI dataProcessorSPIs[];
     private String[] include = new String[]{".*"};
     private String[] exclude = new String[]{""};
+    private String[] m_include = new String[]{".*"};
+    private String[] m_exclude = new String[]{""};
     private String[] fms = null;
     private String filter = null;
+    private String[] ancfilters = null;
     private boolean noAbstract = false;
     private boolean syntheticOn = false;
     private boolean isPublicAPI = false;
@@ -108,6 +112,10 @@ public class RepGen extends JCovCMDTool {
     private boolean withTestsInfo = false;
     //path to the jar, dir or .class for javap repgen
     private String classesPath;
+    private AncFilter[] ancfiltersClasses = null;
+    private String mainReportTitle = null;
+    private String overviewListTitle = null;
+    private String entitiesTitle = null;
 
     public RepGen() {
         readPlugins = true;
@@ -221,6 +229,20 @@ public class RepGen extends JCovCMDTool {
             logger.fine("OK");
         }
 
+        if (ancfilters != null){
+            ancfiltersClasses = new AncFilter[ancfilters.length];
+            for (int i = 0; i < ancfilters.length; i++) {
+                try {
+                    String ancfilter = ancfilters[i];
+                    Class ancFilteClass = Class.forName(ancfilter);
+                    ancfiltersClasses[i] = (AncFilter) ancFilteClass.newInstance();
+                } catch (Exception e) {
+                    throw new Error("Cannot create an instance of "
+                            + "AncFilter: ", e);
+                }
+            }
+        }
+
         if (dataProcessorSPIs != null) {
             for (DataProcessorSPI spi : dataProcessorSPIs) {
                 logger.log(Level.INFO, "-- Applying data processor {0}", spi.getClass());
@@ -241,12 +263,13 @@ public class RepGen extends JCovCMDTool {
             }
             logger.fine("OK");
         }
-        ReportGenerator.Options options = new ReportGenerator.Options(srcRootPath, sts, classes, withTestsInfo, false);
+        ReportGenerator.Options options = new ReportGenerator.Options(srcRootPath, sts, classes, withTestsInfo, false,
+                mainReportTitle, overviewListTitle, entitiesTitle);
         options.setInstrMode(file_image.getParams().getMode());
         options.setAnonymOn(anonym);
 
         try {
-            ProductCoverage coverage = new ProductCoverage(file_image, options.getSrcRootPaths(), options.getJavapClasses(), isPublicAPI, noAbstract, anonym);
+            ProductCoverage coverage = new ProductCoverage(file_image, options.getSrcRootPaths(), options.getJavapClasses(), isPublicAPI, noAbstract, anonym, ancfiltersClasses);
 
             logger.log(Level.INFO, "- Starting ReportGenerator {0}", rg.getClass().getName());
             rg.generateReport(coverage, options);
@@ -286,7 +309,7 @@ public class RepGen extends JCovCMDTool {
 
     protected DataRoot readDataRootFile(String filename, boolean readScales, String[] include, String[] exclude, String[] modif) throws FileFormatException {
         DataRoot file_image = null;
-        ClassSignatureFilter acceptor = new ClassSignatureFilter(include, exclude, modif);
+        ClassSignatureFilter acceptor = new ClassSignatureFilter(include, exclude, m_include, m_exclude, modif);
         file_image = Reader.readXML(filename, readScales, acceptor);
         return file_image;
     }
@@ -543,9 +566,14 @@ public class RepGen extends JCovCMDTool {
                 rg.init(outputDir);
                 String[] tl = testlist != null ? Utils.readLines(testlist) : merge.getResultTestList();
                 SmartTestService sts = new SmartTestService(tl);
-                ReportGenerator.Options options = new ReportGenerator.Options(srcRootPath, sts, null, true, true);
+                ReportGenerator.Options options = new ReportGenerator.Options(srcRootPath, sts, null, true, true,
+                        mainReportTitle, overviewListTitle, entitiesTitle);
                 try {
-                    ProductCoverage coverage = new ProductCoverage(merge.getResult(), options.getSrcRootPaths(), null, isPublicAPI, noAbstract);
+                    DataRoot mergedResult = merge.getResult();
+                    if (!syntheticOn) {
+                        mergedResult.applyFilter(new ANC_FILTER());
+                    }
+                    ProductCoverage coverage = new ProductCoverage(mergedResult, options.getSrcRootPaths(), null, isPublicAPI, noAbstract, ancfiltersClasses);
                     rg.generateReport(coverage, options);
 
                     if (srcZipped) {
@@ -606,6 +634,10 @@ public class RepGen extends JCovCMDTool {
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE_LIST,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE_LIST,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE_LIST,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE_LIST,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FM,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FM_LIST,
                     DSC_NO_ABSTRACT,
@@ -614,10 +646,14 @@ public class RepGen extends JCovCMDTool {
                     DSC_SRC_ROOT,
                     DSC_VERBOSE,
                     DSC_FILTER_PLUGIN,
+                    DSC_ANC_FILTER_PLUGINS,
                     DSC_TEST_LIST,
                     DSC_ANONYM,
                     DSC_JAVAP,
-                    DSC_TESTS_INFO,}, this);
+                    DSC_TESTS_INFO,
+                    DSC_REPORT_TITLE_MAIN,
+                    DSC_REPORT_TITLE_OVERVIEW,
+                    DSC_REPORT_TITLE_ENTITIES,}, this);
         SPIDescr spiDescr = new SPIDescr(CUSTOM_REPORT_GENERATOR_SPI, ReportGeneratorSPI.class);
         spiDescr.setDefaultSPI(new DefaultReportGeneratorSPI());
         envHandler.registerSPI(spiDescr);
@@ -643,6 +679,7 @@ public class RepGen extends JCovCMDTool {
         // no check for output
 
         filter = opts.getValue(DSC_FILTER_PLUGIN);
+        ancfilters = opts.getValues(DSC_ANC_FILTER_PLUGINS);
         noAbstract = opts.isSet(DSC_NO_ABSTRACT);
         isPublicAPI = opts.isSet(DSC_PUBLIC_API);
         anonym = opts.isSet(DSC_ANONYM);
@@ -652,6 +689,9 @@ public class RepGen extends JCovCMDTool {
         exclude = InstrumentationOptions.handleExclude(opts);
         fms = InstrumentationOptions.handleFM(opts);
 
+        m_include = InstrumentationOptions.handleMInclude(opts);
+        m_exclude = InstrumentationOptions.handleMExclude(opts);
+
         testlist = opts.getValue(DSC_TEST_LIST);
         Utils.checkFileCanBeNull(testlist, "testlist filename", Utils.CheckOptions.FILE_EXISTS, Utils.CheckOptions.FILE_CANREAD, Utils.CheckOptions.FILE_ISFILE);
 
@@ -660,6 +700,16 @@ public class RepGen extends JCovCMDTool {
         srcRootPath = null;
         if (opts.isSet(DSC_SRC_ROOT)) {
             srcRootPath = opts.getValue(DSC_SRC_ROOT);
+        }
+
+        if (opts.isSet(DSC_REPORT_TITLE_MAIN)){
+            mainReportTitle = opts.getValue(DSC_REPORT_TITLE_MAIN);
+        }
+        if (opts.isSet(DSC_REPORT_TITLE_OVERVIEW)){
+            overviewListTitle = opts.getValue(DSC_REPORT_TITLE_OVERVIEW);
+        }
+        if (opts.isSet(DSC_REPORT_TITLE_ENTITIES)){
+            entitiesTitle = opts.getValue(DSC_REPORT_TITLE_ENTITIES);
         }
 
         ArrayList<ReportGeneratorSPI> reportGenerators = opts.getSPIs(ReportGeneratorSPI.class);
@@ -745,6 +795,11 @@ public class RepGen extends JCovCMDTool {
     final static OptionDescr DSC_FILTER_PLUGIN =
             new OptionDescr("filter", "", OptionDescr.VAL_SINGLE,
             "Custom filtering plugin class");
+
+    final static OptionDescr DSC_ANC_FILTER_PLUGINS =
+            new OptionDescr("ancfilter", new String[]{"ancf"}, "Custom anc filtering plugin classes", OptionDescr.VAL_MULTI,
+                    "");
+
     /**
      *
      */
@@ -770,4 +825,11 @@ public class RepGen extends JCovCMDTool {
             new OptionDescr("javap", new String[]{"javap"}, "Path to the class files of the product to use javap", OptionDescr.VAL_SINGLE, "");
     public final static OptionDescr DSC_TESTS_INFO =
             new OptionDescr("testsinfo", "Additional information about for specified tests' list", "Show covererage for all tests in test list");
+
+    public final static OptionDescr DSC_REPORT_TITLE_MAIN =
+            new OptionDescr("mainReportTitle", new String[]{"mainReportTitle", "mrtitle"}, "The main report title", OptionDescr.VAL_SINGLE, "");
+    public final static OptionDescr DSC_REPORT_TITLE_OVERVIEW =
+            new OptionDescr("overviewReportTitle", new String[]{"overviewReportTitle", "ortitle"}, "The overview list report title", OptionDescr.VAL_SINGLE, "");
+    public final static OptionDescr DSC_REPORT_TITLE_ENTITIES =
+            new OptionDescr("entitiesReportTitle", new String[]{"entitiesReportTitle", "ertitle"}, "Entities report title (for modules, packages, subpackages)", OptionDescr.VAL_SINGLE, "");
 }

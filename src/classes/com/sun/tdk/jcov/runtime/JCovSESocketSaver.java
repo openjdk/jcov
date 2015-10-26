@@ -46,16 +46,23 @@ public class JCovSESocketSaver extends JCovSocketSaver {
 
         File file = null;
         String urlString = "";
-        try {
-            urlString = ClassLoader.getSystemClassLoader().getResource(JCovSESocketSaver.class.getCanonicalName().replaceAll("\\.", "/") + ".class").toString();
+        URL url = ClassLoader.getSystemClassLoader().getResource(JCovSESocketSaver.class.getCanonicalName().replaceAll("\\.", "/") + ".class");
+        if (url != null) {
+            urlString = url.toString();
             if (urlString.contains("file:") && urlString.contains("!")) {
                 urlString = urlString.substring(urlString.indexOf("file:"), urlString.indexOf('!'));
             }
             urlString = urlString.replaceAll("jrt:", "file:");
-            URL url = new URL(urlString);
-            file = new File(url.toURI());
-        } catch (Exception e) {
-            System.err.println("Error while finding " + urlString + " file: " + e);
+            try {
+                url = new URL(urlString);
+                file = new File(url.toURI());
+            } catch (Exception e) {
+                System.err.println("Error while finding " + urlString + " file: " + e);
+            }
+        }
+
+        if (file == null){
+            file = new File(System.getProperty("java.home")+File.separator + NETWORK_DEF_PROPERTIES_FILENAME);
         }
 
         if (file != null && file.exists()) {

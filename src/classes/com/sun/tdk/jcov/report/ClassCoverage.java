@@ -68,6 +68,8 @@ public class ClassCoverage extends AbstractCoverage {
     private String name;
     private String packagename;
     private String modulename;
+    private boolean isInAnc = false;
+    protected String ancInfo;
 
     /**
      * <p> Creates new ClassCoverage instance. </p>
@@ -81,22 +83,44 @@ public class ClassCoverage extends AbstractCoverage {
     }
 
     public ClassCoverage(DataClass clz, String srcRootPaths[], List<JavapClass> javapClasses, MemberFilter filter) {
-        this(clz, srcRootPaths, null, filter, false);
+        this(clz, srcRootPaths, null, filter, null, false);
     }
 
-    public ClassCoverage(DataClass clz, String srcRootPaths[], List<JavapClass> javapClasses, MemberFilter filter, boolean anonym) {
+    public ClassCoverage(DataClass clz, String srcRootPaths[], List<JavapClass> javapClasses, MemberFilter filter, AncFilter[] ancFilters, boolean anonym) {
         access = clz.getAccess();
         fullname = clz.getFullname();
         name = clz.getName();
         packagename = clz.getPackageName();
         modulename = clz.getModuleName();
 
+        if (ancFilters != null){
+            for (AncFilter ancFilter : ancFilters){
+                if (ancFilter.accept(clz)){
+                    isInAnc = true;
+                    setAncInfo(ancFilter.getAncReason());
+                    break;
+                }
+            }
+        }
+
         for (DataMethod method : clz.getMethods()) {
             if (filter != null && !filter.accept(clz, method)) {
                 continue;
             }
 
-            MethodCoverage methodCoverage = new MethodCoverage(method);
+            MethodCoverage methodCoverage = null;
+            if (ancFilters != null){
+                for (AncFilter ancFilter : ancFilters){
+                    if (isInAnc || ancFilter.accept(clz, method)){
+                        methodCoverage = new MethodCoverage(method, ancFilters, ancFilter.getAncReason());
+                        methodCoverage.setAncInfo(ancFilter.getAncReason());
+                        break;
+                    }
+                }
+            }
+            if (methodCoverage == null) {
+                methodCoverage = new MethodCoverage(method, ancFilters, null);
+            }
             methodCoverage.setAnonymOn(anonym);
             if (method.getName() != null && method.getName().matches("\\$\\d.*")) {
                 methodCoverage.setInAnonymClass(true);
@@ -337,6 +361,19 @@ public class ClassCoverage extends AbstractCoverage {
         return lineCoverage.isLineCovered(lineNum);
     }
 
+    public boolean isLineInAnc(int lineNum){
+        return lineCoverage.isLineAnc(lineNum);
+    }
+
+    public void setAncInfo(String ancInfo){
+        isInAnc = (ancInfo != null && !ancInfo.isEmpty());
+        this.ancInfo = ancInfo;
+    }
+
+    public String getAncInfo(){
+        return ancInfo;
+    }
+
     /**
      * Returns true if the line with the given number contains java code
      *
@@ -365,30 +402,37 @@ public class ClassCoverage extends AbstractCoverage {
             case CLASS:
                 for (MethodCoverage method : methods) {
                     if (method.count > 0 && (testNumber < 0 || method.isCoveredByTest(testNumber))) {
-                        return new CoverageData(1, 1);
+                        if (isInAnc) {
+                            return new CoverageData(1, 1, 1);
+                        }
+                        return new CoverageData(1, 0, 1);
                     }
                 }
-                return new CoverageData(0, 1);
+                if (isInAnc) {
+                    return new CoverageData(0, 1, 1);
+                }
+                return new CoverageData(0, 0, 1);
             case METHOD:
             case BLOCK:
             case BRANCH:
-                CoverageData covered = new CoverageData(0, 0);
+                CoverageData covered = new CoverageData(0, 0, 0);
                 for (MethodCoverage method : methods) {
                     if (testNumber < 0 || method.isCoveredByTest(testNumber)) {
                         covered.add(method.getData(column, testNumber));
                     } else {
-                        covered.add(new CoverageData(0, method.getData(column, testNumber).getTotal()));
+                        CoverageData mcov = method.getData(column, testNumber);
+                        covered.add(new CoverageData(0, mcov.getAnc() ,mcov.getTotal()));
                     }
                 }
                 return covered;
             case FIELD:
-                covered = new CoverageData(0, 0);
+                covered = new CoverageData(0, 0, 0);
                 for (FieldCoverage field : fields) {
                     covered.add(field.getData(column));
                 }
                 return covered;
             case LINE:
-                return new CoverageData(lineCoverage.getCovered(), lineCoverage.getTotal());
+                return new CoverageData(lineCoverage.getCovered(), lineCoverage.getAnc(), lineCoverage.getTotal());
             default:
                 return new CoverageData();
         }

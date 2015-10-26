@@ -50,6 +50,7 @@ public class ClassSignatureFilter implements MemberFilter {
     private String[] includes;
     private String[] excludes;
     private Pattern[] alls;
+    private Pattern[] all_modules;
 
     /**
      * Constructs new ClassSignatureAcceptor with the specified
@@ -60,14 +61,20 @@ public class ClassSignatureFilter implements MemberFilter {
      * @param modifs acceptable modifiers
      */
     public ClassSignatureFilter(String[] incl_masks, String[] excl_masks, String[] modifs) {
+        this(incl_masks, excl_masks, null , null, modifs);
+    }
+
+    public ClassSignatureFilter(String[] incl_masks, String[] excl_masks, String[] m_includes, String[] m_excludes, String[] modifs) {
         this.modifs = modifs;
         this.includes = incl_masks;
         this.excludes = excl_masks;
         this.alls = Utils.concatFilters(incl_masks, excl_masks);
+        this.all_modules = Utils.concatModuleFilters(m_includes, m_excludes);
     }
 
     public boolean accept(DataClass c) {
-        return Utils.accept(alls, modifs, "/" + c.getFullname(), c.getSignature());
+        return Utils.accept(all_modules, modifs, c.getModuleName(), null) &&
+               Utils.accept(alls, modifs, "/" + c.getFullname(), c.getSignature());
     }
 
     public boolean accept(DataClass clz, DataMethod m) {

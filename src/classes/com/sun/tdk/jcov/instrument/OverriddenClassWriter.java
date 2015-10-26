@@ -239,8 +239,28 @@ public class OverriddenClassWriter extends ClassWriter {
         }
 
         InputStream in = getInputStreamForName(clName, ClassLoader.getSystemClassLoader(), false, ".class");
+        String superClassName = null;
+        String[] interfaceNames = null;
+        if (in == null){
+            try {
+                Class cClass = Class.forName(clName.replace("/", "."));
 
-        if (in == null) {
+                superClassName = "java/lang/Object";
+                if (cClass.getSuperclass() != null) {
+                    superClassName = cClass.getSuperclass().getName();
+                }
+                Class[] iclasses = cClass.getInterfaces();
+                if (iclasses != null) {
+                    interfaceNames = new String[iclasses.length];
+                    for (int i = 0; i < iclasses.length; i++) {
+                        interfaceNames[i] = iclasses[i].getName();
+                    }
+                }
+            } catch (ClassNotFoundException e) {
+            }
+        }
+
+        if (in == null && superClassName == null) {
 
             in = getInputStreamForName(clName, ClassLoader.getSystemClassLoader(), false, ".clazz");
 
@@ -265,12 +285,17 @@ public class OverriddenClassWriter extends ClassWriter {
 
         }
 
-        ClassReader cr = new OffsetLabelingClassReader(in);
-        classInfo = new ClassInfo(cr.getSuperName(), cr.getInterfaces());
-        try{
-            in.close();
+        if (superClassName == null) {
+            ClassReader cr = new OffsetLabelingClassReader(in);
+            classInfo = new ClassInfo(cr.getSuperName(), cr.getInterfaces());
+            try {
+                in.close();
+            } catch (Throwable ignore) {
+            }
         }
-        catch (Throwable ignore){}
+        else{
+            classInfo = new ClassInfo(superClassName, interfaceNames);
+        }
         return classInfo;
     }
 

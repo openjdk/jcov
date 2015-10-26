@@ -46,10 +46,7 @@ import java.net.URLClassLoader;
 import java.net.UnknownHostException;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
@@ -800,7 +797,15 @@ public final class Utils {
         return args.toString();
     }
 
-    public static Pattern[] concatFilters(String[] includes, String[] excludes) {
+    public static Pattern[] concatFilters(String[] includes, String[] excludes){
+        return concatFilters(includes, excludes, false);
+    }
+
+    public static Pattern[] concatModuleFilters(String[] includes, String[] excludes){
+        return concatFilters(includes, excludes, true);
+    }
+
+    private static Pattern[] concatFilters(String[] includes, String[] excludes, boolean modulePattern) {
         if (includes == null || includes.length == 1 && includes[0].equals("")) {
             includes = new String[0];
         }
@@ -813,20 +818,20 @@ public final class Utils {
             if (includes[i].contains("|")) {
                 String[] split = includes[i].split("\\|");
                 for (int j = 0; j < split.length; ++j) {
-                    list.add(new Pattern(split[j], true));
+                    list.add(new Pattern(split[j], true, modulePattern));
                 }
             } else {
-                list.add(new Pattern(includes[i], true));
+                list.add(new Pattern(includes[i], true, modulePattern));
             }
         }
         for (int i = 0; i < excludes.length; ++i) {
             if (excludes[i].contains("|")) {
                 String[] split = excludes[i].split("\\|");
                 for (int j = 0; j < split.length; ++j) {
-                    list.add(new Pattern(split[j], false));
+                    list.add(new Pattern(split[j], false, modulePattern));
                 }
             } else {
-                list.add(new Pattern(excludes[i], false));
+                list.add(new Pattern(excludes[i], false, modulePattern));
             }
         }
         alls = list.toArray(new Pattern[list.size()]);
@@ -870,19 +875,26 @@ public final class Utils {
          * @param element Should not be null
          * @param include
          */
-        public Pattern(String element, boolean include) {
+        public Pattern(String element, boolean include, boolean modulePattern) {
             try {
                 if ("/".equals(element)) {
                     this.element = element;
                     this.included = include;
                     this.patt = java.util.regex.Pattern.compile("/[a-zA-Z0-9_\\$]+");
                 } else {
-                    this.element = element.replaceAll("\\.", "/").replaceAll("([^\\\\])\\$", "$1\\\\\\$");
+                    if (modulePattern) {
+                        this.element = element.replaceAll("([^\\\\])\\$", "$1\\\\\\$");
+                    }
+                    else{
+                        this.element = element.replaceAll("\\.", "/").replaceAll("([^\\\\])\\$", "$1\\\\\\$");
+                    }
                     if (this.element.endsWith("/")) {
                         this.element = this.element.substring(0, this.element.length() - 1);
                     }
-                    if (this.element.length() == 0 || !this.element.startsWith("/")) {
-                        this.element = "/" + this.element;
+                    if (!modulePattern) {
+                        if (this.element.length() == 0 || !this.element.startsWith("/")) {
+                            this.element = "/" + this.element;
+                        }
                     }
                     this.patt = java.util.regex.Pattern.compile(this.element.replace('*', '#').replaceAll("##", "[a-zA-Z0-9_\\$/]*").replaceAll("#", "[a-zA-Z0-9_\\$]*") + "(/.*|\\$.*)*");
                     this.included = include;
@@ -1330,7 +1342,8 @@ public final class Utils {
                 && (!classname.equals("java/lang/ThreadGroup"))
                 && (!classname.equals("java/lang/RuntimePermission"))
                 && (!classname.equals("java/security/Permission"))
-                && (!classname.equals("java/security/BasicPermission"))) {
+                && (!classname.equals("java/security/BasicPermission"))
+                && (!classname.equals("java/lang/Class"))) {
             return true;
         }
 

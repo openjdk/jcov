@@ -84,7 +84,7 @@ public class JCov extends JCovCMDTool {
             return 1;
         }
 
-        File parentProductDir = productDir.getParentFile();
+        File parentProductDir = productDir.getCanonicalFile().getParentFile();
 
         //zip product
         try {

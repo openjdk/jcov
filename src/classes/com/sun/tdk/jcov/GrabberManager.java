@@ -54,7 +54,7 @@ import java.util.logging.Logger;
 public class GrabberManager extends JCovCMDTool {
 
     private LinkedList<ServerCommand> commands;
-    private int waittime = 5;
+    private int waittime = 30;
     private int stoptimeout = 0;
 
     @Override
@@ -168,7 +168,7 @@ public class GrabberManager extends JCovCMDTool {
         }
 
         if (opts.isSet(DSC_WAITTIME)) {
-            waittime = Utils.checkedToInt(opts.getValue(DSC_WAITTIME), "time to wait value");
+            waittime = Utils.checkedToInt(opts.getValue(DSC_WAITTIME), "time to wait value in seconds");
         }
         if (opts.isSet(DSC_STOPTIMEOUT)) {
             stoptimeout = Utils.checkedToInt(opts.getValue(DSC_STOPTIMEOUT), "time to wait before stop");
@@ -203,7 +203,7 @@ public class GrabberManager extends JCovCMDTool {
             new OptionDescr("grabber.props", "", OptionDescr.VAL_SINGLE, "Read server properties from a file. Host should be specified explicitly.");
     final static OptionDescr DSC_WAITTIME =
             new OptionDescr("waittime", new String[]{"time", "t"}, "",
-            OptionDescr.VAL_SINGLE, "Max time in seconds to wait for Grabber startup. Note that Manager will do 4 attempts to connect the Grabber");
+            OptionDescr.VAL_SINGLE, "Max time in seconds to wait for Grabber startup.");
     final static ServerCommand COMM_KILL =
             new ServerCommand("kill", new String[]{"stop"}, "Manage running server",
             OptionDescr.VAL_NONE, "Stop running server saving data and waining for all connections close.", MiscConstants.GRABBER_KILL_COMMAND);
@@ -336,7 +336,7 @@ public class GrabberManager extends JCovCMDTool {
      */
     public String sendWaitCommand() throws IOException {
         String ret = null;
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i < waittime; ++i) {
             try {
                 ret = recieveCode(COMM_WAIT.getCommandCode());
                 String[] split = ret.split(";");
@@ -345,7 +345,7 @@ public class GrabberManager extends JCovCMDTool {
                 }
             } catch (IOException e) {
                 try {
-                    Thread.sleep(waittime * 1000);
+                    Thread.sleep(1000);
                 } catch (InterruptedException ex) {
                 }
             }

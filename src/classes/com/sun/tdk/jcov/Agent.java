@@ -70,6 +70,8 @@ public class Agent extends JCovTool {
     private boolean instrumentSynthetic = true;
     private String[] include;
     private String[] exclude;
+    private String[] m_include;
+    private String[] m_exclude;
     private String[] callerInclude;
     private String[] callerExclude;
     private String[] fm;
@@ -174,6 +176,7 @@ public class Agent extends JCovTool {
                         logger.log(Level.INFO, "Ignore for now {0}", className);
                     } else {
                         logger.log(Level.INFO, "Try to transform {0}", className);
+
                         byte[] newBuff = classMorph.morph(classfileBuffer, loader, flushpath);
                         return newBuff;
                     }
@@ -430,14 +433,17 @@ public class Agent extends JCovTool {
      */
     public void premainV50(String agentArgs, Instrumentation inst) throws Exception {
         InstrumentationParams params =
-                new InstrumentationParams(classesReload, true, instrumentNative, instrumentField,
+                new InstrumentationParams(true, classesReload, true, instrumentNative, instrumentField,
                 detectInternal, instrumentAbstract ? InstrumentationOptions.ABSTRACTMODE.DIRECT : InstrumentationOptions.ABSTRACTMODE.NONE,
-                include, exclude, callerInclude, callerExclude, mode, saveBegin, saveEnd)
+                include, exclude, callerInclude, callerExclude, m_include, m_exclude, mode, saveBegin, saveEnd)
                 .setInstrumentAnonymous(instrumentAnonymous)
                 .setInstrumentSynthetic(instrumentSynthetic);
 
         params.enable();
         CollectDetect.enterInstrumentationCode();
+
+        updateModules();
+
         Tr transformer = new Tr("RetransformApp", flushPath);
         inst.addTransformer(transformer, true);
         if (params.isInstrumentNative()) {
@@ -504,6 +510,45 @@ public class Agent extends JCovTool {
         }
         CollectDetect.leaveInstrumentationCode();
         PropertyFinder.addAutoShutdownSave();
+
+    }
+
+    private void updateModules(){
+        try {
+            Class layer = Class.forName("java.lang.module.Layer");
+            java.lang.reflect.Method bootMethod = layer.getDeclaredMethod("boot", null);
+            Object layerObj = bootMethod.invoke(layer, null);
+
+            java.lang.reflect.Method allModulesD = layer.getDeclaredMethod("allModuleDescriptors", null);
+            allModulesD.setAccessible(true);
+            Set<Object> mDescriptors = (Set<Object>) allModulesD.invoke(layerObj, null);
+
+            Class moduleDescriptor = Class.forName("java.lang.module.ModuleDescriptor");
+            java.lang.reflect.Method nameMethod = moduleDescriptor.getDeclaredMethod("name");
+
+            for (Object md : mDescriptors){
+                String moduleName = (String) nameMethod.invoke(md, null);
+                updateModule(moduleName, layer, layerObj);
+            }
+        }
+        catch (Exception e){
+        }
+    }
+
+    private void updateModule(String name, Class layer, Object layerObj){
+        try{
+            java.lang.reflect.Method findModule = layer.getDeclaredMethod("findModule", String.class);
+            Object moduleOptional = findModule.invoke(layerObj, name);
+            java.lang.reflect.Method getMethod = moduleOptional.getClass().getDeclaredMethod("get", null);
+            Object module = getMethod.invoke(moduleOptional, null);
+
+            java.lang.reflect.Method getModuleMethod = Class.class.getDeclaredMethod("getModule", null);
+            Object jcovModule = getModuleMethod.invoke(Class.forName("com.sun.tdk.jcov.runtime.CollectDetect"), null);
+            java.lang.reflect.Method addReadsMethod = module.getClass().getDeclaredMethod("addReads", Class.forName("java.lang.reflect.Module"));
+            addReadsMethod.invoke(module, jcovModule);
+        }
+        catch (Exception e){
+        }
     }
 
     private void loadFileSaverClasses() throws IOException{
@@ -611,8 +656,12 @@ public class Agent extends JCovTool {
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_INCLUDE,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_EXCLUDE,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE_LIST,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE_LIST,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE_LIST,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE_LIST,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_ABSTRACT,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_NATIVE,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FIELD,
@@ -652,6 +701,10 @@ public class Agent extends JCovTool {
 
         include = InstrumentationOptions.handleInclude(opts);
         exclude = InstrumentationOptions.handleExclude(opts);
+
+        m_include = InstrumentationOptions.handleMInclude(opts);
+        m_exclude = InstrumentationOptions.handleMExclude(opts);
+
         fm = InstrumentationOptions.handleFM(opts);
 
         callerInclude = opts.getValues(InstrumentationOptions.DSC_CALLER_INCLUDE);

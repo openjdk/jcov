@@ -171,7 +171,10 @@ public class Filter extends JCovCMDTool {
         String[] include = InstrumentationOptions.handleInclude(opts);
         String[] fm = InstrumentationOptions.handleFM(opts);
 
-        readFilter = new ClassSignatureFilter(include, exclude, fm);
+        String[] m_exclude = InstrumentationOptions.handleMExclude(opts);
+        String[] m_include = InstrumentationOptions.handleMInclude(opts);
+
+        readFilter = new ClassSignatureFilter(include, exclude, m_include, m_exclude, fm);
 
         ArrayList<FilterSpi> filters = opts.getSPIs(FilterSpi.class);
         if (filters == null || filters.isEmpty()) {

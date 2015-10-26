@@ -37,16 +37,22 @@ import static com.sun.tdk.jcov.report.DataType.*;
 public class SubpackageCoverage extends AbstractCoverage {
 
     private int class_cov = 0;
+    private int class_anc = 0;
     private int class_tot = 0;
     private int meth_cov = 0;
+    private int meth_anc = 0;
     private int meth_tot = 0;
     private int field_cov = 0;
+    private int field_anc = 0;
     private int field_tot = 0;
     private int block_cov = 0;
+    private int block_anc = 0;
     private int block_tot = 0;
     private int branch_cov = 0;
+    private int branch_anc = 0;
     private int branch_tot = 0;
     private int line_cov = 0;
+    private int line_anc = 0;
     private int line_tot = 0;
 
     public SubpackageCoverage() {
@@ -60,21 +66,27 @@ public class SubpackageCoverage extends AbstractCoverage {
     public void add(AbstractCoverage cov) {
         CoverageData d = cov.getData(CLASS);
         class_cov += d.getCovered();
+        class_anc += d.getAnc();
         class_tot += d.getTotal();
         d = cov.getData(METHOD);
         meth_cov += d.getCovered();
+        meth_anc += d.getAnc();
         meth_tot += d.getTotal();
         d = cov.getData(FIELD);
         field_cov += d.getCovered();
+        field_anc += d.getAnc();
         field_tot += d.getTotal();
         d = cov.getData(BLOCK);
         block_cov += d.getCovered();
+        block_anc += d.getAnc();
         block_tot += d.getTotal();
         d = cov.getData(BRANCH);
         branch_cov += d.getCovered();
+        branch_anc += d.getAnc();
         branch_tot += d.getTotal();
         d = cov.getData(LINE);
         line_cov += d.getCovered();
+        line_anc += d.getAnc();
         line_tot += d.getTotal();
     }
     private DataType[] supportedColumns = {CLASS, METHOD, FIELD,
@@ -93,17 +105,17 @@ public class SubpackageCoverage extends AbstractCoverage {
     public CoverageData getData(DataType column, int testNumber) {
         switch (column) {
             case CLASS:
-                return new CoverageData(class_cov, class_tot);
+                return new CoverageData(class_cov, class_anc, class_tot);
             case METHOD:
-                return new CoverageData(meth_cov, meth_tot);
+                return new CoverageData(meth_cov, meth_anc, meth_tot);
             case FIELD:
-                return new CoverageData(field_cov, field_tot);
+                return new CoverageData(field_cov, field_anc, field_tot);
             case BLOCK:
-                return new CoverageData(block_cov, block_tot);
+                return new CoverageData(block_cov, block_anc, block_tot);
             case BRANCH:
-                return new CoverageData(branch_cov, branch_tot);
+                return new CoverageData(branch_cov, branch_anc, branch_tot);
             case LINE:
-                return new CoverageData(line_cov, line_tot);
+                return new CoverageData(line_cov, line_anc, line_tot);
             default:
                 return new CoverageData();
         }

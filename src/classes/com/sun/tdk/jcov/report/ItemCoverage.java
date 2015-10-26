@@ -112,12 +112,27 @@ public abstract class ItemCoverage extends AbstractCoverage {
     protected long count;
     private int srcLine = -1;
     protected Scale scale;
+    protected boolean isInAnc = false;
+    protected String ancInfo;
 
     protected ItemCoverage(int startLine, int endLine, long count, Scale scale) {
         this.startLine = startLine;
         this.endLine = endLine;
         this.count = count;
         this.scale = scale;
+    }
+
+    public boolean isInAnc() {
+        return isInAnc;
+    }
+
+    public void setAncInfo(String ancInfo){
+        isInAnc = true;
+        this.ancInfo = ancInfo;
+    }
+
+    public String getAncInfo(){
+        return ancInfo;
     }
 
     protected void setSrcLine(int srcLine) {
@@ -219,7 +234,11 @@ public abstract class ItemCoverage extends AbstractCoverage {
         public CoverageData getData(DataType column, int testNumber) {
             switch (column) {
                 case BLOCK:
-                    return new CoverageData(count == 0 ? 0 : 1, 1);
+                    int value = count == 0 ? 0 : 1;
+                    if (isInAnc){
+                        return new CoverageData(value, 1 - value, 1);
+                    }
+                    return new CoverageData(value, 0, 1);
                 default:
                     return new CoverageData();
             }
@@ -268,7 +287,11 @@ public abstract class ItemCoverage extends AbstractCoverage {
         public CoverageData getData(DataType column, int testNumber) {
             switch (column) {
                 case BRANCH:
-                    return new CoverageData(count == 0 ? 0 : 1, 1);
+                    int value = count == 0 ? 0 : 1;
+                    if (isInAnc){
+                        return new CoverageData(value, 1 - value, 1);
+                    }
+                    return new CoverageData(value, 0, 1);
                 default:
                     return new CoverageData();
             }

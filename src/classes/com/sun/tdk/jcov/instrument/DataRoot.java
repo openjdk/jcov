@@ -398,6 +398,17 @@ public class DataRoot extends DataAbstract {
      * @param name
      * @return package
      */
+    public DataPackage findPackage(String name) {
+        return findPackage(name, XmlNames.NO_MODULE);
+    }
+
+    /**
+     * Find package by name and module name. Creates new DataPackage instance if the package
+     * doesn't exist
+     *
+     * @param name
+     * @return package
+     */
     public DataPackage findPackage(String name, String moduleName) {
         DataPackage pack = packages.get(name);
         if (pack == null) {
@@ -824,7 +835,7 @@ public class DataRoot extends DataAbstract {
                 }
             } else {
                 DataPackage p = packages.get(pOther.getName());
-                if (p.getModuleName() == null || p.getModuleName().equals("no_module")) {
+                if (p.getModuleName() == null || p.getModuleName().equals(XmlNames.NO_MODULE)) {
                     p.setModuleName(pOther.getModuleName());
                 }
                 for (DataClass cl : pOther.getClasses()) {

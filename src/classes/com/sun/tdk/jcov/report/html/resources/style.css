@@ -132,6 +132,13 @@ td.reportValue_uncovered {
     background: #FF4652;
 }
 
+td.reportValue_anc{
+    font-size: inherit !important;
+    border: #dcdcdc 1px solid;
+    text-align: right;
+    background: #FFFF52;
+}
+
 td.spacer {
 	border-left: #FF4652 0px none;
 	border-right: #FF4652 0px none;
@@ -147,6 +154,11 @@ td.percentCovered {
 td.percentUnCovered {
     background: #FF4652;
 	empty-cells: show;
+}
+
+td.percentAnc {
+    background: #FFFF52;
+    empty-cells: show;
 }
 
 td.numLine {
@@ -170,6 +182,13 @@ td.numLineUnCover {
     text-align: right;
 }
 
+td.numLineAnc {
+    background: #FFFF52;
+    border-right: #dcdcdc 1px solid;
+    padding-right: 3px;
+    text-align: right;
+}
+
 td.nbHits {
     background: #F0F0F0;
     border-right: #dcdcdc 1px solid;
@@ -186,6 +205,13 @@ td.nbHitsCovered {
 
 td.nbHitsUncovered {
     background: #FF4652;
+    border-right: #dcdcdc 1px solid;
+    padding-right: 3px;
+    text-align: left;
+}
+
+td.nbHitsAnc {
+    background: #FFFF52;
     border-right: #dcdcdc 1px solid;
     padding-right: 3px;
     text-align: left;

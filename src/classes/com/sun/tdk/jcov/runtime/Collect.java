@@ -38,7 +38,7 @@ package com.sun.tdk.jcov.runtime;
 public class Collect {
 
     // coverage data
-    public static final int MAX_SLOTS = 1200000;
+    public static final int MAX_SLOTS = 2000000;
     public static int SLOTS = MAX_SLOTS;
     private static final int MAX_SAVERS = 10;
     private static int nextSlot = 0;

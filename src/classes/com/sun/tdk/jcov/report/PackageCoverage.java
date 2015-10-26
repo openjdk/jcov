@@ -59,17 +59,17 @@ public class PackageCoverage extends AbstractCoverage implements Iterable<ClassC
      * @param srcRoots Paths for sources
      * @param filter Allows to filter read data
      */
-    public PackageCoverage(DataRoot fileImage, String name, String srcRoots[], ProductCoverage.CoverageFilter filter) {
-        this(fileImage, name, srcRoots, null, filter);
+    public PackageCoverage(DataRoot fileImage, String name, String srcRoots[], ProductCoverage.CoverageFilter filter,  AncFilter[] ancfilters) {
+        this(fileImage, name, srcRoots, null, filter, ancfilters);
     }
 
-    public PackageCoverage(DataRoot fileImage, String name, String srcRoots[], List<JavapClass> javapClasses, ProductCoverage.CoverageFilter filter) {
-        this(fileImage, name, srcRoots, null, filter, false);
+    public PackageCoverage(DataRoot fileImage, String name, String srcRoots[], List<JavapClass> javapClasses, ProductCoverage.CoverageFilter filter, AncFilter[] ancfilters) {
+        this(fileImage, name, srcRoots, null, filter, ancfilters, false);
     }
 
-    public PackageCoverage(DataRoot fileImage, String name, String srcRoots[], List<JavapClass> javapClasses, ProductCoverage.CoverageFilter filter, boolean anonym) {
+    public PackageCoverage(DataRoot fileImage, String name, String srcRoots[], List<JavapClass> javapClasses, ProductCoverage.CoverageFilter filter, AncFilter[] ancfilters, boolean anonym) {
         this.name = name;
-        classCoverageList = _getClassCoverageList(fileImage, srcRoots, javapClasses, filter, anonym);
+        classCoverageList = _getClassCoverageList(fileImage, srcRoots, javapClasses, filter, ancfilters, anonym);
         if (classCoverageList != null) {
             java.util.Collections.sort(classCoverageList);
         }
@@ -82,11 +82,11 @@ public class PackageCoverage extends AbstractCoverage implements Iterable<ClassC
         return classCoverageList;
     }
 
-    private List<ClassCoverage> _getClassCoverageList(DataRoot fileImage, String srcRoots[], List<JavapClass> javapClasses, ProductCoverage.CoverageFilter filter, boolean anonym) {
+    private List<ClassCoverage> _getClassCoverageList(DataRoot fileImage, String srcRoots[], List<JavapClass> javapClasses, ProductCoverage.CoverageFilter filter, AncFilter[] ancfilters, boolean anonym) {
         List<ClassCoverage> result = new ArrayList<ClassCoverage>();
         DataPackage pkg = fileImage.findPackage(name, "");
         for (DataClass cls : pkg.getClasses()) {
-            ClassCoverage cc = new ClassCoverage(cls, srcRoots, javapClasses, filter, anonym);
+            ClassCoverage cc = new ClassCoverage(cls, srcRoots, javapClasses, filter, ancfilters, anonym);
             if (filter == null || filter.accept(cc)) {
                 result.add(cc);
             }
@@ -146,7 +146,7 @@ public class PackageCoverage extends AbstractCoverage implements Iterable<ClassC
                     if (testNumber < 0 || classCoverage.isCoveredByTest(testNumber)) {
                         covered.add(classCoverage.getData(column, testNumber));
                     } else {
-                        covered.add(new CoverageData(0, classCoverage.getData(column, testNumber).getTotal()));
+                        covered.add(new CoverageData(0, 0, classCoverage.getData(column, testNumber).getTotal()));
                     }
                 }
                 return covered;

@@ -36,6 +36,7 @@ public class CoverageData {
 
     protected int covered;
     protected int total;
+    protected int anc;
     /**
      * default formatter to use in getFormattedCoverage
      *
@@ -43,13 +44,13 @@ public class CoverageData {
      * @see AbstractCoverage.CoverageFormatter
      * @see AbstractCoverage.PercentFormatter
      */
-    public static final AbstractCoverage.CoverageFormatter defaultFormatter = new AbstractCoverage.PercentFormatter();
+    public static final AbstractCoverage.CoverageANCFormatter defaultFormatter = new AbstractCoverage.PercentFormatter();
 
     /**
      * Creates zero-filled coverage data object
      */
     public CoverageData() {
-        this.covered = this.total = 0;
+        this.covered = this.anc = this.total = 0;
     }
 
     /**
@@ -57,10 +58,26 @@ public class CoverageData {
      *
      * @param covered member hit count
      * @param total total member count
+     * @param anc acceptable non coverage
      */
-    public CoverageData(int covered, int total) {
+    public CoverageData(int covered, int anc, int total) {
         this.covered = covered;
         this.total = total;
+        this.anc = anc;
+    }
+
+    /**
+     * @return acceptable non coverage count
+     */
+    public int getAnc() {
+        return anc;
+    }
+
+    /**
+     * @param anc acceptable non coverage count
+     */
+    public void setAnc(int anc) {
+        this.anc = anc;
     }
 
     /**
@@ -100,6 +117,7 @@ public class CoverageData {
     public CoverageData add(CoverageData data) {
         covered += data.covered;
         total += data.total;
+        anc += data.anc;
         return this;
     }
 
@@ -113,7 +131,11 @@ public class CoverageData {
      * @see AbstractCoverage.PercentFormatter
      */
     public String getFormattedCoverage() {
-        return defaultFormatter.format(this);
+        return getFormattedCoverage(false);
+    }
+
+    public String getFormattedCoverage(boolean withANC) {
+        return defaultFormatter.format(this, withANC);
     }
 
     /**
@@ -128,6 +150,10 @@ public class CoverageData {
         return f.format(this);
     }
 
+    public String getFormattedCoverage(AbstractCoverage.CoverageANCFormatter f, boolean withANC) {
+        return f.format(this, withANC);
+    }
+
     /**
      * @return coverage string in form of "covered/total"
      */
@@ -136,6 +162,11 @@ public class CoverageData {
         if (total == 0) {
             return "-";
         }
-        return String.format("%d/%d", covered, total);
+
+        if (anc == 0){
+            return String.format("%d/%d", covered, total);
+        }
+
+        return String.format("%d/%d/%d", covered, anc, total);
     }
 }

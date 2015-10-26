@@ -93,6 +93,10 @@ public interface ReportGenerator {
         private InstrumentationOptions.InstrumentationMode mode;
         private boolean anonym = false;
 
+        private String mainReportTitle = null;
+        private String overviewListTitle = null;
+        private String entitiesTitle = null;
+
         /**
          * Creates empty Options
          */
@@ -110,6 +114,19 @@ public interface ReportGenerator {
          * @param testListService STS object
          */
         public Options(String srcRootPath, SmartTestService testListService, List<JavapClass> classes, boolean withTestInfo, boolean mergeRepGenMode) {
+            this(srcRootPath, testListService, classes, withTestInfo, mergeRepGenMode,
+                    null, null, null);
+        }
+
+        /**
+         * Creates Options instance
+         *
+         * @param srcRootPath Path to the sources (divided by
+         * File.pathSeparator)
+         * @param testListService STS object
+         */
+        public Options(String srcRootPath, SmartTestService testListService, List<JavapClass> classes, boolean withTestInfo, boolean mergeRepGenMode,
+                       String mainTitle, String overviewTitle, String entitiesTitle) {
             this.withTestsInfo = withTestInfo;
             this.mergeRepGenMode = mergeRepGenMode;
             this.classes = classes;
@@ -120,6 +137,10 @@ public interface ReportGenerator {
             } else {
                 this.srcRootPaths = null;
             }
+            this.mainReportTitle = mainTitle;
+            this.overviewListTitle = overviewTitle;
+            this.entitiesTitle = entitiesTitle;
+
         }
 
         public List<JavapClass> getJavapClasses() {
@@ -204,6 +225,18 @@ public interface ReportGenerator {
 
         public boolean isAnonymOn() {
             return anonym;
+        }
+
+        public String getMainReportTitle() {
+            return mainReportTitle;
+        }
+
+        public String getOverviewListTitle() {
+            return overviewListTitle;
+        }
+
+        public String getEntitiesTitle() {
+            return entitiesTitle;
         }
     }
 }
