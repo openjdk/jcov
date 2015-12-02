@@ -126,7 +126,7 @@ public class CoverageReport implements ReportGenerator {
         generateFrameset(directory);
         generatePackageList(directory);
         generateClassList(directory);
-        HashMap<String, CoverageData[]> modules = getModulesCoverage();
+        HashMap<String, ArrayList<ModuleCoverageData>> modules = getModulesCoverage();
         if (modules == null || (modules.size() == 1 && XmlNames.NO_MODULE.equals(modules.keySet().iterator().next()))){
             modules = null;
         }
@@ -137,18 +137,18 @@ public class CoverageReport implements ReportGenerator {
 
     }
 
-    private void generateModulesList(File directory, HashMap<String, CoverageData[]> modules) throws IOException{
+    private void generateModulesList(File directory, HashMap<String, ArrayList<ModuleCoverageData>> modules) throws IOException{
         List<PackageCoverage> list = coverage.getPackages();
 
         for (String moduleName: modules.keySet()) {
-            HashMap<String, CoverageData[]> module = new HashMap<String, CoverageData[]>();
+            HashMap<String, ArrayList<ModuleCoverageData>> module = new HashMap<String, ArrayList<ModuleCoverageData>>();
             module.put(moduleName, modules.get(moduleName));
             generateModuleOverview(directory, list, module);
         }
     }
 
-    private HashMap<String, CoverageData[]> getModulesCoverage(){
-        HashMap<String, CoverageData[]> modules = null;
+    private HashMap<String, ArrayList<ModuleCoverageData>> getModulesCoverage(){
+        HashMap<String, ArrayList<ModuleCoverageData>> modules = null;
         List<PackageCoverage> list = coverage.getPackages();
 
         if (list == null || list.size() == 0 || list.get(0) == null
@@ -156,16 +156,26 @@ public class CoverageReport implements ReportGenerator {
             return modules;
         }
 
-        modules = new HashMap<String, CoverageData[]>();
+        modules = new HashMap<String, ArrayList<ModuleCoverageData>>();
         for (PackageCoverage pkg : list) {
             String moduleName = pkg.getClasses().get(0).getModuleName();
             if (modules.get(moduleName) == null) {
-                modules.put(moduleName, new CoverageData[]{pkg.getData(DataType.CLASS), pkg.getData(DataType.METHOD),
-                        pkg.getData(DataType.BLOCK), pkg.getData(DataType.BRANCH), pkg.getData(DataType.LINE)});
+                ArrayList<ModuleCoverageData> coverageDataList = new ArrayList<ModuleCoverageData>();
+                if (testService != null && (isAddTestsInfo || isMergeRepGenMode)) {
+                    for (int test = 0; test < testService.getTestCount(); test++) {
+                        coverageDataList.add(new ModuleCoverageData(pkg, test));
+                    }
+                }
+                coverageDataList.add(new ModuleCoverageData(pkg));
+                modules.put(moduleName, coverageDataList);
             } else {
-                CoverageData[] oldCD = modules.get(moduleName);
-                modules.put(moduleName, new CoverageData[]{oldCD[0].add(pkg.getData(DataType.CLASS)), oldCD[1].add(pkg.getData(DataType.METHOD)),
-                        oldCD[2].add(pkg.getData(DataType.BLOCK)), oldCD[3].add(pkg.getData(DataType.BRANCH)), oldCD[4].add(pkg.getData(DataType.LINE))});
+                ArrayList<ModuleCoverageData> modulesCD = modules.get(moduleName);
+                if (testService != null && (isAddTestsInfo || isMergeRepGenMode)) {
+                    for (int test = 0; test < testService.getTestCount(); test++) {
+                        modulesCD.get(test).addPackage(pkg);
+                    }
+                }
+                modulesCD.get(modulesCD.size()-1).addPackage(pkg);
             }
         }
 
@@ -370,11 +380,11 @@ public class CoverageReport implements ReportGenerator {
         pw.close();
     }
 
-    private void generateOverview(File dir, HashMap<String, CoverageData[]> modules) throws IOException {
+    private void generateOverview(File dir, HashMap<String, ArrayList<ModuleCoverageData>> modules) throws IOException {
         generateOverview(dir, null, modules);
     }
 
-    private void generateModuleOverview(File dir, List<PackageCoverage> allPkgList, HashMap<String, CoverageData[]> module) throws IOException {
+    private void generateModuleOverview(File dir, List<PackageCoverage> allPkgList, HashMap<String, ArrayList<ModuleCoverageData>> module) throws IOException {
         String filename = "overview-summary.html";
         String rootRef = "../";
         String moduleName = module.keySet().iterator().next();
@@ -497,7 +507,7 @@ public class CoverageReport implements ReportGenerator {
         pw.close();
     }
 
-    private void generateOverview(File dir, PackageCoverage thePackage, HashMap<String, CoverageData[]> modules)
+    private void generateOverview(File dir, PackageCoverage thePackage, HashMap<String, ArrayList<ModuleCoverageData>> modules)
             throws IOException {
         String filename = "overview-summary.html";
         String rootRef;
@@ -680,7 +690,7 @@ public class CoverageReport implements ReportGenerator {
         pw.close();
     }
 
-    private void generateModulesInfo(PrintWriter pw, HashMap<String, CoverageData[]> modules, boolean decorate){
+    private void generateModulesInfo(PrintWriter pw, HashMap<String, ArrayList<ModuleCoverageData>> modules, boolean decorate){
 
         if (modules.keySet().size() > 1) {
             pw.println("<span class=\"title2\">Modules</span><br>");
@@ -708,11 +718,23 @@ public class CoverageReport implements ReportGenerator {
                         + " </b> </a></td>");
             }
 
+            int moduleDataColumnsSize = modules.get(module).size();
+            ModuleCoverageData totalModuleCD = modules.get(module).get(moduleDataColumnsSize-1);
             pw.println("<td class=\"reportValue_number\">"
-                    + modules.get(module)[0].getTotal() + "</td>");
-            for (int i = 1; i< modules.get(module).length; i++) {
+                    + totalModuleCD.getData()[columns.classes.number].getTotal() + "</td>");
+            for (int i = 1; i< totalModuleCD.getData().length; i++) {
                 if (show(columns.valueOf(i))) {
-                    CoverageData cd = modules.get(module)[i];
+                    if (testService != null && (isAddTestsInfo || isMergeRepGenMode)) {
+                        for (int test = 0; test < testService.getTestCount(); test++) {
+                            if (show(columns.valueOf(i)) && i != columns.line.number) {
+                                CoverageData cd = modules.get(module).get(test).getData()[i];
+                                    pw.println("<td class=\"reportValue\">"
+                                            + decorate(cd.getFormattedCoverage(coverage.isAncFiltersSet())) + "</td>");
+                            }
+                        }
+                    }
+
+                    CoverageData cd = totalModuleCD.getData()[i];
                     if (!decorate) {
                         pw.println("<td class=\"reportValue\">"
                                 + decorate(cd.getFormattedCoverage(coverage.isAncFiltersSet())) + "</td>");
@@ -729,8 +751,51 @@ public class CoverageReport implements ReportGenerator {
     }
 
 
+    private class ModuleCoverageData {
+
+        private CoverageData[] collectedData;
+
+        public ModuleCoverageData() {
+            collectedData = new CoverageData[6];
+        }
+
+        public ModuleCoverageData(PackageCoverage pkg) {
+            collectedData = new CoverageData[]{
+                    pkg.getData(DataType.FIELD),
+                    pkg.getData(DataType.METHOD),
+                    pkg.getData(DataType.BLOCK),
+                    pkg.getData(DataType.BRANCH),
+                    pkg.getData(DataType.LINE),
+                    pkg.getData(DataType.CLASS)};
+        }
+
+        public ModuleCoverageData(PackageCoverage pkg, int testNumber) {
+            collectedData = new CoverageData[]{
+                    pkg.getData(DataType.FIELD, testNumber),
+                    pkg.getData(DataType.METHOD, testNumber),
+                    pkg.getData(DataType.BLOCK, testNumber),
+                    pkg.getData(DataType.BRANCH, testNumber),
+                    pkg.getData(DataType.LINE, testNumber),
+                    pkg.getData(DataType.CLASS, testNumber)};
+        }
+
+        public void addPackage(PackageCoverage pkg) {
+            collectedData[columns.field.number].add(pkg.getData(DataType.FIELD));
+            collectedData[columns.method.number].add(pkg.getData(DataType.METHOD));
+            collectedData[columns.block.number].add(pkg.getData(DataType.BLOCK));
+            collectedData[columns.branch.number].add(pkg.getData(DataType.BRANCH));
+            collectedData[columns.line.number].add(pkg.getData(DataType.LINE));
+            collectedData[columns.classes.number].add(pkg.getData(DataType.CLASS));
+        }
+
+        public CoverageData[] getData(){
+            return collectedData;
+        }
+
+    }
+
     public enum columns {
-        method(1), field(0), block(2), branch(3), line(4);
+        method(1), field(0), block(2), branch(3), line(4), classes(5);
 
         private int number;
 

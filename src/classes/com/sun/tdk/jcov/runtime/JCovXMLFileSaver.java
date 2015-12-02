@@ -60,7 +60,7 @@ public class JCovXMLFileSaver extends FileSaver {
     }
 
     public void saveResults(String filename) throws Exception {
-        if (isWindows) {
+        //if (isWindows) {
             File file = new File(filename);
             FileChannel channel = new RandomAccessFile(file, "rw").getChannel();
 
@@ -82,12 +82,12 @@ public class JCovXMLFileSaver extends FileSaver {
                     Thread.sleep(LOCK_SLEEP);
                 }
             }
-        } else {
+        /*} else {
             XmlContext ctx = new XmlContext(filename, root.getParams());
             ctx.setSkipNotCoveredClasses(agentdata);
             root.xmlGen(ctx);
             ctx.close();
-        }
+        }*/
     }
 
     void mergeResults(String dest, String src, boolean scale) throws Exception {

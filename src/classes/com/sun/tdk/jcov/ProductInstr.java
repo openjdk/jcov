@@ -60,6 +60,13 @@ public class ProductInstr extends JCovCMDTool {
     private String tempPath;
     private File rtLibFile;
     private String[] rtClassDirTargets;
+    private InstrumentationOptions.InstrumentationMode mode = InstrumentationOptions.InstrumentationMode.BRANCH;
+    private String[] include = new String[]{".*"};
+    private String[] exclude = new String[]{""};
+    private String[] m_include = new String[]{".*"};
+    private String[] m_exclude = new String[]{""};
+    private String[] callerInclude;
+    private String[] callerExclude;
 
     public void instrumentProduct() throws IOException {
         logger.log(Level.INFO, " - Instrumenting product");
@@ -78,7 +85,7 @@ public class ProductInstr extends JCovCMDTool {
     }
 
     private AbstractUniversalInstrumenter setupInstrumenter() {
-        InstrumentationParams params = new InstrumentationParams(false, false, true, null, null, InstrumentationOptions.InstrumentationMode.BRANCH)
+        InstrumentationParams params = new InstrumentationParams(true, false, false, false, false, false, InstrumentationOptions.ABSTRACTMODE.NONE, include, exclude, callerInclude, callerExclude, m_include, m_exclude, mode, null, null)
                 .setInstrumentAnonymous(true)
                 .setInstrumentSynthetic(false);
 
@@ -120,6 +127,17 @@ public class ProductInstr extends JCovCMDTool {
     @Override
     protected EnvHandler defineHandler() {
         return new EnvHandler(new OptionDescr[]{
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_TYPE,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE_LIST,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE_LIST,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE_LIST,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE_LIST,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_INCLUDE,
+                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_EXCLUDE,
                     DSC_INSTRUMENT,
                     DSC_INSTRUMENT_TO,
                     Instr.DSC_INCLUDE_RT,
@@ -138,6 +156,19 @@ public class ProductInstr extends JCovCMDTool {
             throw new EnvHandlingException("Please specify saver location with '-rt' option");
         }
         rtClassDirTargets = envHandler.getValues(ProductInstr.DSC_RT_TO);
+        if (envHandler.getValue(InstrumentationOptions.DSC_TYPE) != null) {
+            mode = InstrumentationOptions.InstrumentationMode.fromString(envHandler.getValue(InstrumentationOptions.DSC_TYPE));
+        }
+
+        include = InstrumentationOptions.handleInclude(envHandler);
+        exclude = InstrumentationOptions.handleExclude(envHandler);
+
+        m_include = InstrumentationOptions.handleMInclude(envHandler);
+        m_exclude = InstrumentationOptions.handleMExclude(envHandler);
+
+        callerInclude = envHandler.getValues(InstrumentationOptions.DSC_CALLER_INCLUDE);
+        callerExclude = envHandler.getValues(InstrumentationOptions.DSC_CALLER_EXCLUDE);
+
         return SUCCESS_EXIT_CODE;
     }
 

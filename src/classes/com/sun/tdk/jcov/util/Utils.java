@@ -1337,6 +1337,7 @@ public final class Utils {
 
         if ((!classname.equals("java/lang/System"))
                 && (!classname.equals("java/lang/String"))
+                && (!classname.equals("java/lang/StringLatin1"))
                 && (!classname.equals("java/lang/String$CaseInsensitiveComparator"))
                 && (!classname.equals("java/lang/Thread"))
                 && (!classname.equals("java/lang/ThreadGroup"))
@@ -1352,6 +1353,8 @@ public final class Utils {
                 && !methodname.equals("<init>")
                 && !methodname.equals("init")
                 && !methodname.equals("length")
+                && !methodname.equals("coder")
+                && !methodname.equals("isLatin1")
                 && !methodname.equals("charAt")
                 && !methodname.equals("equals")
                 && !methodname.equals("add")

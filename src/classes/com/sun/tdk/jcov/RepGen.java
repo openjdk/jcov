@@ -552,6 +552,7 @@ public class RepGen extends JCovCMDTool {
                 Merger.Merge merge = new Merger.Merge(results, null);
                 merger.setAddMissing(true);
                 merger.setRead_scales(true);
+                merger.setDefaultReadingFilter(include, exclude, m_include, m_exclude, fms);
                 merger.merge(merge, outputDir, true);
 
                 ReportGenerator rg;

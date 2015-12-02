@@ -47,40 +47,6 @@ public abstract class FileSaver implements JCovSaver {
     protected boolean scales;
     private static boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
 
-    protected static File createLockFile(String filename) {
-
-        if (isWindows) {
-            return null;
-        }
-
-        for (int i = LOCK_REPEAT; i != 0; i--) {
-            String lockName = filename + ".lock";
-            File fl = new File(lockName);
-            try {
-                if (fl.createNewFile()) {
-                    return fl;
-                }
-                Thread.sleep(LOCK_SLEEP);
-            } catch (InterruptedException e) {
-                // should be exit??
-                return null;
-            } catch (IOException ioe) {
-                return null;
-            }
-        }
-        return null;
-    }
-
-    protected static void deleteLock(File lock) {
-        if (isWindows) {
-            return;
-        }
-
-        if (lock != null) {
-            lock.delete();
-        }
-    }
-
     protected static String genUniqFileName(String filename) {
         for (int i = 1; i < Integer.MAX_VALUE; i++) {
             if (!new File(filename + "." + i).exists()) {
@@ -135,20 +101,10 @@ public abstract class FileSaver implements JCovSaver {
 
             if (new File(filename).exists()
                     && !mergeMode.equals(MERGE.OVERWRITE)) {
-                File lock = createLockFile(filename);
-                try {
-                    try2MergeAndSave(filename, filename, scales || mergeMode == MERGE.SCALE);
-                } finally {
-                    deleteLock(lock);
-                }
+                try2MergeAndSave(filename, filename, scales || mergeMode == MERGE.SCALE);
                 return;
             } else {
-                File lock = createLockFile(filename);
-                try {
-                    try2MergeAndSave(filename, template, scales || mergeMode == MERGE.SCALE);
-                } finally {
-                    deleteLock(lock);
-                }
+                try2MergeAndSave(filename, template, scales || mergeMode == MERGE.SCALE);
             }
         } catch (Exception e) {
             e.printStackTrace();

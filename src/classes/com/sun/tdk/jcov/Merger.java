@@ -84,6 +84,8 @@ public class Merger extends JCovCMDTool {
     private int loose_lvl = 0;
     private String[] include = new String[]{".*"};
     private String[] exclude = new String[]{""};
+    private String[] m_include = new String[]{".*"};
+    private String[] m_exclude = new String[]{""};
     private String[] fm = null;
     private boolean compress;
     private boolean sigmerge = false;
@@ -418,7 +420,7 @@ public class Merger extends JCovCMDTool {
      */
     public void merge(Merge merge, String outTestList, boolean ignoreOriginalScales) {
 
-        readFilter = new ClassSignatureFilter(include, exclude, fm);
+        readFilter = new ClassSignatureFilter(include, exclude, m_include, m_exclude, fm);
         DataRoot merged = null;
         DataRoot rNext = null;
         logger.log(Level.INFO, "- Merging started");
@@ -790,10 +792,16 @@ public class Merger extends JCovCMDTool {
      * @param fm
      */
     public void setDefaultReadingFilter(String[] include, String[] exclude, String[] fm) {
+        setDefaultReadingFilter(include, exclude, m_include, m_exclude, fm);
+    }
+
+    public void setDefaultReadingFilter(String[] include, String[] exclude, String[] m_include, String[] m_exclude, String[] fm) {
         this.include = include;
         this.exclude = exclude;
+        this.m_include = m_include;
+        this.m_exclude = m_exclude;
         this.fm = fm;
-        this.readFilter = new ClassSignatureFilter(include, exclude, fm);
+        this.readFilter = new ClassSignatureFilter(include, exclude, m_include, m_exclude, fm);
     }
 
     /**
@@ -963,6 +971,8 @@ public class Merger extends JCovCMDTool {
 
         include = InstrumentationOptions.handleInclude(opts);
         exclude = InstrumentationOptions.handleExclude(opts);
+        m_include = InstrumentationOptions.handleMInclude(opts);
+        m_exclude = InstrumentationOptions.handleMExclude(opts);
         fm = InstrumentationOptions.handleFM(opts);
 
         read_scales = opts.isSet(DSC_SCALE);

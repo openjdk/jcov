@@ -196,7 +196,11 @@ public class JREInstr extends JCovCMDTool {
                         }
                     }
                 } else {
-                    instr.instrumentFile(dirtoInstrument.getAbsolutePath(), null, null);
+                    for (File mod : dirtoInstrument.listFiles()) {
+                        if (mod != null && mod.isDirectory()) {
+                            instr.instrumentFile(mod.getAbsolutePath(), null, null, mod.getName());
+                        }
+                    }
                 }
                 createJimage(dirtoInstrument, jimageInstr.getAbsolutePath() + "i");
 
