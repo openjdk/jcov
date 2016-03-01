@@ -402,7 +402,7 @@ public class ProductCoverage extends AbstractCoverage implements Iterable<Packag
         switch (column) {
             case PACKAGE:
                 for (PackageCoverage pCoverage : packages) {
-                    covered.add(pCoverage.getData(column));
+                    covered.add(pCoverage.getData(column, testNumber));
                 }
                 return covered;
             case CLASS:
@@ -413,7 +413,7 @@ public class ProductCoverage extends AbstractCoverage implements Iterable<Packag
             case LINE:
                 for (ClassCoverage classCoverage : classes) {
                     if (testNumber < 0 || classCoverage.isCoveredByTest(testNumber)) {
-                        covered.add(classCoverage.getData(column));
+                        covered.add(classCoverage.getData(column, testNumber));
                     } else {
                         covered.add(new CoverageData(0, 0, classCoverage.getData(column).getTotal()));
                     }

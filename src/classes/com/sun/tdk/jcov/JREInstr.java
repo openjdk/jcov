@@ -142,6 +142,11 @@ public class JREInstr extends JCovCMDTool {
                     File orig_jimage = new File(jdk.getCanonicalPath() + jimage_path);
                     File instr_jimage = new File(newJdkDir.getCanonicalPath() + jimage_path);
 
+                    if (!orig_jimage.exists()) {
+                        jimage_path = File.separator + "lib" + File.separator + "modules";
+                        orig_jimage = new File(jdk.getCanonicalPath() + jimage_path);
+                        instr_jimage = new File(newJdkDir.getCanonicalPath() + jimage_path);
+                    }
                     Utils.copyFile(orig_jimage, new File(orig_jimage.getParent(), orig_jimage.getName() + ".bak"));
 
                     if (!orig_jimage.delete()) {

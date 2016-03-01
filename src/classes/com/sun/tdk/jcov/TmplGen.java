@@ -102,10 +102,17 @@ public class TmplGen extends JCovCMDTool {
         return SUCCESS_EXIT_CODE;
     }
 
-    private boolean expandJimage(File jimage, String tempDirName){
+    private boolean expandJimage(File jimage, String tempDirName, boolean isModulesDir){
         try {
-            String command = jimage.getParentFile().getParentFile().getParent()+File.separator+"bin"+File.separator+"jimage extract --dir "+
-                    jimage.getParent()+File.separator+tempDirName+" "+jimage.getAbsolutePath();
+            String command = "";
+            if (isModulesDir) {
+                command = jimage.getParentFile().getParentFile().getParent() + File.separator + "bin" + File.separator + "jimage extract --dir " +
+                        jimage.getParent() + File.separator + tempDirName + " " + jimage.getAbsolutePath();
+            }
+            else{
+                command = jimage.getParentFile().getParentFile() + File.separator + "bin" + File.separator + "jimage extract --dir " +
+                        jimage.getParent() + File.separator + tempDirName + " " + jimage.getAbsolutePath();
+            }
             Process process = Runtime.getRuntime().exec(command);
             process.waitFor();
             if (process.exitValue() != 0) {
@@ -123,26 +130,12 @@ public class TmplGen extends JCovCMDTool {
         setDefaultInstrumenter();
         for (String root : files) {
             if (root.endsWith(".jimage")){
-                File rootFile = new File(root);
-                String jimagename = getJImageName(rootFile);
-
-                expandJimage(rootFile, "temp_"+jimagename);
-                File tempJimage = new File(rootFile.getParentFile().getAbsolutePath()+File.separator+"temp_"+jimagename);
-                //still need it
-                Utils.addToClasspath(new String[]{tempJimage.getAbsolutePath()});
-                for (File file:tempJimage.listFiles()){
-                    if (file.isDirectory()){
-                        Utils.addToClasspath(new String[]{file.getAbsolutePath()});
-                    }
-                }
-                for (File file:tempJimage.listFiles()){
-                    if (file.isDirectory()){
-                        currentModule = file.getName();
-                        instrumenter.instrument(file, null);
-                    }
-                }
+                readJImage(new File(root), true);
             }
-            else {
+            else if (root.endsWith("modules") && (new File(root).isFile())) {
+                readJImage(new File(root), false);
+            }
+            else{
                 instrumenter.instrument(new File(root), null);
             }
         }
@@ -151,9 +144,38 @@ public class TmplGen extends JCovCMDTool {
                 File rootFile = new File(root);
                 Utils.deleteDirectory(new File(rootFile.getParentFile().getAbsolutePath() + File.separator + "temp_" + getJImageName(rootFile)));
             }
+            if (root.endsWith("modules")){
+                File rootFile = new File(root);
+                if (rootFile.isFile()){
+                    Utils.deleteDirectory(new File(rootFile.getParentFile().getAbsolutePath() + File.separator + "temp_modules"));
+                }
+            }
         }
         instrumenter.finishWork();
         instrumenter = null;
+    }
+
+    private void readJImage(File rootFile, boolean isModulesDir) throws IOException{
+        String jimagename = "modules";
+        if (isModulesDir) {
+            jimagename = getJImageName(rootFile);
+        }
+
+        expandJimage(rootFile, "temp_"+jimagename, isModulesDir);
+        File tempJimage = new File(rootFile.getParentFile().getAbsolutePath()+File.separator+"temp_"+jimagename);
+        //still need it
+        Utils.addToClasspath(new String[]{tempJimage.getAbsolutePath()});
+        for (File file:tempJimage.listFiles()){
+            if (file.isDirectory()){
+                Utils.addToClasspath(new String[]{file.getAbsolutePath()});
+            }
+        }
+        for (File file:tempJimage.listFiles()){
+            if (file.isDirectory()){
+                currentModule = file.getName();
+                instrumenter.instrument(file, null);
+            }
+        }
     }
 
     private String getJImageName(File jimage){

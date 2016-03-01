@@ -227,7 +227,7 @@ public class Scale {
         return (scale_size + 8 - 1) / 8;
     }
 
-    static Scale createZeroScale(int size) {
+    public static Scale createZeroScale(int size) {
         Scale res = new Scale();
         res.size = size;
         res.bytes = new byte[bytesRequiredFor(size)];

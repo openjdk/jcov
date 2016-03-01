@@ -24,6 +24,7 @@
  */
 package com.sun.tdk.jcov.report;
 
+import com.sun.tdk.jcov.data.Scale;
 import com.sun.tdk.jcov.instrument.DataMethod.LineEntry;
 import java.util.Map;
 import java.util.HashMap;
@@ -58,7 +59,7 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
     private boolean anonymon = false;
     private DataType[] supportedColumns = {METHOD, BLOCK, BRANCH, LINE};
     private boolean isInAnc = false;
-    protected static String ancInfo;
+    protected String ancInfo;
 
     /**
      * <p> Creates new MethodCoverage instance without counting blocks </p>
@@ -148,7 +149,7 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
     /**
      * Finds coverage items in terms of legacy jcov (blocks and branches)
      */
-    static void detectItems(DataMethod m, List<ItemCoverage> list, boolean isInAnc, AncFilter[] ancFilters) {
+     void detectItems(DataMethod m, List<ItemCoverage> list, boolean isInAnc, AncFilter[] ancFilters) {
         Map<DataBlock, ItemCoverage> added = new HashMap<DataBlock, ItemCoverage>();
 
         for (DataBlock db : m.getBlocks()) {
@@ -172,6 +173,14 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
             for (DataBlock d : added.keySet()) {
                 if (d.startBCI() == db.startBCI() && type(d) == type(db) && added.get(d).isBlock()) {
                     added.get(d).count += db.getCount();
+
+                    if (added.get(d).scale != null && db.getScale() != null) {
+                        for (int i = 0; i < added.get(d).scale.size(); i++) {
+                            if (db.getScale().isBitSet(i)) {
+                                added.get(d).scale.setBit(i, true);
+                            }
+                        }
+                    }
                     isNew = false;
                     break;
                 }
@@ -202,6 +211,14 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
             for (DataBlock d : added.keySet()) {
                 if (d.startBCI() == db.startBCI() && type(d) == type(db) && added.get(d).isBlock()) {
                     added.get(d).count += db.getCount();
+
+                    if (added.get(d).scale != null && db.getScale() != null) {
+                        for (int i = 0; i < added.get(d).scale.size(); i++) {
+                            if (db.getScale().isBitSet(i)) {
+                                added.get(d).scale.setBit(i, true);
+                            }
+                        }
+                    }
                     isNew = false;
                     break;
                 }
@@ -226,6 +243,17 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
                 for (DataBlock d : added.keySet()) {
                     if (d.startBCI() == db.startBCI() && added.get(d).isBlock()) {
                         added.get(d).count += db.getCount();
+
+                        if (added.get(d).scale != null && db.getScale() != null){
+                            Scale s =  Scale.createZeroScale(added.get(d).scale.size());
+                            for (int j = 0; j < added.get(d).scale.size(); j++) {
+                                if (added.get(d).scale.isBitSet(j) || db.getScale().isBitSet(j)) {
+                                    s.setBit(j, true);
+                                }
+                            }
+                            added.get(d).scale = s;
+                        }
+
                         isNew = false;
                         break;
                     }

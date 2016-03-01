@@ -47,7 +47,7 @@ public class DataExitSimple extends DataExit {
         this.opcode = opcode;
     }
 
-    String opcodeName() {
+    public String opcodeName() {
         return Constants.opcNames[opcode];
     }
 

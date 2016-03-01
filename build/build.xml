@@ -177,8 +177,27 @@
         </copy>
     </target>
 
+    <patternset id="jcov.services">
+        <include name="META-INF/services/**"/>
+    </patternset>
+
     <target name="build-jcov" depends="compile" description="build jcov jar">
         <unjar src="${asmjar5}" dest="${jcov.classes}"/>
+
+        <mkdir dir="${jcov.classes}/META-INF"/>
+        <mkdir dir="${jcov.classes}/META-INF/services"/>
+        <echo file="${jcov.classes}/META-INF/services/com.sun.tdk.jcov.report.ancfilters.DefaultAncFilter"
+              append="false">
+            com.sun.tdk.jcov.report.ancfilters.ToStringANCFilter
+            com.sun.tdk.jcov.report.ancfilters.DeprecatedANCFilter
+            com.sun.tdk.jcov.report.ancfilters.EmptyANCFilter
+            com.sun.tdk.jcov.report.ancfilters.CatchANCFilter
+            com.sun.tdk.jcov.report.ancfilters.ThrowANCFilter
+            com.sun.tdk.jcov.report.ancfilters.SyntheticANCFilter
+            com.sun.tdk.jcov.report.ancfilters.GetterANCFilter
+            com.sun.tdk.jcov.report.ancfilters.SetterANCFilter
+        </echo>
+
         <jar destfile="${build.dir}/jcov.jar" basedir="${jcov.classes}" index="false">
             <manifest>
                 <attribute name="Built-By"   value="${user.name}"/>
@@ -188,8 +207,10 @@
                 <attribute name="Can-Retransform-Classes" value="true"/>
                 <attribute name="Can-Set-Native-Method-Prefix" value="true" />
             </manifest>
+
             <patternset refid="jcov.files"/>
             <patternset refid="asm.files"/>
+            <patternset refid="jcov.services"/>
         </jar>
 
     </target>

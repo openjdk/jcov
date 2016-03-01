@@ -172,7 +172,7 @@ public class CoverageReport implements ReportGenerator {
                 ArrayList<ModuleCoverageData> modulesCD = modules.get(moduleName);
                 if (testService != null && (isAddTestsInfo || isMergeRepGenMode)) {
                     for (int test = 0; test < testService.getTestCount(); test++) {
-                        modulesCD.get(test).addPackage(pkg);
+                        modulesCD.get(test).addPackage(pkg, test);
                     }
                 }
                 modulesCD.get(modulesCD.size()-1).addPackage(pkg);
@@ -777,6 +777,15 @@ public class CoverageReport implements ReportGenerator {
                     pkg.getData(DataType.BRANCH, testNumber),
                     pkg.getData(DataType.LINE, testNumber),
                     pkg.getData(DataType.CLASS, testNumber)};
+        }
+
+        public void addPackage(PackageCoverage pkg, int testNumber) {
+            collectedData[columns.field.number].add(pkg.getData(DataType.FIELD, testNumber));
+            collectedData[columns.method.number].add(pkg.getData(DataType.METHOD, testNumber));
+            collectedData[columns.block.number].add(pkg.getData(DataType.BLOCK, testNumber));
+            collectedData[columns.branch.number].add(pkg.getData(DataType.BRANCH, testNumber));
+            collectedData[columns.line.number].add(pkg.getData(DataType.LINE, testNumber));
+            collectedData[columns.classes.number].add(pkg.getData(DataType.CLASS, testNumber));
         }
 
         public void addPackage(PackageCoverage pkg) {

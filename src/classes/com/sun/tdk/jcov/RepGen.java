@@ -29,6 +29,7 @@ import com.sun.tdk.jcov.instrument.DataField;
 import com.sun.tdk.jcov.instrument.DataClass;
 import com.sun.tdk.jcov.processing.DataProcessorSPI;
 import com.sun.tdk.jcov.report.AncFilter;
+import com.sun.tdk.jcov.report.ancfilters.DefaultAncFilter;
 import com.sun.tdk.jcov.util.Utils;
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.data.Result;
@@ -62,6 +63,7 @@ import java.util.logging.Logger;
 import static com.sun.tdk.jcov.tools.OptionDescr.*;
 import java.io.File;
 import java.util.Arrays;
+import java.util.ServiceLoader;
 import java.util.List;
 import org.objectweb.asm.Opcodes;
 
@@ -100,6 +102,7 @@ public class RepGen extends JCovCMDTool {
     private String[] fms = null;
     private String filter = null;
     private String[] ancfilters = null;
+    private String[] ancdeffilters = null;
     private boolean noAbstract = false;
     private boolean syntheticOn = false;
     private boolean isPublicAPI = false;
@@ -241,6 +244,35 @@ public class RepGen extends JCovCMDTool {
                             + "AncFilter: ", e);
                 }
             }
+        }
+
+        if (ancdeffilters != null) {
+            ServiceLoader<DefaultAncFilter> loader = ServiceLoader.load(DefaultAncFilter.class);
+            List<AncFilter> defaultANCFiltersList = new ArrayList<AncFilter>();
+            if (ancfiltersClasses != null && ancfiltersClasses.length > 0){
+                defaultANCFiltersList.addAll(Arrays.asList(ancfiltersClasses));
+            }
+            if (ancdeffilters.length == 1 && ancdeffilters[0].equals("all")){
+                for (DefaultAncFilter filter : loader) {
+                    defaultANCFiltersList.add(filter);
+                }
+            }
+            else {
+                for (String defaulAncFilter : ancdeffilters) {
+                    boolean found = false;
+                    for (DefaultAncFilter filter : loader) {
+                        if (defaulAncFilter.equals(filter.getFilterName())) {
+                            defaultANCFiltersList.add(filter);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        logger.log(Level.SEVERE, "There is no default ANC filter for \"{0}\" value", defaulAncFilter);
+                    }
+                }
+            }
+            ancfiltersClasses = defaultANCFiltersList.toArray(new AncFilter[defaultANCFiltersList.size()]);
         }
 
         if (dataProcessorSPIs != null) {
@@ -574,6 +606,14 @@ public class RepGen extends JCovCMDTool {
                     if (!syntheticOn) {
                         mergedResult.applyFilter(new ANC_FILTER());
                     }
+
+                    if (dataProcessorSPIs != null) {
+                        for (DataProcessorSPI spi : dataProcessorSPIs) {
+                            logger.log(Level.INFO, "-- Applying data processor {0}", spi.getClass());
+                            mergedResult = spi.getDataProcessor().process(mergedResult);
+                        }
+                    }
+
                     ProductCoverage coverage = new ProductCoverage(mergedResult, options.getSrcRootPaths(), null, isPublicAPI, noAbstract, ancfiltersClasses);
                     rg.generateReport(coverage, options);
 
@@ -648,6 +688,7 @@ public class RepGen extends JCovCMDTool {
                     DSC_VERBOSE,
                     DSC_FILTER_PLUGIN,
                     DSC_ANC_FILTER_PLUGINS,
+                    DSC_ANC_DEFAULT_FILTERS,
                     DSC_TEST_LIST,
                     DSC_ANONYM,
                     DSC_JAVAP,
@@ -681,6 +722,7 @@ public class RepGen extends JCovCMDTool {
 
         filter = opts.getValue(DSC_FILTER_PLUGIN);
         ancfilters = opts.getValues(DSC_ANC_FILTER_PLUGINS);
+        ancdeffilters = opts.getValues(DSC_ANC_DEFAULT_FILTERS);
         noAbstract = opts.isSet(DSC_NO_ABSTRACT);
         isPublicAPI = opts.isSet(DSC_PUBLIC_API);
         anonym = opts.isSet(DSC_ANONYM);
@@ -799,6 +841,10 @@ public class RepGen extends JCovCMDTool {
 
     final static OptionDescr DSC_ANC_FILTER_PLUGINS =
             new OptionDescr("ancfilter", new String[]{"ancf"}, "Custom anc filtering plugin classes", OptionDescr.VAL_MULTI,
+                    "");
+
+    final static OptionDescr DSC_ANC_DEFAULT_FILTERS =
+            new OptionDescr("ancdeffilters", new String[]{"ancdf"}, "Default ANC filters names to use in report", OptionDescr.VAL_MULTI,
                     "");
 
     /**
