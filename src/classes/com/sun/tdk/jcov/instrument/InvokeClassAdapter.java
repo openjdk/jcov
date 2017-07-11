@@ -38,7 +38,7 @@ public class InvokeClassAdapter extends ClassVisitor {
     private final InstrumentationParams params;
 
     public InvokeClassAdapter(final ClassVisitor cv, final InstrumentationParams params) {
-        super(Opcodes.ASM4, cv);
+        super(Opcodes.ASM6, cv);
         this.params = params;
     }
 

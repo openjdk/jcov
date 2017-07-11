@@ -37,6 +37,7 @@ import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -59,6 +60,8 @@ public class Instr extends JCovCMDTool {
     private String[] m_exclude = new String[]{""};
     private String[] callerInclude;
     private String[] callerExclude;
+    private String[] innerInclude;
+    private String[] innerExclude;
     private String[] save_beg = null;
     private String[] save_end = null;
     private boolean genabstract = false;
@@ -205,6 +208,18 @@ public class Instr extends JCovCMDTool {
         }
     }
 
+    public void instrumentTests(String[] files, File outDir, String implantRT) throws IOException {
+
+        if (gennative || genabstract) {
+            morph.fillIntrMethodsIDs(morph.getRoot());
+        }
+
+        setDefaultInstrumenter();
+        for (String file : files) {
+            instrumenter.instrument(new File(file), outDir, implantRT, recurse);
+        }
+    }
+
     /**
      * Begin instrumentation in semi-automatic mode
      *
@@ -223,7 +238,9 @@ public class Instr extends JCovCMDTool {
             InstrumentationParams params = new InstrumentationParams(innerinvocations, false, false, gennative, genfield, false, genabstract ? InstrumentationOptions.ABSTRACTMODE.DIRECT : InstrumentationOptions.ABSTRACTMODE.NONE, include, exclude, callerInclude, callerExclude, m_include, m_exclude, mode, save_beg, save_end)
                     .setInstrumentSynthetic(gensynthetic)
                     .setInstrumentAnonymous(genanonymous)
-                    .setInnerInvocations(innerinvocations);
+                    .setInnerInvocations(innerinvocations)
+                    .setInnerIncludes(innerInclude)
+                    .setInnerExcludes(innerExclude);
             if (subsequentInstr) {
                 morph = new ClassMorph(params, template);
             } else {
@@ -243,6 +260,21 @@ public class Instr extends JCovCMDTool {
                         morph.saveData(template, null, MERGE.OVERWRITE); // template should be initialized
                     }
                 }
+
+                public void processClassFileInModules(Path filePath, File outDir){
+                    if (morph != null){
+                        if (filePath != null){
+                            String mpath = filePath.toAbsolutePath().toString();
+                            mpath = mpath.substring("/modules/".length());
+                            if (mpath.indexOf("/") != -1){
+                                String module_name = mpath.substring(0, mpath.indexOf("/"));
+                                morph.setCurrentModuleName(module_name);
+                            }
+                        }
+                        super.processClassFileInModules(filePath, outDir);
+                    }
+                }
+
             };
         }
     }
@@ -392,6 +424,14 @@ public class Instr extends JCovCMDTool {
 
     public void setCallerExclude(String[] callerExclude) {
         this.callerExclude = callerExclude;
+    }
+
+    public void setInnerInclude(String[] include) {
+        this.innerInclude = include;
+    }
+
+    public void setInnerExclude(String[] exclude) {
+        this.innerExclude = exclude;
     }
 
     public void setFilter(String[] include, String exclude[]) {
@@ -581,6 +621,9 @@ public class Instr extends JCovCMDTool {
 
         include = InstrumentationOptions.handleInclude(opts);
         exclude = InstrumentationOptions.handleExclude(opts);
+
+        m_include = InstrumentationOptions.handleMInclude(opts);
+        m_exclude = InstrumentationOptions.handleMExclude(opts);
 
         flushPath = opts.getValue(ClassMorph.DSC_FLUSH_CLASSES);
         if ("none".equals(flushPath)) {

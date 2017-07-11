@@ -45,7 +45,7 @@ class MethodAnnotationAdapter extends MethodVisitor {
 
     MethodAnnotationAdapter(final MethodVisitor mv,
             final DataMethod method) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM6, mv);
         this.meth = method;
     }
 }

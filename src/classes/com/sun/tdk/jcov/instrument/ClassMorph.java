@@ -77,6 +77,10 @@ public class ClassMorph {
         findAlreadyInstrumentedAndSetID();
     }
 
+    public DataRoot getRoot(){
+        return root;
+    }
+
     /**
      * Default constructor for Instr and TemplGen. Uses specified template as
      * output file.
@@ -283,8 +287,8 @@ public class ClassMorph {
                 fullname = fullname.substring(0, fullname.indexOf("$"));
             }
             Class cls = Class.forName(fullname.replaceAll("/","."));
-            java.lang.reflect.Method getModuleMethod = Class.class.getDeclaredMethod("getModule", null);
-            Object module = getModuleMethod.invoke(cls, null);
+            java.lang.reflect.Method getModuleMethod = Class.class.getDeclaredMethod("getModule");
+            Object module = getModuleMethod.invoke(cls);
             result = module.toString();
 
         }catch(Throwable ignore){
@@ -568,6 +572,61 @@ public class ClassMorph {
             throw new Error(e);
         }
 
+    }
+
+    public static void fillIntrMethodsIDs(DataRoot root){
+        try {
+            for (DataPackage pack : root.getPackages()) {
+                for (DataClass clazz : pack.getClasses()) {
+                    for (DataMethod meth : clazz.getMethods()) {
+                        if (meth.access(meth.getAccess()).matches(".*abstract.*")
+                                || meth.access(meth.getAccess()).matches(".*native.*")) {
+                            int id = 0;
+                            if (meth instanceof DataMethodInvoked) {
+                                id = ((DataMethodInvoked) meth).getId();
+                            } else if (meth instanceof DataMethodEntryOnly) {
+                                id = ((DataMethodEntryOnly) meth).getId();
+                            } else {
+                                DataMethodWithBlocks mb = (DataMethodWithBlocks) meth;
+                                for (BasicBlock bb : mb.getBasicBlocks()) {
+                                    for (DataBlock db : bb.blocks()) {
+                                        id = db.getId();
+                                        break;
+                                    }
+                                    break;
+                                }
+                            }
+
+                            String className = pack.getName().equals("") ? clazz.getName()
+                                    : pack.getName().replace('.', '/') + "/" + clazz.getName();
+                            StaticInvokeMethodAdapter.addID(
+                                    className, meth.getName(), meth.getVmSignature(), id);
+
+                            if (meth.getAnnotations()!= null ) {
+                                for (String annotation : meth.getAnnotations()) {
+                                    if (annotation != null && annotation.contains("PolymorphicSignature")) {
+                                        StaticInvokeMethodAdapter.addID(
+                                                className, meth.getName(), "", id);
+                                        break;
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                    for (DataField fld : clazz.getFields()) {
+                        int id = fld.getId();
+                        String className = pack.getName().equals("") ? clazz.getName()
+                                : pack.getName().replace('.', '/') + "/" + clazz.getName();
+                        StaticInvokeMethodAdapter.addID(
+                                className, fld.getName(), fld.getVmSig(), id);
+                    }
+                }
+            }
+
+        } catch (Throwable t) {
+            throw new Error(t);
+        }
     }
 
     public void saveData(InstrumentationOptions.MERGE merge) {

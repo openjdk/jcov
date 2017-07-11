@@ -70,7 +70,7 @@ public class InvokeMethodAdapter extends MethodVisitor {
             Collections.synchronizedMap(new HashMap<String, Integer>());
 
     public InvokeMethodAdapter(MethodVisitor mv, String className, final InstrumentationParams params) {
-        super(ASM4, mv);
+        super(ASM6, mv);
         this.className = className;
         this.params = params;
     }
@@ -89,7 +89,7 @@ public class InvokeMethodAdapter extends MethodVisitor {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
         if (params.isCallerFilterOn()
                 && params.isCallerFilterAccept(className)) {
 
@@ -99,7 +99,7 @@ public class InvokeMethodAdapter extends MethodVisitor {
             } else {
                 int id = (name + desc).hashCode();
                 super.visitLdcInsn(id);
-                super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V");
+                super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V", false);
             }
         }
 
@@ -108,9 +108,9 @@ public class InvokeMethodAdapter extends MethodVisitor {
                 && params.isIncluded(owner)
                 && params.isCallerFilterAccept(className)) {
             super.visitLdcInsn(getInvokeID(owner, name, desc));
-            super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "invokeHit", "(I)V");
+            super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "invokeHit", "(I)V", false);
         }
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
     }
 
     private enum ReflPair {

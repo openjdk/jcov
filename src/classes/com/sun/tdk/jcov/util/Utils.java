@@ -100,20 +100,19 @@ public final class Utils {
     public final static int VER14 = 140;
     public final static int VER15 = 150;
     public final static int VER16 = 160;
-    private static int javaVersion = VER11;
+    private static int javaVersion = -1;
 
-    /* determine JVM version */
-    static {
-        String ver = System.getProperty("java.version");
-        javaVersion = (ver.charAt(0) - '0') * 100
-                + (ver.charAt(2) - '0') * 10
-                + (ver.length() > 4 ? (ver.charAt(4) - '0') : 0);
-    }
 
     /**
      * @return JVM version
      */
     public static int getJavaVersion() {
+        if (javaVersion == -1){
+            String ver = System.getProperty("java.version");
+            javaVersion = (ver.charAt(0) - '0') * 100
+                    + (ver.charAt(2) - '0') * 10
+                    + (ver.length() > 4 ? (ver.charAt(4) - '0') : 0);
+        }
         return javaVersion;
     }
 
@@ -519,20 +518,22 @@ public final class Utils {
     }
 
     public static void addToClasspath(String[] path) {
-        URLClassLoader sysloader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-        Class sysclass = URLClassLoader.class;
+        if (ClassLoader.getSystemClassLoader() instanceof URLClassLoader) {
+            URLClassLoader sysloader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+            Class sysclass = URLClassLoader.class;
 
-        try {
-            Method method = sysclass.getDeclaredMethod("addURL", new Class[]{URL.class});
-            method.setAccessible(true);
+            try {
+                Method method = sysclass.getDeclaredMethod("addURL", new Class[]{URL.class});
+                method.setAccessible(true);
 
-            URL[] urls = new URL[path.length];
-            for (int i = 0; i < path.length; i++) {
-                urls[i] = new File(path[i]).toURI().toURL();
-                method.invoke(sysloader, new Object[]{urls[i]});
+                URL[] urls = new URL[path.length];
+                for (int i = 0; i < path.length; i++) {
+                    urls[i] = new File(path[i]).toURI().toURL();
+                    method.invoke(sysloader, new Object[]{urls[i]});
+                }
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
-        } catch (Throwable t) {
-            t.printStackTrace();
         }
     }
 

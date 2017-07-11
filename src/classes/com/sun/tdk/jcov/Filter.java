@@ -142,6 +142,10 @@ public class Filter extends JCovCMDTool {
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE_LIST,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FM,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FM_LIST,
+                    InstrumentationOptions.DSC_MINCLUDE,
+                    InstrumentationOptions.DSC_MINCLUDE_LIST,
+                    InstrumentationOptions.DSC_MEXCLUDE,
+                    InstrumentationOptions.DSC_MEXCLUDE_LIST,
                     DSC_FILTER_PLUGIN,
                     DSC_SYNTHETIC
                 }, this);

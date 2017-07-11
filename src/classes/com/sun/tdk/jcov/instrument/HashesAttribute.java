@@ -36,11 +36,11 @@ import java.util.Set;
  */
 public class HashesAttribute extends Attribute {
     private String algorithm;
-    private Map<String, String> nameToHash;
+    private Map<String, byte[]> nameToHash;
 
 
-    HashesAttribute(String algorithm, Map<String, String> nameToHash) {
-        super("Hashes");
+    HashesAttribute(String algorithm, Map<String, byte[]> nameToHash) {
+        super("ModuleHashes");
         this.algorithm = algorithm;
         this.nameToHash = nameToHash;
     }
@@ -63,12 +63,20 @@ public class HashesAttribute extends Attribute {
         int hash_count = cr.readUnsignedShort(off);
         off += 2;
 
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, byte[]> map = new HashMap<String, byte[]>();
         for (int i=0; i<hash_count; i++) {
-            String dn = cr.readUTF8(off, buf);
-            String hash = cr.readUTF8(off, buf);
-            map.put(dn, hash);
+            String mn = cr.readModule(off, buf);
             off += 2;
+
+            int hash_length = cr.readUnsignedShort(off);
+            off += 2;
+            byte[] hash = new byte[hash_length];
+            for (int j = 0; j < hash_length; j++) {
+                hash[j] = (byte) (0xff & cr.readByte(off + j));
+            }
+            off += hash_length;
+
+            map.put(mn, hash);
         }
 
         return new HashesAttribute(algorithm, map);
@@ -85,14 +93,7 @@ public class HashesAttribute extends Attribute {
 
         int index = cw.newUTF8(algorithm);
         attr.putShort(index);
-
-        Set<String> names = nameToHash.keySet();
-        attr.putShort(names.size());
-
-        for (String dn : names) {
-            attr.putShort(cw.newUTF8(""));
-            attr.putShort(cw.newUTF8(""));
-        }
+        attr.putShort(0);
 
         return attr;
     }

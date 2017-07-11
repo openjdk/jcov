@@ -44,7 +44,7 @@ class ForkingMethodAdapter extends MethodVisitor {
         final AnnotationVisitor av2;
 
         DuplicatingAnnotationAdapter(final AnnotationVisitor av1, final AnnotationVisitor av2) {
-            super(Opcodes.ASM4);
+            super(Opcodes.ASM6);
             this.av1 = av1;
             this.av2 = av2;
         }
@@ -88,7 +88,7 @@ class ForkingMethodAdapter extends MethodVisitor {
      * @param mv the code visitor to which this adapter must delegate calls.
      */
     public ForkingMethodAdapter(final MethodVisitor mv1, final MethodVisitor mv2) {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM6);
         this.mv1 = mv1;
         this.mv2 = mv2;
     }

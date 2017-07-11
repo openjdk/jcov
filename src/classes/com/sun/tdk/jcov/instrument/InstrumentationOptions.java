@@ -144,10 +144,18 @@ public class InstrumentationOptions {
             "Work similar savebegin, however save before last instruction in the method is executed (throw or return).\n"
             + "This method doesn't work if exception was thrown not directly in this method.");
     public final static OptionDescr DSC_INNERINVOCATION =
-            new OptionDescr("innerinvocation", "", new String[][]{
+            new OptionDescr("innerinvocation", "Inner invocations", new String[][]{
                 {"on", "count inner invocations in the product"},
                 {"off", "count only invocations outside the instrumented product"}
             }, "Allows to filter inner invocations in the instrumented product", "on");
+    public final static OptionDescr DSC_INNER_INCLUDE =
+            new OptionDescr("inner_include", new String[]{"ii"}, "", OptionDescr.VAL_MULTI,
+            "Specify included classes by regular expression for adding inner invocations instrumentaion\n" +
+            "(only for innerinvocation off)");
+    public final static OptionDescr DSC_INNER_EXCLUDE =
+            new OptionDescr("inner_exclude", new String[]{"ie"}, "", OptionDescr.VAL_MULTI,
+            "Specify excluded classes by regular expression, no inner invocations instrumentaion will be\n" +
+            "added to the specified classes (only for innerinvocation off)");
 
     public static enum ABSTRACTMODE {
 
@@ -245,6 +253,29 @@ public class InstrumentationOptions {
         }
 
         return includeSet.toArray(new String[includeSet.size()]);
+    }
+
+    public static String[] handleInnerInclude(EnvHandler opts) throws EnvHandlingException {
+        Set<String> includeSet = new TreeSet<String>();
+        String[] s;
+        if (opts.isSet(InstrumentationOptions.DSC_INNER_INCLUDE)) {
+            s = opts.getValues(InstrumentationOptions.DSC_INNER_INCLUDE);
+            if (s != null) {
+                includeSet.addAll(Arrays.asList(s));
+            }
+        }
+
+        return includeSet.toArray(new String[includeSet.size()]);
+    }
+
+    public static String[] handleInnerExclude(EnvHandler opts) throws EnvHandlingException {
+        Set<String> excludeSet = new TreeSet<String>();
+        String[] s = opts.getValues(InstrumentationOptions.DSC_INNER_EXCLUDE);
+        if (s != null) {
+            excludeSet.addAll(Arrays.asList(s));
+        }
+
+        return excludeSet.toArray(new String[excludeSet.size()]);
     }
 
     public static String[] handleExclude(EnvHandler opts) throws EnvHandlingException {

@@ -32,7 +32,7 @@
 
     <!-- Build area -->
     <property name="build.dir" location="${result.dir}/jcov_${build.version}"/>
-    <property name="jcov.classpath" value="${asmjar5}:${java.home}/lib/tools.jar"/>
+    <property name="jcov.classpath" value="${asmjar}:${java.home}/lib/tools.jar"/>
 
     <!-- Temp dir is for files which do not appear in release directory -->
     <property name="tmp.dir" location="${result.dir}/temp"/>
@@ -96,7 +96,7 @@
 
     <target name="prepare" depends="clean" description="checks dependencies">
 
-        <available file="${asmjar5}" property="asm.present"/>
+        <available file="${asmjar}" property="asm.present"/>
         <fail unless="asm.present" message="Please, specify asm library"/>
 
         <condition property="javatest.present">
@@ -159,13 +159,13 @@
     <target name="compile"  depends="prepare, build-date"
             description="compile main tools">
 
-        <javac encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
+        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
                srcdir="${jcov.src.update}"
                destdir="${jcov.classes}"
                classpath="${jcov.classpath}">
         </javac>
 
-        <javac encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
+        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
                srcdir="${src.dir}"
                destdir="${jcov.classes}"
                classpath="${jcov.classpath}">
@@ -182,7 +182,7 @@
     </patternset>
 
     <target name="build-jcov" depends="compile" description="build jcov jar">
-        <unjar src="${asmjar5}" dest="${jcov.classes}"/>
+        <unjar src="${asmjar}" dest="${jcov.classes}"/>
 
         <mkdir dir="${jcov.classes}/META-INF"/>
         <mkdir dir="${jcov.classes}/META-INF/services"/>
@@ -236,7 +236,7 @@
                 </filterreader>
             </filterchain>
         </copy>
-        <javac encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
+        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
                srcdir="${jcov.filesaver.src}"
                sourcepath=""
                classpath="${jcov.filesaver.classes}"
@@ -270,7 +270,7 @@
                 </filterreader>
             </filterchain>
         </copy>
-        <javac encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
+        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
                srcdir="${jcov.networksaver.src}"
                sourcepath=""
                classpath="${jcov.networksaver.classes}"
@@ -287,7 +287,7 @@
 
     <target name="build-jt.observer" depends="prepare" if ="javatest.present" description="build jtobserver jar">
         <mkdir dir="${jcov.jtobserver.classes}"/>
-        <javac encoding="iso-8859-1" debug="true" target="1.6" source="1.6"
+        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
                srcdir="${src.dir}"
                sourcepath=""
                destdir="${jcov.jtobserver.classes}" classpath="${javatestjar}">

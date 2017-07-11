@@ -41,7 +41,7 @@ public class SavePointsMethodAdapter extends MethodVisitor {
     private final boolean isBegin;
 
     public SavePointsMethodAdapter(final MethodVisitor mv, boolean isBegin) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM6, mv);
         this.isBegin = isBegin;
     }
 

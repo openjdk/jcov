@@ -78,6 +78,7 @@ public class CoverageReport implements ReportGenerator {
     private boolean showBranches;
     private boolean showBlocks;
     private boolean showMethods;
+    private boolean showOverviewColorBars;
     private static final Logger logger;
     private InstrumentationOptions.InstrumentationMode mode;
 
@@ -124,8 +125,7 @@ public class CoverageReport implements ReportGenerator {
         CopyResources.copy(directory);
         generateSourceFiles(directory);
         generateFrameset(directory);
-        generatePackageList(directory);
-        generateClassList(directory);
+
         HashMap<String, ArrayList<ModuleCoverageData>> modules = getModulesCoverage();
         if (modules == null || (modules.size() == 1 && XmlNames.NO_MODULE.equals(modules.keySet().iterator().next()))){
             modules = null;
@@ -134,6 +134,8 @@ public class CoverageReport implements ReportGenerator {
         if (modules != null) {
             generateModulesList(directory, modules);
         }
+        generatePackageList(directory, modules);
+        generateClassList(directory);
 
     }
 
@@ -224,7 +226,12 @@ public class CoverageReport implements ReportGenerator {
                 + "</title>");
         generateScriptsHeader(pw);
         pw.println("</head>");
-        pw.println("<FRAMESET cols=\"20%,80%\" title=\"Documentation frame\" onclick=\"top.loadFrames()\">");
+        if (showOverviewColorBars) {
+            pw.println("<FRAMESET cols=\"30%,70%\" title=\"Documentation frame\" onclick=\"top.loadFrames()\">");
+        }
+        else{
+            pw.println("<FRAMESET cols=\"20%,80%\" title=\"Documentation frame\" onclick=\"top.loadFrames()\">");
+        }
         pw.println("<FRAMESET rows=\"30%,70%\" title=\"Left frames\" onload=\"top.loadFrames()\">");
         pw
                 .println("<FRAME src=\"overview-frame.html\" name=\"packageListFrame\" title=\"All Packages\">");
@@ -245,7 +252,7 @@ public class CoverageReport implements ReportGenerator {
         pw.close();
     }
 
-    private void generatePackageList(File dir) throws IOException {
+    private void generatePackageList(File dir, HashMap<String, ArrayList<ModuleCoverageData>> modules) throws IOException {
         File fsFile = new File(dir, "overview-frame.html");
         logger.log(Level.INFO, "generatePackageList:{0}", fsFile.getAbsolutePath());
         PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
@@ -269,6 +276,27 @@ public class CoverageReport implements ReportGenerator {
         pw.println("</tr>");
         pw.println("</table>");
         pw.println("<p>");
+
+        if (modules != null) {
+            pw.println("<table>");
+            pw.println("<tr>");
+            pw.println("<td nowrap=\"nowrap\"><span class=\"title2\">All modules</span></td>");
+            pw.println("</tr>");
+            pw.println("<tr>");
+            pw.println("<td nowrap=\"nowrap\">");
+            List<String> modulesList = new ArrayList<String>(modules.keySet());
+            Collections.sort(modulesList);
+            for (String module : modulesList){
+                pw.println("<a href=\"" + module + "/module-summary.html"+ "\" target=\"classFrame\""
+                        + " onClick=\"parent.frames[1].location.href='"
+                        + "allclasses-frame.html" + "';\">"
+                        + module+ "</a><br>");
+
+            }
+            pw.println("</tr>");
+            pw.println("</table>");
+        }
+
         pw.println("<table>");
         pw.println("<tr>");
         pw.println("<td nowrap=\"nowrap\"><span class=\"title2\">All packages</span></td>");
@@ -280,10 +308,15 @@ public class CoverageReport implements ReportGenerator {
             String pkgPath = pkg.getName().replace('.', '/');
             String url = pkgPath + "/package-frame.html";
             logger.log(Level.FINE, "generatePackageList:url:{0}", url);
+
+            String pkgCovData = "";
+            if (showOverviewColorBars) {
+                pkgCovData = generatePercentResult(pkg.getCoverageString(DataType.METHOD, coverage.isAncFiltersSet()), true);
+            }
             pw.println("<a href=\"" + url + "\" target=\"packageFrame\""
                     + " onClick=\"parent.frames[2].location.href='"
                     + pkgPath + "/package-summary.html" + "';\">"
-                    + pkg.getName() + "</a><br>");
+                    + pkgCovData + pkg.getName()+ "</a><br>");
         }
 
         pw.println("</td>");
@@ -366,9 +399,13 @@ public class CoverageReport implements ReportGenerator {
                     urlDirectory = ".";
                 }
             }
+            String classCovBar = "";
+            if (showOverviewColorBars) {
+                classCovBar = generatePercentResult(theClass.getCoverageString(DataType.METHOD, coverage.isAncFiltersSet()), true);
+            }
             String classFilename = theClass.getName() + ".html";
             pw.println("<a href=\"" + urlDirectory + "/" + classFilename
-                    + "\" target=\"classFrame\">" + theClass.getName()
+                    + "\" target=\"classFrame\">" +classCovBar + theClass.getName()
                     + "</a><span class=\"text_italic\">&nbsp;" + prc + "</span><br>");
         }
 
@@ -705,7 +742,9 @@ public class CoverageReport implements ReportGenerator {
         printColumnHeaders(pw, "");
         pw.println("</tr>");
 
-        for (String module : modules.keySet()) {
+        List<String> modulesList = new ArrayList<String>(modules.keySet());
+        Collections.sort(modulesList);
+        for (String module : modulesList) {
             pw.println("<tr class=\"report\">");
             if (!decorate) {
                 pw.println("<td class=\"reportText\"><a href=\""
@@ -1448,6 +1487,9 @@ public class CoverageReport implements ReportGenerator {
                     continue;
                 }
             }
+            if (mcov instanceof MethodCoverage && ((MethodCoverage) mcov).isLambdaMethod()){
+                continue;
+            }
 
             pw.println(" <tr class=\"report\">");
             long c = mcov.getHitCount();
@@ -1659,6 +1701,11 @@ public class CoverageReport implements ReportGenerator {
     }
 
     private String generatePercentResult(String percentValue) {
+        return generatePercentResult(percentValue, false);
+    }
+
+
+    private String generatePercentResult(String percentValue, boolean onlyColorBar) {
         String value = percentValue;
         String cov_total = "";
         double anc = 0;
@@ -1687,14 +1734,25 @@ public class CoverageReport implements ReportGenerator {
             badNumber = true;
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("<table cellpadding=\"0\" cellspacing=\"0\" align=\"center\">");
-        sb.append("<tr>");
-        // sb.append("<td><span class=\"text\">" + decorate(percentValue)
-        sb.append("<td><span class=\"text\"><b>").append(value.trim()).append("</b>%").append(cov_total.trim()).append("</span></td>");
-        if (!badNumber) {
+        if (onlyColorBar) {
+            sb.append("<table cellpadding=\"0\" cellspacing=\"0\" align=\"left\">");
+        }
+        else{
+            sb.append("<table cellpadding=\"0\" cellspacing=\"0\" align=\"center\">");
             sb.append("<tr>");
-            sb.append("<td>");
-            sb.append("<table class=\"percentGraph\" cellpadding=\"0\" cellspacing=\"0\">");
+            sb.append("<td><span class=\"text\"><b>").append(value.trim()).append("</b>%").append(cov_total.trim()).append("</span></td>");
+        }
+
+        if (!badNumber) {
+            if (onlyColorBar) {
+                sb.append("<td>");
+                sb.append("<table class=\"percentGraph\" cellpadding=\"0\" cellspacing=\"0\" style=\"padding-right: 5px\">");
+            }
+            else{
+                sb.append("<tr>");
+                sb.append("<td>");
+                sb.append("<table class=\"percentGraph\" cellpadding=\"0\" cellspacing=\"0\">");
+            }
             sb.append("<tr>");
             if (anc > 0) {
                 sb.append("<td class=\"percentCovered\" width=\"").append(dvalue - anc).append("\"></td>");
@@ -1710,9 +1768,13 @@ public class CoverageReport implements ReportGenerator {
             sb.append("</tr>");
             sb.append("</table>");
             sb.append("</td>");
+            if (!onlyColorBar) {
+                sb.append("</tr>");
+            }
+        }
+        if (!onlyColorBar) {
             sb.append("</tr>");
         }
-        sb.append("</tr>");
         sb.append("</table>");
         return sb.toString();
     }
@@ -1767,5 +1829,9 @@ public class CoverageReport implements ReportGenerator {
 
     public void setShowLines(boolean showLines) {
         this.showLines = showLines;
+    }
+
+    public void setShowOverviewColorBars(boolean showOverviewColorBars){
+        this.showOverviewColorBars = showOverviewColorBars;
     }
 }

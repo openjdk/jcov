@@ -27,9 +27,8 @@ package com.sun.tdk.jcov;
 import com.sun.tdk.jcov.constants.MiscConstants;
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.data.Result;
-import com.sun.tdk.jcov.instrument.DataRoot;
+import com.sun.tdk.jcov.instrument.*;
 import com.sun.tdk.jcov.instrument.DataRoot.CompatibilityCheckResult;
-import com.sun.tdk.jcov.instrument.InstrumentationOptions;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.MERGE;
 import com.sun.tdk.jcov.runtime.Collect;
 import com.sun.tdk.jcov.runtime.FileSaver;
@@ -42,6 +41,8 @@ import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.RuntimeUtils;
 import com.sun.tdk.jcov.util.Utils;
 import com.sun.tdk.jcov.util.Utils.Pair;
+import org.objectweb.asm.Opcodes;
+
 import java.io.*;
 import java.net.*;
 import java.nio.charset.Charset;
@@ -825,6 +826,18 @@ class Server extends Thread {
                 if (templateName != null) {
                     //do not need it at all
                     dataRoot.update();
+                    if (dataRoot.getParams().isInstrumentAbstract() || dataRoot.getParams().isInstrumentNative()) {
+                        for (DataPackage dp : dataRoot.getPackages()) {
+                            for (DataClass dc : dp.getClasses()) {
+                                for (DataMethod dm : dc.getMethods()) {
+                                    if ((dm.isAbstract() || (dm.getAccess() & Opcodes.ACC_NATIVE) != 0)
+                                            && data.length > dm.getSlot() && dm.getCount() < data[dm.getSlot()]) {
+                                        dm.setCount(data[dm.getSlot()]);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 FileSaver fs = FileSaver.getFileSaver(dataRoot, fileName, templateName, MERGE.OVERWRITE, false, true);
                 fs.saveResults(fileName);

@@ -40,7 +40,7 @@ class FieldAnnotationVisitor extends FieldVisitor {
     final FieldVisitor fv;
 
     FieldAnnotationVisitor(final FieldVisitor fv, final DataField field) {
-        super(Opcodes.ASM4, fv);
+        super(Opcodes.ASM6, fv);
         this.fv = fv;
         this.field = field;
     }

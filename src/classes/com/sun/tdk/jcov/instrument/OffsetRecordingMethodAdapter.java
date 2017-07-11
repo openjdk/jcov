@@ -45,7 +45,7 @@ class OffsetRecordingMethodAdapter extends MethodVisitor {
 
     public OffsetRecordingMethodAdapter(final MethodVisitor mv,
             final DataMethodWithBlocks method) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM6, mv);
         this.currentInstructionIndex = 0;
         this.bcis = new int[60];
         this.method = method;
@@ -97,15 +97,6 @@ class OffsetRecordingMethodAdapter extends MethodVisitor {
             final String desc) {
         recordInstructionOffset();
         super.visitFieldInsn(opcode, owner, name, desc);
-    }
-
-    public void visitMethodInsn(
-            final int opcode,
-            final String owner,
-            final String name,
-            final String desc) {
-        recordInstructionOffset();
-        super.visitMethodInsn(opcode, owner, name, desc);
     }
 
     public void visitJumpInsn(final int opcode, final Label label) {
@@ -163,4 +154,11 @@ class OffsetRecordingMethodAdapter extends MethodVisitor {
         recordInstructionOffset();
         super.visitInvokeDynamicInsn(name, desc, bsm, bsmArgs);
     }
+
+    @Override
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+        recordInstructionOffset();
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
+    }
+
 }

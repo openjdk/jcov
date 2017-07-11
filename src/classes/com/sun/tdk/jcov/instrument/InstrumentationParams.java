@@ -57,6 +57,8 @@ public class InstrumentationParams {
     private String[] excludes;
     private String[] callerIncludes;
     private String[] callerExcludes;
+    private String[] inner_includes;
+    private String[] inner_excludes;
     private InstrumentationOptions.InstrumentationMode mode;
     private String saveBegin;
     private String saveEnd;
@@ -64,6 +66,7 @@ public class InstrumentationParams {
     private String[] savesEnd;
     private Pattern[] alls;
     private Pattern[] all_modules;
+    private Pattern[] inner_alls;
     private boolean innerInvocations = true;
 
     public InstrumentationParams(boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, InstrumentationMode mode) {
@@ -139,6 +142,7 @@ public class InstrumentationParams {
         this.callerExclude = InstrumentationOptions.concatRegexps(callerExcludes);
         this.alls = Utils.concatFilters(includes, excludes);
         this.all_modules = Utils.concatModuleFilters(m_includes, m_excludes);
+        this.inner_alls = Utils.concatFilters(inner_includes, inner_excludes);
     }
 
     public boolean isDetectInternal() {
@@ -190,6 +194,10 @@ public class InstrumentationParams {
 
     public boolean isIncluded(String classname) {
         return Utils.accept(alls, null, "/" + classname, null);
+    }
+
+    public boolean isInnerInstrumentationIncludes(String classname) {
+        return Utils.accept(inner_alls, null, "/" + classname, null);
     }
 
     public boolean isModuleIncluded(String modulename) {
@@ -292,6 +300,18 @@ public class InstrumentationParams {
     public void setIncludes(String[] includes) {
         this.includes = includes;
         this.alls = Utils.concatFilters(includes, excludes);
+    }
+
+    public InstrumentationParams setInnerExcludes(String[] excludes) {
+        this.inner_excludes = excludes;
+        this.inner_alls = Utils.concatFilters(inner_includes, excludes);
+        return this;
+    }
+
+    public InstrumentationParams setInnerIncludes(String[] includes) {
+        this.inner_includes = includes;
+        this.inner_alls = Utils.concatFilters(includes, inner_excludes);
+        return this;
     }
 
     public InstrumentationParams setInstrumentSynthetic(boolean synth) {

@@ -42,43 +42,7 @@ public class ClassMorph2 {
         try {
 
             DataRoot root = Reader.readXML(template, true, null);
-            for (DataPackage pack : root.getPackages()) {
-                for (DataClass clazz : pack.getClasses()) {
-                    for (DataMethod meth : clazz.getMethods()) {
-                        if (meth.access(meth.getAccess()).matches(".*abstract.*")
-                                || meth.access(meth.getAccess()).matches(".*native.*")) {
-                            int id = 0;
-                            if (meth instanceof DataMethodInvoked) {
-                                id = ((DataMethodInvoked) meth).getId();
-                            } else if (meth instanceof DataMethodEntryOnly) {
-                                id = ((DataMethodEntryOnly) meth).getId();
-                            } else {
-                                DataMethodWithBlocks mb = (DataMethodWithBlocks) meth;
-                                for (BasicBlock bb : mb.getBasicBlocks()) {
-                                    for (DataBlock db : bb.blocks()) {
-                                        id = db.getId();
-                                        break;
-                                    }
-                                    break;
-                                }
-                            }
-
-                            String className = pack.getName().equals("") ? clazz.getName()
-                                    : pack.getName().replace('.', '/') + "/" + clazz.getName();
-                            StaticInvokeMethodAdapter.addID(
-                                    className, meth.getName(), meth.getVmSignature(), id);
-
-                        }
-                    }
-                    for (DataField fld : clazz.getFields()) {
-                        int id = fld.getId();
-                        String className = pack.getName().equals("") ? clazz.getName()
-                                : pack.getName().replace('.', '/') + "/" + clazz.getName();
-                        StaticInvokeMethodAdapter.addID(
-                                className, fld.getName(), fld.getVmSig(), id);
-                    }
-                }
-            }
+            ClassMorph.fillIntrMethodsIDs(root);
 
         } catch (Throwable t) {
             throw new Error(t);

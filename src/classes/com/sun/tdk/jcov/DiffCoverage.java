@@ -60,8 +60,8 @@ public class DiffCoverage extends JCovCMDTool {
      */
     public static class SourceLine {
 
-        private int line;
-        private String source;
+        public int line;
+        public String source;
         boolean checked;
         boolean codeByDefault = true;
 

@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import org.objectweb.asm.ClassReader;
@@ -99,6 +100,21 @@ public class OverriddenClassWriter extends ClassWriter {
     public static void clean() {
         class_superclass.clear();
         class_interfaces.clear();
+    }
+
+    public static void addClassInfo(InputStream in){
+        try {
+            ClassReader cr = new OffsetLabelingClassReader(in);
+            if (class_superclass.get(cr.getClassName()) == null) {
+                class_superclass.put(cr.getClassName(), cr.getSuperName());
+            }
+            if (class_interfaces.get(cr.getClassName()) == null) {
+                class_interfaces.put(cr.getClassName(), Arrays.asList(cr.getInterfaces()));
+            }
+        }
+        catch (IOException ioe){
+            System.err.println("Failed to read class. Reason: " + ioe.getMessage());
+        }
     }
 
     /**

@@ -34,6 +34,7 @@ import com.sun.tdk.jcov.instrument.XmlNames;
 import com.sun.tdk.jcov.instrument.DataBlock;
 import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.util.Utils;
+import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -56,6 +57,7 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
     private LineCoverage lineCoverage = new LineCoverage();
     private List<ItemCoverage> items = new ArrayList<ItemCoverage>();
     private boolean inAnonymClass = false;
+    private boolean lambdaMethod = false;
     private boolean anonymon = false;
     private DataType[] supportedColumns = {METHOD, BLOCK, BRANCH, LINE};
     private boolean isInAnc = false;
@@ -122,13 +124,20 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
         }
     }
 
-    private static String isBlockInAnc(DataMethod m, DataBlock b , AncFilter[] filters){
+    private static String isBlockInAnc(DataMethod m, DataBlock b , AncFilter[] filters, List<String> ancBlockReasons){
         if (filters == null){
             return null;
         }
         for (AncFilter filter : filters){
             if (filter.accept(m , b)){
-                return filter.getAncReason();
+                String ancReason = filter.getAncReason();
+                if (ancBlockReasons.size() == 0) {
+                    ancBlockReasons.add("All blocks are filtered:");
+                }
+                if (!ancBlockReasons.contains(ancReason)) {
+                    ancBlockReasons.add(ancReason);
+                }
+                return ancReason;
             }
         }
         return null;
@@ -146,11 +155,20 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
         return inAnonymClass;
     }
 
+    public void setLambdaMethod(boolean lambdaMethod) {
+        this.lambdaMethod = lambdaMethod;
+    }
+
+    public boolean isLambdaMethod() {
+        return lambdaMethod;
+    }
+
     /**
      * Finds coverage items in terms of legacy jcov (blocks and branches)
      */
      void detectItems(DataMethod m, List<ItemCoverage> list, boolean isInAnc, AncFilter[] ancFilters) {
         Map<DataBlock, ItemCoverage> added = new HashMap<DataBlock, ItemCoverage>();
+        List<String> ancBlockReasons = new ArrayList<String>();
 
         for (DataBlock db : m.getBlocks()) {
             if (db instanceof DataBlockTarget /* db.isNested()*/) {
@@ -164,7 +182,7 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
                 item = ItemCoverage.createBranchCoverageItem(db.startBCI(), db.endBCI(), db.getCount(), db.getScale());
             }
 
-            String ancReason = isBlockInAnc(m, db, ancFilters);
+            String ancReason = isBlockInAnc(m, db, ancFilters, ancBlockReasons);
             if (isInAnc || ancReason != null){
                 item.setAncInfo(ancInfo != null ? ancInfo : ancReason);
             }
@@ -202,7 +220,7 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
                 item = ItemCoverage.createBranchCoverageItem(db.startBCI(), db.endBCI(), db.getCount(), db.getScale());
             }
 
-            String ancReason = isBlockInAnc(m, db, ancFilters);
+            String ancReason = isBlockInAnc(m, db, ancFilters, ancBlockReasons);
             if (isInAnc || ancReason != null){
                 item.setAncInfo(ancInfo != null ? ancInfo : ancReason);
             }
@@ -234,7 +252,7 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
             if (!i.isBlock()) {
                 ItemCoverage i2 = ItemCoverage.createBlockCoverageItem(i.startLine, i.endLine, i.count, db.getScale());
 
-                String ancReason = isBlockInAnc(m, db, ancFilters);
+                String ancReason = isBlockInAnc(m, db, ancFilters, ancBlockReasons);
                 if (isInAnc || ancReason != null){
                     i2.setAncInfo(ancInfo != null ? ancInfo : ancReason);
                 }
@@ -264,11 +282,23 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
                 }
             }
         }
+
+        if (!isInAnc && ancBlockReasons.size() - 1 == list.size()) {
+            StringBuilder methodAncReason = new StringBuilder();
+            for (String ancBlock : ancBlockReasons) {
+                methodAncReason.append(" ").append(ancBlock);
+            }
+            setAncInfo(methodAncReason.toString());
+        }
     }
 
     public void setAncInfo(String ancInfo){
         isInAnc = (ancInfo != null && !ancInfo.isEmpty());
         this.ancInfo = ancInfo;
+    }
+
+    public boolean isMethodInAnc(){
+        return isInAnc;
     }
 
     public String getAncInfo(){
@@ -365,6 +395,10 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
                     return new CoverageData(0, 0, 0);
                 }
 
+                if (name.startsWith("lambda$")){
+                    return new CoverageData(0, 0, 0);
+                }
+
                 if (testNumber > -1) {
                     int c = (count > 0 && isCoveredByTest(testNumber)) ? 1 : 0;
                     if (isInAnc) {
@@ -379,6 +413,9 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
                 return new CoverageData(c, 0, 1);
             case BLOCK:
             case BRANCH:
+                if (inAnonymClass && !anonymon && (access & Opcodes.ACC_SYNTHETIC) != 0) {
+                    return new CoverageData(0, 0, 0);
+                }
                 CoverageData result = new CoverageData(0, 0, 0);
                 for (ItemCoverage item : items) {
                     if (testNumber < 0 || item.isCoveredByTest(testNumber)) {

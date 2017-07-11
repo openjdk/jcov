@@ -44,6 +44,7 @@ public class DefaultReportGeneratorSPI implements ReportGeneratorSPI, AntableSPI
     protected boolean showBlocks = true;
     protected boolean showBranches = true;
     protected boolean showLines = true;
+    protected boolean showOverviewColorBars = false;
     protected boolean generateShortFormat;
     protected boolean showFields;
 
@@ -67,6 +68,7 @@ public class DefaultReportGeneratorSPI implements ReportGeneratorSPI, AntableSPI
             html.setShowBlocks(showBlocks);
             html.setShowBranches(showBranches);
             html.setShowLines(showLines);
+            html.setShowOverviewColorBars(showOverviewColorBars);
             return html;
         }
 
@@ -80,7 +82,8 @@ public class DefaultReportGeneratorSPI implements ReportGeneratorSPI, AntableSPI
                     DSC_NO_LINE,
                     DSC_NO_METHOD,
                     DSC_NO_FIELD,
-                    DSC_SHORT,});
+                    DSC_SHORT,
+                    DSC_OVERVIEW_COLORBARS});
     }
 
     public int handleEnv(EnvHandler opts) throws EnvHandlingException {
@@ -90,6 +93,7 @@ public class DefaultReportGeneratorSPI implements ReportGeneratorSPI, AntableSPI
         showBranches = !opts.isSet(DSC_NO_BRANCH);
         showLines = !opts.isSet(DSC_NO_LINE);
         generateShortFormat = opts.isSet(DSC_SHORT);
+        showOverviewColorBars = opts.isSet(DSC_OVERVIEW_COLORBARS);
 
         return 0;
     }
@@ -141,4 +145,6 @@ public class DefaultReportGeneratorSPI implements ReportGeneratorSPI, AntableSPI
             new OptionDescr("noblock", "Additional filtering", "Hide block coverage from report");
     protected final static OptionDescr DSC_NO_LINE =
             new OptionDescr("noline", "Additional filtering", "Hide line coverage from report");
+    protected final static OptionDescr DSC_OVERVIEW_COLORBARS =
+            new OptionDescr("addoverviewbars", "Additional reporting", "Adds colorful bars to the overview frames.");
 }

@@ -104,6 +104,9 @@ public class CombinerDataProcessor implements DataProcessor {
                     String prefix = createPrefix(clzName, mainClassName);
                     for (DataMethod m : c.getMethods()) {
                         int newAccess = isPublic ? m.getAccess() : makePrivate(m.getAccess());
+                        if ((c.getAccess() & Opcodes.ACC_SYNTHETIC) != 0 && (m.getAccess() & Opcodes.ACC_SYNTHETIC) == 0){
+                            newAccess = m.getAccess() | Opcodes.ACC_SYNTHETIC;
+                        }
 
                         DataMethod nm = m.clone(newClass, newAccess, prefix + m.getName());
                         // for -type=method methods exist witout blocks and branches

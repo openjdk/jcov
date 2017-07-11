@@ -125,6 +125,10 @@ public class ClassCoverage extends AbstractCoverage {
             if (method.getName() != null && method.getName().matches("\\$\\d.*")) {
                 methodCoverage.setInAnonymClass(true);
             }
+            if ((method.getAccess() & Opcodes.ACC_SYNTHETIC) != 0 && method.getName().startsWith("lambda$")){
+                methodCoverage.setLambdaMethod(true);
+            }
+
             methods.add(methodCoverage);
             lineCoverage.processLineCoverage(methodCoverage.getLineCoverage());
         }
@@ -400,6 +404,7 @@ public class ClassCoverage extends AbstractCoverage {
     public CoverageData getData(DataType column, int testNumber) {
         switch (column) {
             case CLASS:
+                boolean allMethodsInANC = true;
                 for (MethodCoverage method : methods) {
                     if (method.count > 0 && (testNumber < 0 || method.isCoveredByTest(testNumber))) {
                         if (isInAnc) {
@@ -407,8 +412,11 @@ public class ClassCoverage extends AbstractCoverage {
                         }
                         return new CoverageData(1, 0, 1);
                     }
+                    if (method.count <= 0 && !method.isMethodInAnc()){
+                        allMethodsInANC = false;
+                    }
                 }
-                if (isInAnc) {
+                if (isInAnc || (allMethodsInANC && methods.size() > 0)) {
                     return new CoverageData(0, 1, 1);
                 }
                 return new CoverageData(0, 0, 1);
@@ -494,6 +502,14 @@ public class ClassCoverage extends AbstractCoverage {
             File f = new File(source_paths[i] + source_name);
             if (f.exists()) {
                 return f.getAbsolutePath();
+            }
+            else{
+                if (clz.getModuleName() != null && source_paths[i].contains("#module")){
+                    f = new File(source_paths[i].replaceAll("\\#module",clz.getModuleName()) + source_name);
+                    if (f.exists()){
+                        return f.getAbsolutePath();
+                    }
+                }
             }
         }
         return clz.getSource(); // not found

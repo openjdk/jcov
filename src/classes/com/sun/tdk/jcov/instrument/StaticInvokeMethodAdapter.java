@@ -58,12 +58,18 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
         if (id != null) {
             return id;
         }
+
+        sig = owner + "." + name;
+        id = map.get(sig);
+        if (id != null) {
+            return id;
+        }
         return -1;
     }
     public static final Map<String, Integer> map = new HashMap<String, Integer>();
 
     public StaticInvokeMethodAdapter(MethodVisitor mv, String className, String methName, int access, final InstrumentationParams params) {
-        super(Opcodes.ASM4, mv);
+        super(Opcodes.ASM6, mv);
         this.className = className;
         this.params = params;
         this.methName = methName;
@@ -86,16 +92,16 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
     }
 
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-        if ((opcode == INVOKEVIRTUAL || opcode == INVOKEINTERFACE) && params.isInstrumentAbstract()
-                && params.isIncluded(owner)) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
 
+        if ((params.isInstrumentAbstract() || params.isInstrumentNative()) &&
+                params.isIncluded(owner) || params.isCallerFilterAccept(owner)) {
             if (getInvokeID(owner, name, desc) != -1) {
                 int id = getInvokeID(owner, name, desc);
                 InsnList il = new InsnList();
                 il.add(new LdcInsnNode(id));
                 il.add(new MethodInsnNode(INVOKESTATIC,
-                        "com/sun/tdk/jcov/runtime/Collect", "hit", "(I)V"));
+                        "com/sun/tdk/jcov/runtime/Collect", "hit", "(I)V", false));
                 il.accept(this);
             }
         }
@@ -104,21 +110,20 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
 
             int id = (name + desc).hashCode();
             super.visitLdcInsn(id);
-            super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V");
+            super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V", false);
 
         }
 
         if (params.isInnerInvacationsOff() && Utils.isAdvanceStaticInstrAllowed(className, name)) {
-            if (!owner.equals("java/lang/Object")) {
-
+            if (!owner.equals("java/lang/Object") && params.isInnerInstrumentationIncludes(className)) {
                 int id = -1;
                 super.visitLdcInsn(id);
-                super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V");
+                super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V", false);
 
             }
         }
 
-        super.visitMethodInsn(opcode, owner, name, desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
 
     }
 

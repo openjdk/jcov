@@ -516,18 +516,18 @@ public class Agent extends JCovTool {
     private void updateModules(){
         try {
             Class layer = Class.forName("java.lang.module.Layer");
-            java.lang.reflect.Method bootMethod = layer.getDeclaredMethod("boot", null);
-            Object layerObj = bootMethod.invoke(layer, null);
+            java.lang.reflect.Method bootMethod = layer.getDeclaredMethod("boot");
+            Object layerObj = bootMethod.invoke(layer);
 
-            java.lang.reflect.Method allModulesD = layer.getDeclaredMethod("allModuleDescriptors", null);
+            java.lang.reflect.Method allModulesD = layer.getDeclaredMethod("allModuleDescriptors");
             allModulesD.setAccessible(true);
-            Set<Object> mDescriptors = (Set<Object>) allModulesD.invoke(layerObj, null);
+            Set<Object> mDescriptors = (Set<Object>) allModulesD.invoke(layerObj);
 
             Class moduleDescriptor = Class.forName("java.lang.module.ModuleDescriptor");
             java.lang.reflect.Method nameMethod = moduleDescriptor.getDeclaredMethod("name");
 
             for (Object md : mDescriptors){
-                String moduleName = (String) nameMethod.invoke(md, null);
+                String moduleName = (String) nameMethod.invoke(md);
                 updateModule(moduleName, layer, layerObj);
             }
         }
@@ -539,11 +539,11 @@ public class Agent extends JCovTool {
         try{
             java.lang.reflect.Method findModule = layer.getDeclaredMethod("findModule", String.class);
             Object moduleOptional = findModule.invoke(layerObj, name);
-            java.lang.reflect.Method getMethod = moduleOptional.getClass().getDeclaredMethod("get", null);
-            Object module = getMethod.invoke(moduleOptional, null);
+            java.lang.reflect.Method getMethod = moduleOptional.getClass().getDeclaredMethod("get");
+            Object module = getMethod.invoke(moduleOptional);
 
-            java.lang.reflect.Method getModuleMethod = Class.class.getDeclaredMethod("getModule", null);
-            Object jcovModule = getModuleMethod.invoke(Class.forName("com.sun.tdk.jcov.runtime.CollectDetect"), null);
+            java.lang.reflect.Method getModuleMethod = Class.class.getDeclaredMethod("getModule");
+            Object jcovModule = getModuleMethod.invoke(Class.forName("com.sun.tdk.jcov.runtime.CollectDetect"));
             java.lang.reflect.Method addReadsMethod = module.getClass().getDeclaredMethod("addReads", Class.forName("java.lang.reflect.Module"));
             addReadsMethod.invoke(module, jcovModule);
         }

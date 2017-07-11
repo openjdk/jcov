@@ -24,6 +24,7 @@
  */
 package com.sun.tdk.jcov.insert;
 
+import com.sun.tdk.jcov.instrument.OverriddenClassWriter;
 import com.sun.tdk.jcov.runtime.PropertyFinder;
 import com.sun.tdk.jcov.util.Utils;
 import java.io.BufferedInputStream;
@@ -34,6 +35,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -612,6 +616,8 @@ public abstract class AbstractUniversalInstrumenter {
                     processArc(instrumentingPath, destinationPath, null);
                 }
             }
+        } else if (instrumentingPath.getName().equals("modules")) {
+            instrumentModulesFile(instrumentingPath, destinationPath);
         } else if (isClassFile(instrumentingPath.getName())) {
             if (destinationPath == null) {
                 destinationPath = instrumentingPath;
@@ -628,6 +634,84 @@ public abstract class AbstractUniversalInstrumenter {
         if (!isClassFile) {
             logger.log(Level.INFO, "Summary for ''{0}'': files total={1}, classes total={2}, instrumented classes total={3}", new Object[]{instrumentingPath, fileCount, classCount, iClassCount});
         }
+    }
+
+    public void processClassFileInModules(Path file, File destinationPath){
+        String fname = file.toAbsolutePath().toString();
+        try {
+            final String distinationStr = destinationPath.toString();
+            classBuf = Files.readAllBytes(file);
+            int classLength = classBuf.length;
+            byte[] outBuf = null;
+            try {
+                if (!"module-info.class".equals(file.getFileName().toString())) {
+                    outBuf = instrument(classBuf, classLength);
+                }
+            } catch (IOException e) {
+                logger.log(Level.SEVERE, "  Error reading data from '" + fname + "' - skipped", e);
+            } catch (NullPointerException e) {
+                logger.log(Level.SEVERE, "  Error reading data from '" + fname + "' - skipped", e);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "  Error instrumenting '" + fname + "' - skipped", e);
+            }
+            if (outBuf != null) {
+
+                classLength = outBuf.length;
+
+                File outFile = new File(distinationStr + File.separator + fname);
+                String parentName = outFile.getParent();
+                if (parentName != null) {
+                    File parent = new File(parentName);
+                    if (!parent.exists()) {
+                        parent.mkdirs();
+                    }
+                }
+                // write instrumented classfile
+                FileOutputStream fos = new FileOutputStream(outFile);
+                fos.write(outBuf, 0, classLength);
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "  Error writing data to '" + outFile.getAbsolutePath() + "' - skipped", e);
+                }
+            }
+        }
+        catch(IOException e){
+            logger.log(Level.SEVERE, "  Error processing classFile by Path '" + fname + "' - skipped", e);
+        }
+    }
+
+    private void instrumentModulesFile(File modulePath, final File destinationPath){
+
+        try {
+            Utils.addToClasspath(modulePath.getParentFile().getParentFile());
+            FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
+            final Path path = fs.getPath("/modules/");
+
+            Files.walkFileTree(path, new SimpleFileVisitor<Path>(){
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    if(!attrs.isDirectory() && isClassFile(file.getFileName().toString())){
+                        OverriddenClassWriter.addClassInfo(Files.newInputStream(file));
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+
+            Files.walkFileTree(path, new SimpleFileVisitor<Path>(){
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    if(!attrs.isDirectory() && isClassFile(file.getFileName().toString())){
+                        processClassFileInModules(file, destinationPath);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Modules instrumentaion failed", e);
+        }
+
     }
 
     /**

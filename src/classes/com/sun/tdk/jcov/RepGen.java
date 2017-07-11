@@ -805,7 +805,7 @@ public class RepGen extends JCovCMDTool {
             ancMethod = ancMethod
                     || (clz.getSuperName().equals("java/lang/Enum") && (m.getName().equals("valueOf") || m.getName().equals("values")));
 
-            return !ancMethod;
+            return !ancMethod || m.getName().startsWith("lambda$");
 
         }
 

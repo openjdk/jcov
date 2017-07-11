@@ -45,7 +45,7 @@ public class InstrumentedAttributeClassAdapter extends ClassVisitor {
     }
 
     public InstrumentedAttributeClassAdapter(final ClassVisitor cv) {
-        super(Opcodes.ASM4, cv);
+        super(Opcodes.ASM6, cv);
     }
 
     public void visitAttribute(Attribute attr) {

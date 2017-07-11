@@ -170,6 +170,9 @@ public class JavapClass {
             className = className.substring(0, className.indexOf('<'));
         }
 
+        if (className.startsWith("class")){
+            className = className.substring(6, className.length());
+        }
     }
 
     private void parsePackageName(String textLine) {

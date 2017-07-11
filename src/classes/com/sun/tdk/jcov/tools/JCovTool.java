@@ -106,7 +106,8 @@ public abstract class JCovTool {
         "com.sun.tdk.jcov.Filter",
         "com.sun.tdk.jcov.DiffCoverage",
         "com.sun.tdk.jcov.RepGen",
-        "com.sun.tdk.jcov.JCov"
+        "com.sun.tdk.jcov.JCov",
+        "com.sun.tdk.jcov.IssueCoverage"
     };
     public static final List<String> allToolsList = Collections.unmodifiableList(Arrays.asList(allTools));
 
@@ -130,6 +131,11 @@ public abstract class JCovTool {
                 c = Class.forName(str);
                 o = c.newInstance();
                 h = (JCovTool) o;
+            } catch (NoClassDefFoundError cndfe){
+                if ("com.sun.tdk.jcov.IssueCoverage".equals(str)){
+                    System.out.println("IssueCoverage command request jdk9 or javax.tools in classpath");
+                    continue;
+                }
             } catch (Exception ex) {
                 ex.printStackTrace();
                 System.exit(1);

@@ -65,6 +65,8 @@ public class JREInstr extends JCovCMDTool {
     private File javac;
     private String[] callerInclude;
     private String[] callerExclude;
+    private String[] innerInclude;
+    private String[] innerExclude;
     private static final Logger logger;
     private String host = null;
     private Integer port = null;
@@ -115,10 +117,15 @@ public class JREInstr extends JCovCMDTool {
             }
             File jmodsTemp = new File(toInstrument.getParentFile(), "jmod_temp");
 
+            ArrayList<URL> urls = new ArrayList<URL>();
             for (File mod : toInstrument.listFiles()) {
                 File jmodDir = extractJMod(jdk, mod.getAbsoluteFile(), jmodsTemp);
-                Utils.addToClasspath(new String[]{new File(jmodDir, "classes").getAbsolutePath()});
+                urls.add(new File(jmodDir, "classes").toURI().toURL());
             }
+            urls.add(toInstrument.toURI().toURL());
+
+            cl = new StaticJREInstrClassLoader(urls.toArray(new URL[urls.size()]));
+            instr.setClassLoader(cl);
 
             try {
                 for (File mod : jmodsTemp.listFiles()) {
@@ -126,10 +133,9 @@ public class JREInstr extends JCovCMDTool {
 
                         File modClasses = new File(mod, "classes");
                         if ("java.base".equals(mod.getName())) {
-                            updateExports(new File(modClasses, "module-info.class"), cl);
-                        } else {
-                            updateHashes(new File(modClasses, "module-info.class"), cl);
+                            addJCovRuntimeToJavaBase(new File(modClasses, "module-info.class"), cl);
                         }
+                        updateHashes(new File(modClasses, "module-info.class"), cl);
 
                         instr.instrumentFile(modClasses.getAbsolutePath(), null, null, mod.getName());
                         createJMod(mod, jdk, implant.getAbsolutePath());
@@ -241,30 +247,41 @@ public class JREInstr extends JCovCMDTool {
             }
         }
 
-        if (addTests != null) {
-            if (srcs == null) {
-                srcs = new ArrayList<String>();
-            }
-            for (int i = 0; i < addTests.length; ++i) {
-                srcs.add(addTests[i].getAbsolutePath());
-            }
-        }
-
         if (srcs != null) {
             Utils.addToClasspath(srcs.toArray(new String[0]));
             instr.instrumentFiles(srcs.toArray(new String[0]), null, null);
         }
+
+        if (addTests != null) {
+            ArrayList<String> tests = new ArrayList<String>();
+            for (int i = 0; i < addTests.length; ++i) {
+                tests.add(addTests[i].getAbsolutePath());
+            }
+            instr.instrumentTests(tests.toArray(new String[0]), null, null);
+        }
+
         instr.finishWork();
         return SUCCESS_EXIT_CODE;
     }
 
 
-    private void updateExports(File file, ClassLoader cl) {
+    private void addJCovRuntimeToJavaBase(File file, ClassLoader cl) {
         try {
             InputStream in = new FileInputStream(file.getCanonicalPath());
             ClassReader cr = new ClassReader(in);
             ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, cl);
-            cr.accept(cw, new Attribute[]{new ConcealedPackagesAttribute(), new ModuleAttribute()}, 0);
+
+            ClassVisitor cv = new ClassVisitor(Opcodes.ASM6, cw) {
+                @Override
+                public ModuleVisitor visitModule(String name, int access, String version) {
+                    ModuleVisitor mv = super.visitModule(name, access, version);
+                    mv.visitPackage("com/sun/tdk/jcov/runtime");
+                    mv.visitExport("com/sun/tdk/jcov/runtime", 0);
+                    return mv;
+                }
+            };
+
+            cr.accept(cv, 0);
 
             DataOutputStream dout = new DataOutputStream(new FileOutputStream(file.getCanonicalPath()));
             dout.write(cw.toByteArray());
@@ -272,7 +289,7 @@ public class JREInstr extends JCovCMDTool {
             in.close();
             dout.close();
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "can not update module exports", e);
+            logger.log(Level.SEVERE, "can not update java.base", e);
         }
     }
 
@@ -281,7 +298,7 @@ public class JREInstr extends JCovCMDTool {
             InputStream in = new FileInputStream(file.getCanonicalPath());
             ClassReader cr = new ClassReader(in);
             ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, cl);
-            cr.accept(cw, new Attribute[]{new ConcealedPackagesAttribute(), new HashesAttribute()}, 0);
+            cr.accept(cw, new Attribute[]{new HashesAttribute()}, 0);
 
             DataOutputStream doutn = new DataOutputStream(new FileOutputStream(file.getCanonicalPath()));
             doutn.write(cw.toByteArray());
@@ -319,7 +336,7 @@ public class JREInstr extends JCovCMDTool {
     private File runJLink(File jmodDir, File jdk) {
         try {
 
-            String command = jdk.getAbsolutePath() + File.separator + "bin" + File.separator + "jlink --modulepath " + jmodDir.getCanonicalPath() + " --addmods ";
+            String command = jdk.getAbsolutePath() + File.separator + "bin" + File.separator + "jlink --module-path " + jmodDir.getCanonicalPath() + " --add-modules ";
 
             StringBuilder sb = new StringBuilder("");
             for (File subDir : jmodDir.listFiles()) {
@@ -348,8 +365,8 @@ public class JREInstr extends JCovCMDTool {
         try {
             File modsDir = jmodDir.getParentFile();
             StringBuilder command = new StringBuilder();
-            command.append(jdk.getAbsolutePath() + File.separator + "bin" + File.separator + "jmod --create ");
-            command.append("--modulepath " + modsDir.getCanonicalPath() + " ");
+            command.append(jdk.getAbsolutePath() + File.separator + "bin" + File.separator + "jmod create ");
+            command.append("--module-path " + modsDir.getCanonicalPath() + " ");
 
             for (File subDir : jmodDir.listFiles()) {
                 if (subDir.getName().equals("classes")) {
@@ -439,6 +456,8 @@ public class JREInstr extends JCovCMDTool {
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SYNTHETIC,
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_ANONYM,
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INNERINVOCATION,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INNER_INCLUDE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INNER_EXCLUDE,
                 Instr.DSC_SUBSEQUENT,
                 DSC_JAVAC_HACK,
                 DCS_ADD_JAR,
@@ -712,6 +731,9 @@ public class JREInstr extends JCovCMDTool {
         callerInclude = envHandler.getValues(com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_INCLUDE);
         callerExclude = envHandler.getValues(com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_EXCLUDE);
 
+        innerInclude = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleInnerInclude(envHandler);
+        innerExclude = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleInnerExclude(envHandler);
+
         if (!Utils.accept(pats, null, "/java/lang/Shutdown", null)) {
             // Shutdown was excluded with some filtering mechanism. No need to remove it from excludes as inclusion has more priority
             logger.log(Level.WARNING, "java.lang.Shutdown automatically included to instrumentation (it can't be excluded in jreinstr)");
@@ -738,10 +760,13 @@ public class JREInstr extends JCovCMDTool {
         instr.setExclude(excludes);
 
         instr.setMInclude(m_includes);
-         instr.setMExclude(m_excludes);
+        instr.setMExclude(m_excludes);
 
         instr.setCallerInclude(callerInclude);
         instr.setCallerExclude(callerExclude);
+
+        instr.setInnerInclude(innerInclude);
+        instr.setInnerExclude(innerExclude);
 
         return ret;
     }
