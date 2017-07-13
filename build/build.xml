@@ -236,7 +236,7 @@
                 </filterreader>
             </filterchain>
         </copy>
-        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
+        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
                srcdir="${jcov.filesaver.src}"
                sourcepath=""
                classpath="${jcov.filesaver.classes}"
@@ -270,7 +270,7 @@
                 </filterreader>
             </filterchain>
         </copy>
-        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
+        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="1.5" source="1.5"
                srcdir="${jcov.networksaver.src}"
                sourcepath=""
                classpath="${jcov.networksaver.classes}"
