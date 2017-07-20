@@ -100,6 +100,7 @@ public final class Utils {
     public final static int VER14 = 140;
     public final static int VER15 = 150;
     public final static int VER16 = 160;
+    public final static int VER9 = 190;
     private static int javaVersion = -1;
 
 
@@ -109,9 +110,14 @@ public final class Utils {
     public static int getJavaVersion() {
         if (javaVersion == -1){
             String ver = System.getProperty("java.version");
-            javaVersion = (ver.charAt(0) - '0') * 100
-                    + (ver.charAt(2) - '0') * 10
-                    + (ver.length() > 4 ? (ver.charAt(4) - '0') : 0);
+            if (ver.length() > 1) {
+                javaVersion = (ver.charAt(0) - '0') * 100
+                        + (ver.charAt(2) - '0') * 10
+                        + (ver.length() > 4 ? (ver.charAt(4) - '0') : 0);
+            }
+            else{
+                javaVersion = VER9;
+            }
         }
         return javaVersion;
     }

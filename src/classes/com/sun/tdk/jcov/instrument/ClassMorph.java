@@ -281,6 +281,11 @@ public class ClassMorph {
     }
 
     private String updateClassModule(String fullname){
+
+        if ("java/lang/ClassCircularityError".equals(fullname)){
+            return "module java.base";
+        }
+
         String result = null;
         try{
             if (fullname.contains("$")){

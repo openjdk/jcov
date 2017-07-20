@@ -86,7 +86,11 @@ class DeferringMethodClassAdapter extends ClassVisitor {
             final String desc,
             final String signature,
             final String[] exceptions) {
-        if (!InstrumentationOptions.isSkipped(k.getFullname(), name, access) && params.isDynamicCollect() && params.isInstrumentNative() && (access & ACC_NATIVE) != 0) {
+        if (!InstrumentationOptions.isSkipped(k.getFullname(), name, access)
+                && params.isDynamicCollect()
+                && params.isInstrumentNative()
+                && (access & ACC_NATIVE) != 0
+                && !"java/lang/invoke/VarHandle".equals(k.getFullname())) {
             // Visit the native method, but change the access flags and rename it with a prefix
             int accessNative = access;
             if ((accessNative & ACC_STATIC) == 0) {

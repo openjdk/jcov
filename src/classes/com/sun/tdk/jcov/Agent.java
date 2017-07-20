@@ -442,8 +442,6 @@ public class Agent extends JCovTool {
         params.enable();
         CollectDetect.enterInstrumentationCode();
 
-        updateModules();
-
         Tr transformer = new Tr("RetransformApp", flushPath);
         inst.addTransformer(transformer, true);
         if (params.isInstrumentNative()) {
@@ -458,6 +456,7 @@ public class Agent extends JCovTool {
         for (Class c : classes) {
             if (inst.isModifiableClass(c)
                     && classMorph.shouldTransform(c.getName().replace('.', '/'))
+                    && !c.getName().replace('.', '/').equals("jdk/internal/reflect/Reflection")
                     && !c.getName().replace('.', '/').equals("sun/reflect/Reflection")) {
                 classes[keep++] = c;
             }
@@ -511,44 +510,6 @@ public class Agent extends JCovTool {
         CollectDetect.leaveInstrumentationCode();
         PropertyFinder.addAutoShutdownSave();
 
-    }
-
-    private void updateModules(){
-        try {
-            Class layer = Class.forName("java.lang.module.Layer");
-            java.lang.reflect.Method bootMethod = layer.getDeclaredMethod("boot");
-            Object layerObj = bootMethod.invoke(layer);
-
-            java.lang.reflect.Method allModulesD = layer.getDeclaredMethod("allModuleDescriptors");
-            allModulesD.setAccessible(true);
-            Set<Object> mDescriptors = (Set<Object>) allModulesD.invoke(layerObj);
-
-            Class moduleDescriptor = Class.forName("java.lang.module.ModuleDescriptor");
-            java.lang.reflect.Method nameMethod = moduleDescriptor.getDeclaredMethod("name");
-
-            for (Object md : mDescriptors){
-                String moduleName = (String) nameMethod.invoke(md);
-                updateModule(moduleName, layer, layerObj);
-            }
-        }
-        catch (Exception e){
-        }
-    }
-
-    private void updateModule(String name, Class layer, Object layerObj){
-        try{
-            java.lang.reflect.Method findModule = layer.getDeclaredMethod("findModule", String.class);
-            Object moduleOptional = findModule.invoke(layerObj, name);
-            java.lang.reflect.Method getMethod = moduleOptional.getClass().getDeclaredMethod("get");
-            Object module = getMethod.invoke(moduleOptional);
-
-            java.lang.reflect.Method getModuleMethod = Class.class.getDeclaredMethod("getModule");
-            Object jcovModule = getModuleMethod.invoke(Class.forName("com.sun.tdk.jcov.runtime.CollectDetect"));
-            java.lang.reflect.Method addReadsMethod = module.getClass().getDeclaredMethod("addReads", Class.forName("java.lang.reflect.Module"));
-            addReadsMethod.invoke(module, jcovModule);
-        }
-        catch (Exception e){
-        }
     }
 
     private void loadFileSaverClasses() throws IOException{
