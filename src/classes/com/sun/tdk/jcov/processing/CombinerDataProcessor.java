@@ -112,6 +112,7 @@ public class CombinerDataProcessor implements DataProcessor {
                         // for -type=method methods exist witout blocks and branches
                         if (nm instanceof DataMethodEntryOnly) {
                             nm.setCount(m.getCount());
+                            ((DataMethodEntryOnly) nm).setScale(m.getScale());
                         }
                         // new created method will be added to the newClass
                     }

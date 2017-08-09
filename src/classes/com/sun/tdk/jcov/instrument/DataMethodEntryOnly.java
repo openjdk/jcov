@@ -223,6 +223,10 @@ public class DataMethodEntryOnly extends DataMethod implements Iterable<DataBloc
         entryBlock.readScale(s);
     }
 
+    public void setScale(Scale scale) {
+        entryBlock.scale = scale;
+    }
+
     @Override
     public Scale getScale() {
         return entryBlock.scale;
