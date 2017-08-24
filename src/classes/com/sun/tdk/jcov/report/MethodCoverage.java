@@ -120,6 +120,9 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
                         }
                     }
                 }
+                if (item.getSourceLine() < 0 && lineTable.size() > 0){
+                    item.setSrcLine(lineTable.get(lineTable.size() - 1).line);
+                }
             }
         }
     }
