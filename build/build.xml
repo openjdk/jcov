@@ -100,9 +100,12 @@
         <fail unless="asm.present" message="Please, specify asm library"/>
 
         <condition property="javatest.present">
-            <not>
-                <equals arg1="${javatestjar}" arg2=""/>
-            </not>
+            <and>
+                <isset property="javatestjar"/>
+                <not>
+                    <equals arg1="${javatestjar}" arg2=""/>
+                </not>
+            </and>
         </condition>
 
         <mkdir dir="${jcov.src.update}"/>
