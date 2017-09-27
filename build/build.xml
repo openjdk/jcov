@@ -94,10 +94,26 @@
 
     </target>
 
-    <target name="prepare" depends="clean" description="checks dependencies">
+    <target name="compare-checksum">
 
         <available file="${asmjar}" property="asm.present"/>
         <fail unless="asm.present" message="Please, specify asm library"/>
+
+        <checksum file="${asmjar}" algorithm="sha1" property="${asmjar.checksum}" verifyproperty="asm.checksum.matches" />
+        <condition property="checksum.differs">
+            <equals arg1="${asm.checksum.matches}" arg2="false" />
+        </condition>
+    </target>
+
+    <target name="fail-if-checksum-differs" if="verify.strict" unless="verify.off">
+        <fail if="checksum.differs" message="wrong checksum for ASM dependency" />
+    </target>
+
+    <target name="verify-checksum" depends="compare-checksum, fail-if-checksum-differs" if="checksum.differs" unless="verify.off">
+        <echo message="warning: wrong checksum for ASM dependency" level="warning" />
+    </target>
+
+    <target name="prepare" depends="clean, verify-checksum" description="checks dependencies">
 
         <condition property="javatest.present">
             <and>
