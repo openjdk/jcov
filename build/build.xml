@@ -29,10 +29,11 @@
 
     <property file="release.properties"/>
     <property file="build.properties"/>
+    <import file="check-dependecies.xml"/>
 
     <!-- Build area -->
     <property name="build.dir" location="${result.dir}/jcov_${build.version}"/>
-    <property name="jcov.classpath" value="${asmjar}:${java.home}/lib/tools.jar"/>
+    <property name="jcov.classpath" value="${asm.jar}:${asm.util.jar}:${asm.tree.jar}:${java.home}/lib/tools.jar"/>
 
     <!-- Temp dir is for files which do not appear in release directory -->
     <property name="tmp.dir" location="${result.dir}/temp"/>
@@ -94,26 +95,7 @@
 
     </target>
 
-    <target name="compare-checksum">
-
-        <available file="${asmjar}" property="asm.present"/>
-        <fail unless="asm.present" message="Please, specify asm library"/>
-
-        <checksum file="${asmjar}" algorithm="sha1" property="${asmjar.checksum}" verifyproperty="asm.checksum.matches" />
-        <condition property="checksum.differs">
-            <equals arg1="${asm.checksum.matches}" arg2="false" />
-        </condition>
-    </target>
-
-    <target name="fail-if-checksum-differs" if="verify.strict" unless="verify.off">
-        <fail if="checksum.differs" message="wrong checksum for ASM dependency" />
-    </target>
-
-    <target name="verify-checksum" depends="compare-checksum, fail-if-checksum-differs" if="checksum.differs" unless="verify.off">
-        <echo message="warning: wrong checksum for ASM dependency" level="warning" />
-    </target>
-
-    <target name="prepare" depends="clean, verify-checksum" description="checks dependencies">
+    <target name="prepare" depends="clean, verify-dependencies" description="checks dependencies">
 
         <condition property="javatest.present">
             <and>
@@ -201,7 +183,9 @@
     </patternset>
 
     <target name="build-jcov" depends="compile" description="build jcov jar">
-        <unjar src="${asmjar}" dest="${jcov.classes}"/>
+        <unjar src="${asm.jar}" dest="${jcov.classes}"/>
+        <unjar src="${asm.tree.jar}" dest="${jcov.classes}"/>
+        <unjar src="${asm.util.jar}" dest="${jcov.classes}"/>
 
         <mkdir dir="${jcov.classes}/META-INF"/>
         <mkdir dir="${jcov.classes}/META-INF/services"/>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+  This code is free software; you can redistribute it and/or modify it
+  under the terms of the GNU General Public License version 2 only, as
+  published by the Free Software Foundation.  Oracle designates this
+  particular file as subject to the "Classpath" exception as provided
+  by Oracle in the LICENSE file that accompanied this code.
+
+  This code is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+  version 2 for more details (a copy is included in the LICENSE file that
+  accompanied this code).
+
+  You should have received a copy of the GNU General Public License version
+  2 along with this work; if not, write to the Free Software Foundation,
+  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+  or visit www.oracle.com if you need additional information or have any
+  questions.
+-->
+
+<project name="JCov-dependencies" default="verify-dependencies" basedir=".">
+
+    <property file="build.properties"/>
+
+    <target name="compare-asm-checksum">
+        <available file="${asm.jar}" property="asm.present"/>
+        <fail unless="asm.present" message="Please, specify asm library"/>
+
+        <checksum file="${asm.jar}" algorithm="sha1" property="${asm.checksum}" verifyproperty="asm.checksum.matches"/>
+        <condition property="asm.checksum.differs">
+            <equals arg1="${asm.checksum.matches}" arg2="false" />
+        </condition>
+    </target>
+
+    <target name="verify-asm" if="${asm.checksum.differs}" unless="verify.off" depends="compare-asm-checksum">
+        <fail if="verify.strict" message="wrong checksum for ASM dependency"/>
+        <echo message="warning: wrong checksum for ASM dependency" level="warning" />
+    </target>
+
+    <target name="compare-asm-tree-checksum">
+        <available file="${asm.tree.jar}" property="asm.tree.present"/>
+        <fail unless="asm.tree.present" message="Please, specify asm-tree library"/>
+
+        <checksum file="${asm.tree.jar}" algorithm="sha1" property="${asm.tree.checksum}" verifyproperty="asm.tree.checksum.matches"/>
+        <condition property="asm.tree.checksum.differs">
+            <equals arg1="${asm.tree.checksum.matches}" arg2="false" />
+        </condition>
+    </target>
+
+    <target name="verify-asm-tree" if="${asm.tree.checksum.differs}" unless="verify.off" depends="compare-asm-tree-checksum">
+        <fail if="verify.strict" message="wrong checksum for ASM-tree dependency"/>
+        <echo message="warning: wrong checksum for ASM-tree dependency" level="warning" />
+    </target>
+
+    <target name="compare-asm-util-checksum">
+        <available file="${asm.util.jar}" property="asm.util.present"/>
+        <fail unless="asm.util.present" message="Please, specify asm-util library"/>
+
+        <checksum file="${asm.util.jar}" algorithm="sha1" property="${asm.util.checksum}" verifyproperty="asm.util.checksum.matches"/>
+        <condition property="asm.util.checksum.differs">
+            <equals arg1="${asm.util.checksum.matches}" arg2="false" />
+        </condition>
+    </target>
+
+    <target name="verify-asm-util" if="${asm.util.checksum.differs}" unless="verify.off" depends="compare-asm-util-checksum">
+        <fail if="verify.strict" message="wrong checksum for ASM-util dependency"/>
+        <echo message="warning: wrong checksum for ASM-util dependency" level="warning" />
+    </target>
+
+    <target name="verify-dependencies" depends="verify-asm, verify-asm-tree, verify-asm-util"/>
+
+</project>
