@@ -106,6 +106,8 @@
             </and>
         </condition>
 
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${tmp.dir}"/>
         <mkdir dir="${jcov.src.update}"/>
         <mkdir dir="${jcov.classes}"/>
 
