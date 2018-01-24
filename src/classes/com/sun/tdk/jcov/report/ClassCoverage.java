@@ -504,9 +504,16 @@ public class ClassCoverage extends AbstractCoverage {
                 return f.getAbsolutePath();
             }
             else{
-                if (clz.getModuleName() != null && source_paths[i].contains("#module")){
-                    f = new File(source_paths[i].replaceAll("\\#module",clz.getModuleName()) + source_name);
-                    if (f.exists()){
+                if (clz.getModuleName() != null) {
+                    if (source_paths[i].contains("#module")) {
+                        f = new File(source_paths[i].replaceAll("\\#module", clz.getModuleName()) + source_name);
+                        if (f.exists()) {
+                            return f.getAbsolutePath();
+                        }
+                    }
+
+                    f = new File(source_paths[i].concat(clz.getModuleName()).concat(String.valueOf(sep)).concat(source_name));
+                    if (f.exists()) {
                         return f.getAbsolutePath();
                     }
                 }
