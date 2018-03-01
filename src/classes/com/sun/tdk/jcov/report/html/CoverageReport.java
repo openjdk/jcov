@@ -220,34 +220,37 @@ public class CoverageReport implements ReportGenerator {
         File fsFile = new File(dir, "index.html");
         PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
                 fsFile), Charset.defaultCharset())));
+        pw.println("<!DOCTYPE html>");
         pw.println("<html>");
         pw.println("<head>");
         pw.println("<title>" + title + " " /* + coverage.getData(ColumnName.PRODUCT)*/
                 + "</title>");
+        pw.println("<link rel =\"stylesheet\" type=\"text/css\" href=\"style.css\" title=\"Style\">");
         generateScriptsHeader(pw);
         pw.println("</head>");
-        if (showOverviewColorBars) {
-            pw.println("<FRAMESET cols=\"30%,70%\" title=\"Documentation frame\" onclick=\"top.loadFrames()\">");
+
+        String leftPaneStyle = "left20Container";
+        String rightPaneStyle = "right80Container";
+        if (showOverviewColorBars){
+            leftPaneStyle = "left30Container";
+            rightPaneStyle = "right70Container";
         }
-        else{
-            pw.println("<FRAMESET cols=\"20%,80%\" title=\"Documentation frame\" onclick=\"top.loadFrames()\">");
-        }
-        pw.println("<FRAMESET rows=\"30%,70%\" title=\"Left frames\" onload=\"top.loadFrames()\">");
-        pw
-                .println("<FRAME src=\"overview-frame.html\" name=\"packageListFrame\" title=\"All Packages\">");
-        pw
-                .println("<FRAME src=\"allclasses-frame.html\" name=\"packageFrame\" title=\"All classes and interfaces (except non-static nested types)\">");
-        pw.println("</FRAMESET>");
-        pw
-                .println("<FRAME src=\"overview-summary.html\" name=\"classFrame\" title=\"Package, class and interface descriptions\" scrolling=\"yes\">");
-        pw.println("<NOFRAMES>");
-        pw
-                .println("This document is designed to be viewed using the frames feature. If you see this message, you are using a non-frame-capable web client.");
-        pw.println("<BR>");
-        pw
-                .println("Link to<A HREF=\"overview-summary.html\">Non-frame version.</A>");
-        pw.println("</NOFRAMES>");
-        pw.println("</FRAMESET>");
+        pw.println("<body>");
+        pw.println("<div class=\"container\">");
+        pw.println("  <div class=\""+leftPaneStyle+"\">");
+        pw.println("    <div class=\"leftTop\">");
+        pw.println("      <iframe seamless src=\"overview-frame.html\" name=\"packageListFrame\" title=\"All Packages\"></iframe>");
+        pw.println("    </div>");
+        pw.println("    <div class=\"leftBottom\">");
+        pw.println("      <iframe src=\"allclasses-frame.html\" name=\"packageFrame\" title=\"All classes and interfaces (except non-static nested types)\"></iframe>");
+        pw.println("    </div>");
+        pw.println("  </div>");
+        pw.println("  <div class=\""+rightPaneStyle+"\">");
+        pw.println("    <iframe src=\"overview-summary.html\" name=\"classFrame\" title=\"Package, class and interface descriptions\"></iframe>");
+        pw.println("  </div>");
+        pw.println("</div>");
+        pw.println("</body>");
+
         pw.println("</html>");
         pw.close();
     }
@@ -257,6 +260,7 @@ public class CoverageReport implements ReportGenerator {
         logger.log(Level.INFO, "generatePackageList:{0}", fsFile.getAbsolutePath());
         PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
                 fsFile), Charset.defaultCharset())));
+        pw.println("<!DOCTYPE html>");
         pw.println("<html>");
         pw.println("<head>");
         pw.println("<title>coverage report</title>");
@@ -267,6 +271,7 @@ public class CoverageReport implements ReportGenerator {
         pw.println("<span class=\"title\">" + overviewListTitle + "</span><br>");
         // pw.println("<span class=\"title2\">" + coverage.getData(ColumnName.PRODUCT)
         //    + "</span>");
+        pw.println("<br>");
         pw.println("<table>");
         pw.println("<tr>");
         pw.println("<td nowrap=\"nowrap\">");
@@ -275,7 +280,6 @@ public class CoverageReport implements ReportGenerator {
         pw.println("</td>");
         pw.println("</tr>");
         pw.println("</table>");
-        pw.println("<p>");
 
         if (modules != null) {
             pw.println("<table>");
@@ -365,6 +369,7 @@ public class CoverageReport implements ReportGenerator {
         }
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(
                 fsFile), Charset.defaultCharset()));
+        pw.println("<!DOCTYPE html>");
         pw.println("<html>");
         pw.println("<head>");
         pw.println("<title>coverage report</title>");
@@ -373,11 +378,12 @@ public class CoverageReport implements ReportGenerator {
         pw.println("</head>");
         pw.println("<body>");
         if (pkg != null) {
+            pw.println("<p>");
             pw.println("<a href=\"package-summary.html\" target=\"classFrame\">"
                     + pkg.getName() + "</a> "
                     + "<span class=\"text_italic\">&nbsp;" + pkg.getCoverageString(DataType.METHOD, coverage.isAncFiltersSet())
                     + "</span><br>");
-            pw.println("<p>");
+            pw.println("</p>");
         }
         pw.println("<span class=\"title\">All classes</span>");
         pw.println("<table>");
@@ -440,6 +446,7 @@ public class CoverageReport implements ReportGenerator {
         }
         PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
                 fsFile), Charset.defaultCharset())));
+        pw.println("<!DOCTYPE html>");
         pw.println("<html>");
         pw.println("<head>");
         pw.println("<title>coverage report</title>");
@@ -449,15 +456,16 @@ public class CoverageReport implements ReportGenerator {
                 + "sorttable.js\"></script>");
         pw.println("</head>");
         pw.println("<body>");
+        pw.println("<p>");
         pw.println("<span class=\"title\"> <b>" + entitiesTitle + " "
                 + /*coverage.getData(ColumnName.PRODUCT) + */ "</b> </span>");
-        pw.println("<p>");
+        pw.println("</p>");
 
         if (module != null) {
             generateModulesInfo(pw, module, true/*,""*/);
         }
 
-        pw.println("</tr>");
+        //pw.println("</tr>");
         pw.println("</table>");
         pw.println("<p>");
 
@@ -534,9 +542,9 @@ public class CoverageReport implements ReportGenerator {
                         //   + generatePercentResult(cc.getTotalCoverageString()) + "</td>");
                         pw.println("</tr>");
                     }
+                    pw.println("</table>");
                 }
             //}
-            pw.println("</table>");
 
         pw.println(generateFooter());
         pw.println("</body>");
@@ -563,6 +571,7 @@ public class CoverageReport implements ReportGenerator {
         }
         PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
                 fsFile), Charset.defaultCharset())));
+        pw.println("<!DOCTYPE html>");
         pw.println("<html>");
         pw.println("<head>");
         pw.println("<title>coverage report</title>");
@@ -575,7 +584,8 @@ public class CoverageReport implements ReportGenerator {
         String otitle = thePackage == null ? mainReportTitle : entitiesTitle;
         pw.println("<span class=\"title\">" + otitle + " "
                 + /*coverage.getData(ColumnName.PRODUCT) + */ "</span>");
-        pw.println("<p>");
+        pw.println("<br>");
+        pw.println("<br>");
         pw.println("<table class=\"report\" cellpadding=\"0\" cellspacing=\"0\">");
         pw.println("<tr class=\"report\">");
         pw.println("<th class=\"report\">&nbsp;</th>");
@@ -666,6 +676,7 @@ public class CoverageReport implements ReportGenerator {
                     //   + generatePercentResult(cc.getTotalCoverageString()) + "</td>");
                     pw.println("</tr>");
                 }
+                pw.println("</table>");
             }
         } else {
             pkgList = coverage.getPackages();
@@ -695,14 +706,14 @@ public class CoverageReport implements ReportGenerator {
                     //    + generatePercentResult(pkg.getTotalCoverageString()) + "</td>");
                     pw.println("</tr>");
                 }
+                pw.println("</table>");
             }
         }
-        pw.println("</table>");
         if (thePackage != null && pkgList != null && pkgList.size() > 0) {
             // sub packages summary
             pw.println("<p>");
             pw.println("<span class=\"title2\">Total (including subpackages)</span><br>");
-            pw.println("<table class=\"report\" cellpadding=\"0\" cellspacing=\"0\" id=\"subpackages\">");
+            pw.println("<table class=\"report\" cellpadding=\"0\" cellspacing=\"0\" id=\"total_w_subpackages\">");
             pw.println("<tr class=\"report\">");
             pw.println("<th class=\"report\">-</th>");
             pw.println("<th class=\"report_number\">#classes</th>");
@@ -717,7 +728,7 @@ public class CoverageReport implements ReportGenerator {
             //    + decorate(subCov.getClassCoverageString()) + "</td>");
             printColumnCoverages(pw, subCov, true, "");
             pw.println("</table>");
-            pw.println("<p>");
+            pw.println("<br>");
 
         }
 
@@ -975,7 +986,7 @@ public class CoverageReport implements ReportGenerator {
                             if (!columnData.trim().equals("-")) {
                                 testsData += "<td class=\"reportValue\">" + columnData + "</td>";
                             } else {
-                                testsData += "<td class=\"reportValue\"><span class=\"text\"><center>" + columnData + "</center></span></td>";
+                                testsData += "<td class=\"reportValue\"><span style=\"text-align: center;\">" + columnData + "</span></td>";
                             }
                         }
 
@@ -1048,6 +1059,7 @@ public class CoverageReport implements ReportGenerator {
 
         PrintWriter pw = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(
                 srcOutputFile), Charset.defaultCharset())));
+        pw.println("<!DOCTYPE html>");
         pw.println("<html>");
         pw.println("<head>");
         pw.println("<title>tests coverage</title>");
@@ -1071,7 +1083,7 @@ public class CoverageReport implements ReportGenerator {
             pw.println("<p>");
             pw.println("<a href=\"#hittests\">Hit Tests</a>");
         }
-        pw.println("<p>");
+        pw.println("<br>");
         pw.println(" <table cellspacing=\"0\" cellpadding=\"0\"class=\"report\">");
         pw.println(" <tr class=\"report\">");
         pw.println(" <th class=\"report\">&nbsp;</th>");
@@ -1087,7 +1099,7 @@ public class CoverageReport implements ReportGenerator {
         //      + generatePercentResult(theClass.getTotalCoverageString()) + "</td>");
         pw.println(" </tr>");
         pw.println(" </table>");
-        pw.println(" <p>");
+        pw.println(" <br>");
 
 
         String src = theClass.getSource();
@@ -1151,6 +1163,7 @@ public class CoverageReport implements ReportGenerator {
                 numLine++;
             }
             br.close();
+            pw.println(" </table>");
         }
 
         if (theClass.isJavapSource()) {
@@ -1175,9 +1188,9 @@ public class CoverageReport implements ReportGenerator {
                     numLine++;
                 }
             }
+            pw.println(" </table>");
         }
 
-        pw.println(" </table>");
         pw.println("<p>");
         if (isGenHitTests) {
             pw.println(generateHitTests(theClass));
@@ -1379,7 +1392,7 @@ public class CoverageReport implements ReportGenerator {
                 }
 
                 pw.println(" <td class=\"src\"><pre class=\"src\">&nbsp;"
-                        + JavaToHtml.syntaxHighlight(lineStr) + "</span></pre></td>");
+                        + JavaToHtml.syntaxHighlight(lineStr) + "</pre></td>");
 
                 // just string without any items
             } else {
@@ -1451,7 +1464,7 @@ public class CoverageReport implements ReportGenerator {
                 pw.println(" <td>" + numLine + link + "</td>");
                 pw.println(" <td class=\"" + nbHitsCov + "\">&nbsp;" + "   " + "</td>");
                 pw.println(" <td class=\"src\"><pre class=\"src\">&nbsp;"
-                        + htmlStr + "</span></pre></td>");
+                        + htmlStr + "</pre></td>");
             } else {
                 pw.println(" <td>" + numLine + link + "</td>");
                 pw.println(" <td class=\"nbHits\">&nbsp;</td>");
@@ -1466,7 +1479,7 @@ public class CoverageReport implements ReportGenerator {
 
     private void generateMemberTable(PrintWriter pw, ClassCoverage theClass, String fieldOrMethod,
             List<? extends MemberCoverage> list, boolean isGenerate, boolean javapReport) {
-        pw.println(" <p>");
+        pw.println(" <br>");
         pw.println(" <table cellspacing=\"0\" cellpadding=\"0\"class=\"report\" id=\"mcoverage\">");
         pw.println(" <tr class=\"report\">");
         pw.println(" <th class=\"report\">hit count</th>");
@@ -1522,8 +1535,8 @@ public class CoverageReport implements ReportGenerator {
 
                 for (int i = 0; i < testService.getTestCount(); i++) {
                     if (mcov.getCoveringTests().contains(i)) {
-                        pw.println(" <td class=\"numLineCover\"><span class=\"text\">"
-                                + "<center>+</center>" + "</span></td>");
+                        pw.println(" <td class=\"numLineCover\"><span style=\"text-align: center;\">"
+                                + "+" + "</span></td>");
                     } else {
 
                         if (mcov.getData(mcov.getDataType()).getAnc() > 0){
@@ -1536,12 +1549,12 @@ public class CoverageReport implements ReportGenerator {
                                 }
                                 tooltip = "title=\"" + info + "\" ";
                             }
-                            pw.println(" <td class=\"numLineAnc\" "+tooltip+"><span class=\"text\">"
-                                    + "<center>-</center>" + "</span></td>");
+                            pw.println(" <td class=\"numLineAnc\" "+tooltip+"><span style=\"text-align: center;\">"
+                                    + "-" + "</span></td>");
                         }
                         else {
-                            pw.println(" <td class=\"numLineUnCover\"><span class=\"text\">"
-                                    + "<center>-</center>" + "</span></td>");
+                            pw.println(" <td class=\"numLineUnCover\"><span style=\"text-align: center;\">"
+                                    + "-" + "</span></td>");
                         }
                     }
                 }
@@ -1576,7 +1589,7 @@ public class CoverageReport implements ReportGenerator {
         }
 
         pw.println(" </table>");
-        pw.println(" <p>");
+        pw.println(" <br>");
 
     }
 
@@ -1650,7 +1663,7 @@ public class CoverageReport implements ReportGenerator {
 
     private String generateFooter() {
         StringBuilder sb = new StringBuilder();
-        sb.append("<p>");
+        sb.append("<br>");
         sb.append("<table cellpadding=\"0\" cellspacing=\"0\" class=\"report\">");
         sb.append("  <tr class=\"report\">");
         sb.append("    <td class=\"reportText\"><span class=\"text\">");
@@ -1735,10 +1748,10 @@ public class CoverageReport implements ReportGenerator {
         }
         StringBuilder sb = new StringBuilder();
         if (onlyColorBar) {
-            sb.append("<table cellpadding=\"0\" cellspacing=\"0\" align=\"left\">");
+            sb.append("<table cellpadding=\"0\" cellspacing=\"0\">");
         }
         else{
-            sb.append("<table cellpadding=\"0\" cellspacing=\"0\" align=\"center\">");
+            sb.append("<table cellpadding=\"0\" cellspacing=\"0\" style=\"margin: 0 auto;\">");
             sb.append("<tr>");
             sb.append("<td><span class=\"text\"><b>").append(value.trim()).append("</b>%").append(cov_total.trim()).append("</span></td>");
         }
@@ -1755,22 +1768,19 @@ public class CoverageReport implements ReportGenerator {
             }
             sb.append("<tr>");
             if (anc > 0) {
-                sb.append("<td class=\"percentCovered\" width=\"").append(dvalue - anc).append("\"></td>");
-                sb.append("<td class=\"percentAnc\" width=\"").append(anc).append("\"></td>");
+                sb.append("<td class=\"percentCovered\" width=\"").append((int)(dvalue - anc)).append("\"></td>");
+                sb.append("<td class=\"percentAnc\" width=\"").append((int)anc).append("\"></td>");
                 if (dvalue < 100) {
-                    sb.append("<td class=\"percentUnCovered\" width=\"").append(String.valueOf(rest)).append("\"></td>");
+                    sb.append("<td class=\"percentUnCovered\" width=\"").append((int)rest).append("\"></td>");
                 }
             }
             else{
                 sb.append("<td class=\"percentCovered\" width=\"").append(value).append("\"></td>");
-                sb.append("<td class=\"percentUnCovered\" width=\"").append(String.valueOf(rest)).append("\"></td>");
+                sb.append("<td class=\"percentUnCovered\" width=\"").append((int)rest).append("\"></td>");
             }
             sb.append("</tr>");
             sb.append("</table>");
             sb.append("</td>");
-            if (!onlyColorBar) {
-                sb.append("</tr>");
-            }
         }
         if (!onlyColorBar) {
             sb.append("</tr>");

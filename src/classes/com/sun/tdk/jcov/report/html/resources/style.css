@@ -282,3 +282,55 @@ span.text_italic {
 	font-size: 12px;
     font-style: italic;
 }
+
+iframe {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    border: 1;
+}
+
+.container{
+    margin:0 auto;
+    padding:0;
+    height:100%;
+    width:100%;
+    position:fixed;
+    top:0;
+    left:0;
+}
+
+.left20Container{
+    width: 20%;
+    height: 100%;
+    float: left;
+}
+
+.left30Container{
+    width: 30%;
+    height: 100%;
+    float: left;
+}
+
+.leftTop {
+    width: 100%;
+    height: 30%;
+}
+
+.leftBottom {
+    width: 100%;
+    height: 70%;
+}
+
+.right70Container {
+    width: 70%;
+    height: 100%;
+    float: right;
+}
+
+.right80Container {
+    width: 80%;
+    height: 100%;
+    float: right;
+}
