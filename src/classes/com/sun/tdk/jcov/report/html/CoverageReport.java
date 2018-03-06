@@ -1459,7 +1459,10 @@ public class CoverageReport implements ReportGenerator {
 
                 String unCover = theClass.isLineInAnc(numLine) ? "nbHitsAnc" : "nbHitsUncovered";
                 String nbHitsCov = isGreen ? "nbHitsCovered" :  unCover;
-                String htmlStr = javapLine.getTextLine().replaceAll("\\<", "&#60;").replaceAll("\\>", "&#62;");
+                String htmlStr = javapLine.getTextLine().
+                        replaceAll("\\<", "&#60;").
+                        replaceAll("\\>", "&#62;").
+                        replaceAll("\\s++$", "");
 
                 pw.println(" <td>" + numLine + link + "</td>");
                 pw.println(" <td class=\"" + nbHitsCov + "\">&nbsp;" + "   " + "</td>");
