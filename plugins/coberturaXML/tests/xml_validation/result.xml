@@ -1,0 +1,1125 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<coverage>
+	<head>
+		<property name='coverage.generator.args' val=''/>
+		<property name='coverage.generator.mode' val='BRANCH'/>
+		<property name='coverage.generator.internal' val='include'/>
+		<property name='coverage.generator.include' val=''/>
+		<property name='coverage.generator.exclude' val=''/>
+		<property name='coverage.generator.caller_include' val='.*'/>
+		<property name='coverage.generator.caller_exclude' val=''/>
+		<property name='coverage.created.date' val='2018-03-07'/>
+		<property name='coverage.created.time' val='23:36:28'/>
+		<property name='coverage.generator.fullversion' val='3.0os.beta-2 built: 05 March 2018'/>
+		<property name='coverage.generator.name' val='jcov'/>
+		<property name='coverage.generator.version' val='3.0'/>
+		<property name='coverage.spec.version' val='1.3'/>
+		<property name='java.runtime.version' val='1.8.0_131-b11'/>
+		<property name='java.version' val='1.8.0_131'/>
+		<property name='os.arch' val='x86_64'/>
+		<property name='os.name' val='Mac OS X'/>
+		<property name='os.version' val='10.13.3'/>
+		<property name='user.name' val='afedorch'/>
+		<property name='dynamic.collected' val='false'/>
+		<property name='id.count' val='197'/>
+	</head>
+	<package name="jcovtest" moduleName="no_module">
+		<class name="A" supername="java/lang/Object" checksum="3952752527" source="NestedClasses.java" flags=''>
+			<meth name="&lt;init&gt;" vmsig="()V" flags='' access="0" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="0" count="0"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=74;</lt>
+			</meth>
+			<meth name="doCleanA" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="1" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=76;</lt>
+			</meth>
+		</class>
+		<class name="B" supername="java/lang/Object" checksum="4029495196" source="NestedClasses.java" flags=''>
+			<meth name="&lt;init&gt;" vmsig="()V" flags='' access="0" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="2" count="1"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=79;</lt>
+			</meth>
+			<meth name="doCleanB" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="3" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=81;</lt>
+			</meth>
+		</class>
+		<class name="Class1ofN" supername="java/lang/Object" checksum="477314842" source="ClassesN.java" flags=''>
+			<meth name="&lt;init&gt;" vmsig="()V" flags='' access="0" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="4" count="0"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=8;</lt>
+			</meth>
+			<meth name="doSomethingUseful" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="5" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=10;</lt>
+			</meth>
+		</class>
+		<class name="Class2ofN" supername="java/lang/Object" checksum="149373111" source="ClassesN.java" flags=''>
+			<meth name="&lt;init&gt;" vmsig="()V" flags='' access="0" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="6" count="1"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=13;</lt>
+			</meth>
+			<meth name="doSomethingMuchUseful" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="7" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=15;</lt>
+			</meth>
+		</class>
+		<class name="Class3ofN" supername="java/lang/Object" checksum="1012022239" source="ClassesN.java" flags=''>
+			<meth name="&lt;init&gt;" vmsig="()V" flags='' access="0" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="8" count="0"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=18;</lt>
+			</meth>
+			<meth name="doNothing" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="9" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=20;</lt>
+			</meth>
+		</class>
+		<class name="Code" supername="java/lang/Object" checksum="148865413" source="Code.java" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="10" count="1"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=7;</lt>
+			</meth>
+			<meth name="go" vmsig="()V" flags=' public' access="1" length="57">
+				<bl s="0" e="56">
+					<methenter s="0" e="56" id="11" count="1"/>
+					<exit s="56" e="56" opcode="return"/>
+				</bl>
+				<lt>0=10;5=11;10=12;15=13;19=14;26=15;33=16;45=17;51=18;56=19;</lt>
+			</meth>
+			<meth name="test_switch" vmsig="(I)V" flags=' public' access="1" length="107">
+				<bl s="0" e="35">
+					<methenter s="0" e="35" id="12" count="3"/>
+					<switch s="3" e="35">
+						<default s="52" e="53" id="13" count="1"/>
+						<case s="36" e="37" id="14" count="0" val="1"/>
+						<case s="38" e="39" id="15" count="1" val="2"/>
+						<case s="40" e="44" id="16" count="0" val="3"/>
+						<case s="45" e="49" id="17" count="1" val="4"/>
+						<case s="50" e="51" id="18" count="0" val="5"/>
+					</switch>
+				</bl>
+				<bl s="36" e="37">
+				</bl>
+				<bl s="38" e="39">
+					<fall s="38" e="39" id="29" count="0"/>
+				</bl>
+				<bl s="40" e="44">
+					<fall s="40" e="44" id="30" count="1"/>
+					<goto s="42" e="44">
+						<tg s="54" e="91" id="19" count="1"/>
+					</goto>
+				</bl>
+				<bl s="45" e="49">
+					<goto s="47" e="49">
+						<tg s="54" e="91" id="20" count="1"/>
+					</goto>
+				</bl>
+				<bl s="50" e="51">
+				</bl>
+				<bl s="52" e="53">
+					<fall s="52" e="53" id="31" count="0"/>
+				</bl>
+				<bl s="54" e="91">
+					<fall s="54" e="91" id="32" count="1"/>
+					<switch s="57" e="91">
+						<default s="106" e="106" id="21" count="1"/>
+						<case s="92" e="96" id="22" count="0" val="0"/>
+						<case s="97" e="101" id="23" count="0" val="1"/>
+						<case s="102" e="103" id="24" count="0" val="2"/>
+						<case s="106" e="106" id="25" count="1" val="3"/>
+						<case s="104" e="105" id="26" count="1" val="4"/>
+					</switch>
+				</bl>
+				<bl s="92" e="96">
+					<goto s="94" e="96">
+						<tg s="106" e="106" id="27" count="0"/>
+					</goto>
+				</bl>
+				<bl s="97" e="101">
+					<goto s="99" e="101">
+						<tg s="106" e="106" id="28" count="0"/>
+					</goto>
+				</bl>
+				<bl s="102" e="103">
+				</bl>
+				<bl s="104" e="105">
+					<fall s="104" e="105" id="33" count="0"/>
+				</bl>
+				<bl s="106" e="106">
+					<fall s="106" e="106" id="34" count="1"/>
+					<exit s="106" e="106" opcode="return"/>
+				</bl>
+				<lt>0=22;2=23;36=24;38=25;40=26;45=27;50=28;52=29;54=32;56=33;92=35;94=36;97=39;99=40;102=43;104=47;106=51;</lt>
+			</meth>
+			<meth name="test_exception" vmsig="()V" flags=' public' access="1" length="66">
+				<bl s="0" e="38">
+					<methenter s="0" e="38" id="35" count="1"/>
+					<goto s="36" e="38">
+						<tg s="65" e="65" id="36" count="0"/>
+					</goto>
+				</bl>
+				<bl s="39" e="48">
+					<catch s="39" e="48" id="39" count="0"/>
+					<goto s="46" e="48">
+						<tg s="65" e="65" id="37" count="0"/>
+					</goto>
+				</bl>
+				<bl s="49" e="58">
+					<catch s="49" e="58" id="40" count="1"/>
+					<goto s="56" e="58">
+						<tg s="65" e="65" id="38" count="1"/>
+					</goto>
+				</bl>
+				<bl s="59" e="64">
+					<catch s="59" e="64" id="41" count="0"/>
+					<exit s="64" e="64" opcode="athrow"/>
+				</bl>
+				<bl s="65" e="65">
+					<exit s="65" e="65" opcode="return"/>
+				</bl>
+				<lt>0=54;3=56;6=57;13=58;33=64;36=65;39=59;40=60;43=64;46=65;49=61;50=62;53=64;56=65;59=64;65=66;</lt>
+			</meth>
+			<meth name="test_if" vmsig="(III)V" flags=' public' access="1" length="82">
+				<bl s="0" e="6">
+					<methenter s="0" e="6" id="42" count="3"/>
+					<br s="4" e="6">
+						<cond s="12" e="16" id="43" count="3" val="true"/>
+						<cond s="7" e="11" id="44" count="0" val="false"/>
+					</br>
+				</bl>
+				<bl s="7" e="11">
+					<br s="9" e="11">
+						<cond s="17" e="20" id="45" count="0" val="true"/>
+						<cond s="12" e="16" id="46" count="0" val="false"/>
+					</br>
+				</bl>
+				<bl s="12" e="16">
+					<br s="14" e="16">
+						<cond s="33" e="39" id="47" count="1" val="true"/>
+						<cond s="17" e="20" id="48" count="2" val="false"/>
+					</br>
+				</bl>
+				<bl s="17" e="20">
+					<br s="18" e="20">
+						<cond s="27" e="32" id="49" count="2" val="true"/>
+						<cond s="21" e="26" id="50" count="0" val="false"/>
+					</br>
+				</bl>
+				<bl s="21" e="26">
+					<goto s="24" e="26">
+						<tg s="74" e="81" id="51" count="0"/>
+					</goto>
+				</bl>
+				<bl s="27" e="32">
+					<goto s="30" e="32">
+						<tg s="74" e="81" id="52" count="2"/>
+					</goto>
+				</bl>
+				<bl s="33" e="39">
+					<br s="37" e="39">
+						<cond s="71" e="73" id="53" count="0" val="true"/>
+						<cond s="40" e="44" id="54" count="1" val="false"/>
+					</br>
+				</bl>
+				<bl s="40" e="44">
+					<br s="42" e="44">
+						<cond s="65" e="70" id="55" count="0" val="true"/>
+						<cond s="45" e="49" id="56" count="1" val="false"/>
+					</br>
+				</bl>
+				<bl s="45" e="49">
+					<br s="47" e="49">
+						<cond s="65" e="70" id="57" count="0" val="true"/>
+						<cond s="50" e="54" id="58" count="1" val="false"/>
+					</br>
+				</bl>
+				<bl s="50" e="54">
+					<br s="52" e="54">
+						<cond s="65" e="70" id="59" count="0" val="true"/>
+						<cond s="55" e="59" id="60" count="1" val="false"/>
+					</br>
+				</bl>
+				<bl s="55" e="59">
+					<br s="57" e="59">
+						<cond s="74" e="81" id="61" count="1" val="true"/>
+						<cond s="60" e="64" id="62" count="0" val="false"/>
+					</br>
+				</bl>
+				<bl s="60" e="64">
+					<br s="62" e="64">
+						<cond s="74" e="81" id="63" count="0" val="true"/>
+						<cond s="65" e="70" id="64" count="0" val="false"/>
+					</br>
+				</bl>
+				<bl s="65" e="70">
+					<goto s="68" e="70">
+						<tg s="74" e="81" id="65" count="0"/>
+					</goto>
+				</bl>
+				<bl s="71" e="73">
+				</bl>
+				<bl s="74" e="81">
+					<fall s="74" e="81" id="66" count="0"/>
+					<exit s="81" e="81" opcode="return"/>
+				</bl>
+				<lt>0=69;3=70;17=71;21=72;27=74;33=76;40=77;65=81;71=84;74=86;81=87;</lt>
+			</meth>
+			<meth name="test_for" vmsig="(I)V" flags=' public' access="1" length="84">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="67" count="2"/>
+				</bl>
+				<bl s="10" e="15">
+					<fall s="10" e="15" id="81" count="2"/>
+					<br s="13" e="15">
+						<cond s="83" e="83" id="68" count="2" val="true"/>
+						<cond s="16" e="21" id="69" count="10" val="false"/>
+					</br>
+				</bl>
+				<bl s="16" e="21">
+				</bl>
+				<bl s="22" e="28">
+					<fall s="22" e="28" id="82" count="10"/>
+					<br s="26" e="28">
+						<cond s="77" e="82" id="70" count="10" val="true"/>
+						<cond s="29" e="34" id="71" count="45" val="false"/>
+					</br>
+				</bl>
+				<bl s="29" e="34">
+				</bl>
+				<bl s="35" e="44">
+					<fall s="35" e="44" id="83" count="45"/>
+					<br s="42" e="44">
+						<cond s="62" e="70" id="72" count="405" val="true"/>
+						<cond s="45" e="54" id="73" count="45" val="false"/>
+					</br>
+				</bl>
+				<bl s="45" e="54">
+					<br s="52" e="54">
+						<cond s="62" e="70" id="74" count="0" val="true"/>
+						<cond s="55" e="61" id="75" count="45" val="false"/>
+					</br>
+				</bl>
+				<bl s="55" e="61">
+					<br s="59" e="61">
+						<cond s="71" e="76" id="76" count="45" val="true"/>
+						<cond s="62" e="70" id="77" count="0" val="false"/>
+					</br>
+				</bl>
+				<bl s="62" e="70">
+					<goto s="68" e="70">
+						<tg s="35" e="44" id="78" count="405"/>
+					</goto>
+				</bl>
+				<bl s="71" e="76">
+					<goto s="74" e="76">
+						<tg s="22" e="28" id="79" count="45"/>
+					</goto>
+				</bl>
+				<bl s="77" e="82">
+					<goto s="80" e="82">
+						<tg s="10" e="15" id="80" count="10"/>
+					</goto>
+				</bl>
+				<bl s="83" e="83">
+					<exit s="83" e="83" opcode="return"/>
+				</bl>
+				<lt>0=90;2=91;4=92;7=93;16=94;19=95;29=96;32=97;62=98;65=97;71=95;77=93;83=102;</lt>
+			</meth>
+		</class>
+		<class name="LineCov" supername="java/lang/Object" checksum="2101743191" source="LineCov.java" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="84" count="1"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=7;4=9;</lt>
+			</meth>
+			<meth name="LineCov" vmsig="()V" flags=' public' access="1" length="7">
+				<bl s="0" e="6">
+					<methenter s="0" e="6" id="85" count="0"/>
+					<exit s="6" e="6" opcode="return"/>
+				</bl>
+				<lt>0=13;6=14;</lt>
+			</meth>
+			<meth name="LineCov" vmsig="(I)V" flags=' public' access="1" length="6">
+				<bl s="0" e="5">
+					<methenter s="0" e="5" id="86" count="0"/>
+					<exit s="5" e="5" opcode="return"/>
+				</bl>
+				<lt>0=17;5=18;</lt>
+			</meth>
+			<meth name="test" vmsig="()V" flags=' public' access="1" length="44">
+				<bl s="0" e="41">
+					<methenter s="0" e="41" id="87" count="1"/>
+					<goto s="39" e="41">
+						<tg s="43" e="43" id="88" count="0"/>
+					</goto>
+				</bl>
+				<bl s="42" e="42">
+					<catch s="42" e="42" id="89" count="1"/>
+				</bl>
+				<bl s="43" e="43">
+					<fall s="43" e="43" id="90" count="1"/>
+					<exit s="43" e="43" opcode="return"/>
+				</bl>
+				<lt>0=21;8=22;14=23;20=24;27=25;31=26;35=28;39=31;42=29;43=32;</lt>
+			</meth>
+			<meth name="branchThen" vmsig="(I)Z" flags='' access="0" length="10">
+				<bl s="0" e="5">
+					<methenter s="0" e="5" id="91" count="1"/>
+					<br s="3" e="5">
+						<cond s="8" e="9" id="92" count="0" val="true"/>
+						<cond s="6" e="7" id="93" count="1" val="false"/>
+					</br>
+				</bl>
+				<bl s="6" e="7">
+					<exit s="7" e="7" opcode="ireturn"/>
+				</bl>
+				<bl s="8" e="9">
+					<exit s="9" e="9" opcode="ireturn"/>
+				</bl>
+				<lt>0=35;6=36;8=38;</lt>
+			</meth>
+			<meth name="tryCatch" vmsig="()V" flags='' access="0" length="51">
+				<bl s="0" e="18">
+					<methenter s="0" e="18" id="94" count="1"/>
+					<goto s="16" e="18">
+						<tg s="50" e="50" id="95" count="0"/>
+					</goto>
+				</bl>
+				<bl s="19" e="30">
+					<catch s="19" e="30" id="98" count="1"/>
+					<goto s="28" e="30">
+						<tg s="50" e="50" id="96" count="1"/>
+					</goto>
+				</bl>
+				<bl s="31" e="42">
+					<catch s="31" e="42" id="99" count="0"/>
+					<goto s="40" e="42">
+						<tg s="50" e="50" id="97" count="0"/>
+					</goto>
+				</bl>
+				<bl s="43" e="49">
+					<catch s="43" e="49" id="100" count="0"/>
+					<exit s="49" e="49" opcode="athrow"/>
+				</bl>
+				<bl s="50" e="50">
+					<exit s="50" e="50" opcode="return"/>
+				</bl>
+				<lt>0=44;4=45;8=46;12=52;16=53;19=47;20=48;24=52;28=53;31=49;32=50;36=52;40=53;43=52;50=54;</lt>
+			</meth>
+			<meth name="branchElse" vmsig="(I)Z" flags='' access="0" length="10">
+				<bl s="0" e="5">
+					<methenter s="0" e="5" id="101" count="1"/>
+					<br s="3" e="5">
+						<cond s="8" e="9" id="102" count="1" val="true"/>
+						<cond s="6" e="7" id="103" count="0" val="false"/>
+					</br>
+				</bl>
+				<bl s="6" e="7">
+					<exit s="7" e="7" opcode="ireturn"/>
+				</bl>
+				<bl s="8" e="9">
+					<exit s="9" e="9" opcode="ireturn"/>
+				</bl>
+				<lt>0=57;6=58;8=60;</lt>
+			</meth>
+			<meth name="branchBoth" vmsig="(I)Z" flags='' access="0" length="10">
+				<bl s="0" e="5">
+					<methenter s="0" e="5" id="104" count="2"/>
+					<br s="3" e="5">
+						<cond s="8" e="9" id="105" count="1" val="true"/>
+						<cond s="6" e="7" id="106" count="1" val="false"/>
+					</br>
+				</bl>
+				<bl s="6" e="7">
+					<exit s="7" e="7" opcode="ireturn"/>
+				</bl>
+				<bl s="8" e="9">
+					<exit s="9" e="9" opcode="ireturn"/>
+				</bl>
+				<lt>0=64;6=65;8=67;</lt>
+			</meth>
+			<meth name="multiBlocks" vmsig="()V" flags='' access="0" length="27">
+				<bl s="0" e="5">
+					<methenter s="0" e="5" id="107" count="1"/>
+					<br s="3" e="5">
+						<cond s="6" e="21" id="108" count="0" val="true"/>
+						<cond s="6" e="21" id="109" count="1" val="false"/>
+					</br>
+				</bl>
+				<bl s="6" e="21">
+					<br s="19" e="21">
+						<cond s="22" e="26" id="110" count="0" val="true"/>
+						<cond s="22" e="26" id="111" count="1" val="false"/>
+					</br>
+				</bl>
+				<bl s="22" e="26">
+					<exit s="26" e="26" opcode="return"/>
+				</bl>
+				<lt>0=72;2=73;6=75;10=76;14=77;18=78;22=80;26=81;</lt>
+			</meth>
+			<meth name="execptionCov" vmsig="()V" flags='' access="0" length="29">
+				<bl s="0" e="28">
+					<methenter s="0" e="28" id="112" count="1"/>
+					<exit s="28" e="28" opcode="return"/>
+				</bl>
+				<lt>0=85;4=86;8=87;12=88;16=89;20=90;24=91;28=92;</lt>
+			</meth>
+			<meth name="do1" vmsig="()V" flags='' access="0" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="113" count="6"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=94;</lt>
+			</meth>
+			<meth name="do2" vmsig="()V" flags='' access="0" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="114" count="3"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=95;</lt>
+			</meth>
+			<meth name="neverDo" vmsig="()V" flags='' access="0" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="115" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=96;</lt>
+			</meth>
+			<meth name="throwException" vmsig="()V" flags='' access="0" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="116" count="2"/>
+					<exit s="9" e="9" opcode="athrow"/>
+				</bl>
+				<lt>0=98;</lt>
+			</meth>
+		</class>
+		<class name="Main" supername="java/lang/Object" checksum="3020093918" source="Main.java" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="125" count="0"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=14;4=27;</lt>
+			</meth>
+			<meth name="main" vmsig="([Ljava/lang/String;)V" flags=' public static' access="9" length="117">
+				<bl s="0" e="11">
+					<methenter s="0" e="11" id="126" count="1"/>
+					<br s="9" e="11">
+						<cond s="85" e="115" id="127" count="0" val="true"/>
+						<cond s="12" e="84" id="128" count="1" val="false"/>
+					</br>
+				</bl>
+				<bl s="12" e="84">
+					<goto s="82" e="84">
+						<tg s="116" e="116" id="129" count="1"/>
+					</goto>
+				</bl>
+				<bl s="85" e="115">
+				</bl>
+				<bl s="116" e="116">
+					<fall s="116" e="116" id="130" count="0"/>
+					<exit s="116" e="116" opcode="return"/>
+				</bl>
+				<lt>0=46;7=48;12=49;22=50;32=51;42=52;52=53;62=54;72=55;85=57;95=58;105=59;116=61;</lt>
+			</meth>
+		</class>
+		<class name="Main$A" supername="java/lang/Object" checksum="3041289063" source="Main.java" inner="inner" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="(Ljcovtest/Main;)V" flags=' public' access="1" cons="true" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="118" count="0"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=16;9=20;</lt>
+			</meth>
+			<meth name="access$000" vmsig="(Ljcovtest/Main$A;)I" flags=' static synthetic' access="4104" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="119" count="0"/>
+					<exit s="4" e="4" opcode="ireturn"/>
+				</bl>
+				<lt>0=16;</lt>
+			</meth>
+		</class>
+		<class name="Main$A$B" supername="java/lang/Object" checksum="4054476203" source="Main.java" inner="inner" flags=''>
+			<meth name="&lt;init&gt;" vmsig="(Ljcovtest/Main$A;)V" flags=' public' access="1" cons="true" length="20">
+				<bl s="0" e="19">
+					<methenter s="0" e="19" id="117" count="0"/>
+					<exit s="19" e="19" opcode="return"/>
+				</bl>
+				<lt>0=21;9=22;19=23;</lt>
+			</meth>
+		</class>
+		<class name="Main$Color" supername="java/lang/Enum" checksum="1106244945" signature="Ljava/lang/Enum&lt;Ljcovtest/Main$Color;&gt;;" source="Main.java" inner="inner" flags=' public final enum'>
+			<meth name="values" vmsig="()[Ljcovtest/Main$Color;" flags=' public static' access="9" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="120" count="0"/>
+					<exit s="9" e="9" opcode="areturn"/>
+				</bl>
+				<lt>0=27;</lt>
+			</meth>
+			<meth name="valueOf" vmsig="(Ljava/lang/String;)Ljcovtest/Main$Color;" flags=' public static' access="9" length="11">
+				<bl s="0" e="10">
+					<methenter s="0" e="10" id="121" count="0"/>
+					<exit s="10" e="10" opcode="areturn"/>
+				</bl>
+				<lt>0=27;</lt>
+			</meth>
+			<meth name="&lt;init&gt;" vmsig="(Ljava/lang/String;II)V" flags=' private' access="2" cons="true" signature="(I)V" length="12">
+				<bl s="0" e="11">
+					<methenter s="0" e="11" id="122" count="5"/>
+					<exit s="11" e="11" opcode="return"/>
+				</bl>
+				<lt>0=32;6=33;11=34;</lt>
+			</meth>
+			<meth name="getCode" vmsig="()I" flags=' public' access="1" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="123" count="1"/>
+					<exit s="4" e="4" opcode="ireturn"/>
+				</bl>
+				<lt>0=37;</lt>
+			</meth>
+			<meth name="&lt;clinit&gt;" vmsig="()V" flags=' static' access="8" clinit="true" length="113">
+				<bl s="0" e="112">
+					<methenter s="0" e="112" id="124" count="1"/>
+					<exit s="112" e="112" opcode="return"/>
+				</bl>
+				<lt>0=28;75=27;</lt>
+			</meth>
+		</class>
+		<class name="NestedClasses" supername="java/lang/Object" checksum="1268610890" source="NestedClasses.java" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="159" count="1"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=8;4=9;</lt>
+			</meth>
+			<meth name="test" vmsig="()V" flags=' public' access="1" length="99">
+				<bl s="0" e="98">
+					<methenter s="0" e="98" id="160" count="1"/>
+					<exit s="98" e="98" opcode="return"/>
+				</bl>
+				<lt>0=12;11=13;22=14;32=15;42=16;53=19;88=20;98=21;</lt>
+			</meth>
+		</class>
+		<class name="NestedClasses$1" supername="java/lang/Object" checksum="2348710550" source="NestedClasses.java" inner="anon" flags=''>
+			<meth name="&lt;init&gt;" vmsig="(Ljcovtest/NestedClasses;)V" flags='' access="0" cons="true" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="131" count="1"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=16;</lt>
+			</meth>
+			<meth name="meth" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="132" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=17;</lt>
+			</meth>
+		</class>
+		<class name="NestedClasses$Nest1" supername="java/lang/Object" checksum="2636607627" source="NestedClasses.java" inner="inner" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="(Ljcovtest/NestedClasses;)V" flags=' public' access="1" cons="true" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="133" count="1"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=23;</lt>
+			</meth>
+			<meth name="m1" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="134" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=24;</lt>
+			</meth>
+			<meth name="m2" vmsig="()V" flags=' private' access="2" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="135" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=25;</lt>
+			</meth>
+			<meth name="m3" vmsig="()V" flags=' protected' access="4" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="136" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=26;</lt>
+			</meth>
+			<meth name="m4" vmsig="()V" flags='' access="0" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="137" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=27;</lt>
+			</meth>
+		</class>
+		<class name="NestedClasses$Nest2" supername="java/lang/Object" checksum="1231979493" source="NestedClasses.java" inner="inner" flags=''>
+			<meth name="&lt;init&gt;" vmsig="(Ljcovtest/NestedClasses;)V" flags='' access="0" cons="true" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="138" count="1"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=30;</lt>
+			</meth>
+			<meth name="m1" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="139" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=31;</lt>
+			</meth>
+			<meth name="m2" vmsig="()V" flags=' private' access="2" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="140" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=32;</lt>
+			</meth>
+			<meth name="m3" vmsig="()V" flags=' protected' access="4" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="141" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=33;</lt>
+			</meth>
+			<meth name="m4" vmsig="()V" flags='' access="0" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="142" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=34;</lt>
+			</meth>
+			<meth name="access$000" vmsig="(Ljcovtest/NestedClasses$Nest2;)V" flags=' static synthetic' access="4104" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="143" count="1"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=30;</lt>
+			</meth>
+		</class>
+		<class name="NestedClasses$Nest3" supername="java/lang/Object" checksum="2374588652" source="NestedClasses.java" inner="inner" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="144" count="1"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=37;</lt>
+			</meth>
+			<meth name="m1" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="145" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=38;</lt>
+			</meth>
+			<meth name="m2" vmsig="()V" flags=' private' access="2" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="146" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=39;</lt>
+			</meth>
+			<meth name="m3" vmsig="()V" flags=' protected' access="4" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="147" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=40;</lt>
+			</meth>
+			<meth name="m4" vmsig="()V" flags='' access="0" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="148" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=41;</lt>
+			</meth>
+		</class>
+		<class name="NestedClasses$Nest4" supername="java/lang/Object" checksum="2785302799" source="NestedClasses.java" inner="inner" flags=''>
+			<meth name="&lt;init&gt;" vmsig="()V" flags='' access="0" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="149" count="1"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=44;</lt>
+			</meth>
+			<meth name="m1" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="150" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=45;</lt>
+			</meth>
+			<meth name="m2" vmsig="()V" flags=' private' access="2" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="151" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=46;</lt>
+			</meth>
+			<meth name="m3" vmsig="()V" flags=' protected' access="4" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="152" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=47;</lt>
+			</meth>
+			<meth name="m4" vmsig="()V" flags='' access="0" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="153" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=48;</lt>
+			</meth>
+		</class>
+		<class name="NestedClasses$NestedDeep1" supername="java/lang/Object" checksum="2836301161" source="NestedClasses.java" inner="inner" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="(Ljcovtest/NestedClasses;)V" flags=' public' access="1" cons="true" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="158" count="1"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=51;9=52;</lt>
+			</meth>
+		</class>
+		<class name="NestedClasses$NestedDeep1$NestedDeep2" supername="java/lang/Object" checksum="4209290363" source="NestedClasses.java" inner="inner" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="(Ljcovtest/NestedClasses$NestedDeep1;)V" flags=' public' access="1" cons="true" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="157" count="1"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=52;9=53;</lt>
+			</meth>
+		</class>
+		<class name="NestedClasses$NestedDeep1$NestedDeep2$NestedDeep3" supername="java/lang/Object" checksum="1783021456" source="NestedClasses.java" inner="inner" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="(Ljcovtest/NestedClasses$NestedDeep1$NestedDeep2;)V" flags=' public' access="1" cons="true" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="154" count="1"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=53;</lt>
+			</meth>
+			<meth name="wow" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="155" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=54;</lt>
+			</meth>
+			<meth name="oops" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="156" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=55;</lt>
+			</meth>
+		</class>
+		<class name="PackageClass" supername="java/lang/Object" checksum="2717019668" source="PackageClass.java" flags=''>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="166" count="1"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=8;4=9;</lt>
+			</meth>
+			<meth name="meth1" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="167" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=11;</lt>
+			</meth>
+			<meth name="meth2" vmsig="()V" flags=' private' access="2" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="168" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=13;</lt>
+			</meth>
+			<meth name="meth3" vmsig="()V" flags=' protected' access="4" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="169" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=15;</lt>
+			</meth>
+			<meth name="meth4" vmsig="()V" flags='' access="0" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="170" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=17;</lt>
+			</meth>
+			<meth name="test" vmsig="()V" flags=' public' access="1" length="16">
+				<bl s="0" e="15">
+					<methenter s="0" e="15" id="171" count="1"/>
+					<exit s="15" e="15" opcode="return"/>
+				</bl>
+				<lt>0=27;4=28;15=29;</lt>
+			</meth>
+		</class>
+		<class name="PackageClass$Nested" supername="java/lang/Object" checksum="3484905186" source="PackageClass.java" inner="inner" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="(Ljcovtest/PackageClass;)V" flags=' public' access="1" cons="true" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="161" count="1"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=19;</lt>
+			</meth>
+			<meth name="m1" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="162" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=20;</lt>
+			</meth>
+			<meth name="m2" vmsig="()V" flags=' private' access="2" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="163" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=21;</lt>
+			</meth>
+			<meth name="m3" vmsig="()V" flags=' protected' access="4" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="164" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=22;</lt>
+			</meth>
+			<meth name="m4" vmsig="()V" flags='' access="0" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="165" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=23;</lt>
+			</meth>
+		</class>
+		<class name="Visibility" supername="java/lang/Object" checksum="2682171802" source="Visibility.java" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="172" count="1"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=19;4=20;</lt>
+			</meth>
+			<meth name="&lt;init&gt;" vmsig="(I)V" flags=' private' access="2" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="173" count="0"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=25;4=26;</lt>
+			</meth>
+			<meth name="&lt;init&gt;" vmsig="(II)V" flags=' protected' access="4" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="174" count="0"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=31;4=32;</lt>
+			</meth>
+			<meth name="&lt;init&gt;" vmsig="(Z)V" flags='' access="0" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="175" count="0"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=37;4=38;</lt>
+			</meth>
+			<meth name="meth1" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="176" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=44;</lt>
+			</meth>
+			<meth name="meth2" vmsig="()V" flags=' private' access="2" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="177" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=50;</lt>
+			</meth>
+			<meth name="meth3" vmsig="()V" flags=' protected final' access="20" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="178" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=56;</lt>
+			</meth>
+			<meth name="meth4" vmsig="()V" flags='' access="0" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="179" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=62;</lt>
+			</meth>
+			<meth name="meth5" vmsig="()I" flags=' public synchronized' access="33" length="2">
+				<bl s="0" e="1">
+					<methenter s="0" e="1" id="180" count="0"/>
+					<exit s="1" e="1" opcode="ireturn"/>
+				</bl>
+				<lt>0=65;</lt>
+			</meth>
+			<meth name="meth6" vmsig="()Ljava/lang/String;" flags=' protected' access="4" length="3">
+				<bl s="0" e="2">
+					<methenter s="0" e="2" id="181" count="1"/>
+					<exit s="2" e="2" opcode="areturn"/>
+				</bl>
+				<lt>0=69;</lt>
+			</meth>
+			<meth name="meth7" vmsig="()[I" flags=' public static' access="9" length="2">
+				<bl s="0" e="1">
+					<methenter s="0" e="1" id="182" count="1"/>
+					<exit s="1" e="1" opcode="areturn"/>
+				</bl>
+				<lt>0=73;</lt>
+			</meth>
+			<meth name="test" vmsig="()V" flags=' public' access="1" length="22">
+				<bl s="0" e="21">
+					<methenter s="0" e="21" id="183" count="1"/>
+					<exit s="21" e="21" opcode="return"/>
+				</bl>
+				<lt>0=77;4=78;8=79;12=80;17=81;21=82;</lt>
+			</meth>
+			<meth name="&lt;clinit&gt;" vmsig="()V" flags=' static' access="8" clinit="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="184" count="1"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=8;</lt>
+			</meth>
+		</class>
+	</package>
+	<package name="jcovtest.subpack1" moduleName="no_module">
+		<class name="OrphanClass" supername="java/lang/Object" checksum="255476749" source="OrphanClass.java" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="185" count="0"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=7;</lt>
+			</meth>
+			<meth name="meth1" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="186" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=9;</lt>
+			</meth>
+		</class>
+		<class name="PkgClass" supername="java/lang/Object" checksum="4183112976" source="PkgClass.java" flags=''>
+			<meth name="&lt;init&gt;" vmsig="()V" flags='' access="0" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="187" count="1"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=11;</lt>
+			</meth>
+		</class>
+		<class name="PubClass" supername="java/lang/Object" checksum="1644325151" source="PubClass.java" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="188" count="1"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=6;</lt>
+			</meth>
+			<meth name="test" vmsig="()V" flags=' public' access="1" length="20">
+				<bl s="0" e="19">
+					<methenter s="0" e="19" id="189" count="1"/>
+					<exit s="19" e="19" opcode="return"/>
+				</bl>
+				<lt>0=8;4=9;8=10;19=11;</lt>
+			</meth>
+			<meth name="meth1" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="190" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=14;</lt>
+			</meth>
+			<meth name="meth2" vmsig="()V" flags=' private' access="2" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="191" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=16;</lt>
+			</meth>
+			<meth name="meth3" vmsig="()V" flags=' protected' access="4" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="192" count="1"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=18;</lt>
+			</meth>
+			<meth name="meth4" vmsig="()V" flags='' access="0" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="193" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=20;</lt>
+			</meth>
+		</class>
+	</package>
+	<package name="jcovtest.subpack2" moduleName="no_module">
+		<class name="Entry" supername="java/lang/Object" checksum="3855759866" source="Entry.java" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="194" count="0"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=12;</lt>
+			</meth>
+		</class>
+		<class name="Int1$Impl1" supername="java/lang/Object" checksum="1292652268" source="Int1.java" inner="inner" flags=' public final'>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="5">
+				<bl s="0" e="4">
+					<methenter s="0" e="4" id="195" count="0"/>
+					<exit s="4" e="4" opcode="return"/>
+				</bl>
+				<lt>0=15;</lt>
+			</meth>
+			<meth name="dodo" vmsig="()I" flags=' public' access="1" length="2">
+				<bl s="0" e="1">
+					<methenter s="0" e="1" id="196" count="0"/>
+					<exit s="1" e="1" opcode="ireturn"/>
+				</bl>
+				<lt>0=17;</lt>
+			</meth>
+		</class>
+	</package>
+</coverage>

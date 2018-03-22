@@ -98,49 +98,49 @@ public class XmlContext extends PrintWriter {
         this.showAbstract = showAbstract;
     }
 
-    void incIndent() {
+    public void incIndent() {
         indentHistory.push(indent);
         indent += indentDelta;
     }
 
-    void decIndent() {
+    public void decIndent() {
         indent = indentHistory.pop();
     }
 
-    void indent() {
+    public void indent() {
         print(indent);
     }
 
-    void indentPrintln(String str) {
+    public void indentPrintln(String str) {
         indent();
         println(str);
     }
 
-    void attr(String name, String value) {
+    public void attr(String name, String value) {
         print(" " + name + "=\"");
         writeEscaped(value);
         print("\"");
     }
 
-    void attr(String name, Object value) {
+    public void attr(String name, Object value) {
         print(" " + name + "=\"");
         writeEscaped(value.toString());
         print("\"");
     }
 
-    void attr(String name, int value) {
+    public void attr(String name, int value) {
         print(" " + name + "=\"" + value + "\"");
     }
 
-    void attr(String name, long value) {
+    public void attr(String name, long value) {
         print(" " + name + "=\"" + value + "\"");
     }
 
-    void attr(String name, boolean value) {
+    public void attr(String name, boolean value) {
         print(" " + name + "=\"" + value + "\"");
     }
 
-    void attrNormalized(String name, String value) {
+    public void attrNormalized(String name, String value) {
         print(" " + name + "=\"");
         writeEscaped(value);
         print("\"");
@@ -161,7 +161,7 @@ public class XmlContext extends PrintWriter {
         this.skipNotCoveredClasses = skipNotCoveredClasses;
     }
 
-    private void writeEscaped(String str) {
+    public void writeEscaped(String str) {
         if (str == null){
             return;
         }
