@@ -201,6 +201,7 @@
             com.sun.tdk.jcov.report.ancfilters.SyntheticANCFilter
             com.sun.tdk.jcov.report.ancfilters.GetterANCFilter
             com.sun.tdk.jcov.report.ancfilters.SetterANCFilter
+            com.sun.tdk.jcov.report.ancfilters.ListANCFilter
         </echo>
 
         <jar destfile="${build.dir}/jcov.jar" basedir="${jcov.classes}" index="false">
