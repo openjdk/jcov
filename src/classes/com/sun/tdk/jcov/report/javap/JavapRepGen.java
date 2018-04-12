@@ -51,12 +51,10 @@ import java.util.logging.Logger;
  */
 public class JavapRepGen {
 
-    private String[] include;
-    private String[] exclude;
+    private RepGen repGen;
 
-    public JavapRepGen(String[] include, String[] exclude) {
-        this.include = include == null ? new String[]{".*"} : include;
-        this.exclude = exclude == null ? new String[]{""} : exclude;
+    public JavapRepGen(RepGen repGen){
+        this.repGen = repGen;
     }
 
     /**
@@ -198,12 +196,9 @@ public class JavapRepGen {
             }
         }
 
-        RepGen rg = new RepGen();
-        rg.configure(include, exclude, null, null, false, false, false, false, false, false, false, false);
-
         try {
             Result res = new Result(templatePath);
-            rg.generateReport(rg.getDefaultReportGenerator(), outPath, res, null, new ArrayList(classes.values()));
+            repGen.generateReport(repGen.getDefaultReportGenerator(), outPath, res, null, new ArrayList(classes.values()));
         } catch (Exception e) {
             System.err.println("error in report generation: " + e);
         }
@@ -226,7 +221,7 @@ public class JavapRepGen {
                 if (className.endsWith(".class")) {
                     className = className.substring(0, className.lastIndexOf(".class"));
                 }
-                if (Utils.accept(Utils.concatFilters(include, exclude), null, "/" + className, null)) {
+                if (Utils.accept(Utils.concatFilters(repGen.getInclude(), repGen.getExclude()), null, "/" + className, null)) {
                     newFiles.add(classFile);
                 }
 
@@ -244,7 +239,7 @@ public class JavapRepGen {
 
         for (String classFile : filesInJar) {
 
-            if (Utils.accept(Utils.concatFilters(include, exclude), null, "/" + classFile.replaceAll("\\.", "/"), null)) {
+            if (Utils.accept(Utils.concatFilters(repGen.getInclude(), repGen.getExclude()), null, "/" + classFile.replaceAll("\\.", "/"), null)) {
                 newFilesInJar.add(classFile);
             }
 

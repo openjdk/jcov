@@ -517,6 +517,10 @@ public class RepGen extends JCovCMDTool {
         return srcRootPath;
     }
 
+    public void setDataProcessorsSPIs(DataProcessorSPI[] dataProcessorSPIs){
+        this.dataProcessorSPIs = dataProcessorSPIs;
+    }
+
     /**
      * Reset all properties to defaults. reportGeneratorSPI = null; include =
      * new String[] {".*"}; exclude = new String[] {""}; fms = null; filter =
@@ -664,7 +668,8 @@ public class RepGen extends JCovCMDTool {
         if (classesPath != null) {
             try {
                 logger.log(Level.INFO, "-- Creating javap report");
-                new JavapRepGen(include, exclude).run(filenames[0], classesPath, outputDir);
+                setDataProcessorsSPIs(null);
+                new JavapRepGen(this).run(filenames[0], classesPath, outputDir);
                 return 0;
             } catch (Exception ex) {
                 logger.log(Level.SEVERE, "Error while creating javap report", ex);
