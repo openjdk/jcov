@@ -172,7 +172,8 @@ public class Report extends Task implements DynamicAttribute {
             if (filename != null) {
 
                 if (javap != null) {
-                    new JavapRepGen(repGen.getInclude(), repGen.getExclude()).run(filename.getPath(), javap, destdir.getPath());
+                    repGen.setDataProcessorsSPIs(null);
+                    new JavapRepGen(repGen).run(filename.getPath(), javap, destdir.getPath());
                     if (propfile != null) {
                         PropertyFinder.cleanProperties();
                     }
