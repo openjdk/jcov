@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,39 +24,26 @@
  */
 package com.sun.tdk.jcov.report.ancfilters;
 
-import com.sun.tdk.jcov.instrument.DataBlock;
-import com.sun.tdk.jcov.instrument.DataClass;
-import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.report.AncFilter;
-import org.objectweb.asm.Opcodes;
+import com.sun.tdk.jcov.report.AncFilterFactory;
+import org.testng.annotations.Test;
 
-/**
- * @author Alexey Fedorchenko
- */
-public class DeprecatedANCFilter implements AncFilter {
+import java.util.Collection;
 
-    @Override
-    public boolean accept(DataClass clz) {
-        return false;
+import static org.testng.Assert.assertTrue;
+
+public class BuiltInAncFiltersTest {
+    static final AncFilterFactory factory = new BuiltInAncFilters();
+    @Test
+    public void testInstantiate() {
+        assertTrue(factory.instantiate("setter") instanceof SetterANCFilter);
+        assertTrue(factory.instantiate("getter") instanceof GetterANCFilter);
     }
-
-    @Override
-    public boolean accept(DataClass clz, DataMethod m) {
-
-        if ((m.getAccess() & Opcodes.ACC_DEPRECATED) != 0){
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
-    public boolean accept(DataMethod m, DataBlock b) {
-        return false;
-    }
-
-    @Override
-    public String getAncReason() {
-        return "Deprecated method filter";
+    @Test
+    public void testInstantiateAll() {
+        Collection<AncFilter> filters = factory.instantiateAll();
+        assertTrue(filters.stream().anyMatch(f -> f instanceof CatchANCFilter));
+        assertTrue(filters.stream().anyMatch(f -> f instanceof DeprecatedANCFilter));
+        assertTrue(filters.stream().noneMatch(f -> f instanceof ListANCFilter));
     }
 }

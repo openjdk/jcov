@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,41 +22,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.report.ancfilters;
+package com.sun.tdk.jcov.report;
 
-import com.sun.tdk.jcov.instrument.DataBlock;
-import com.sun.tdk.jcov.instrument.DataClass;
-import com.sun.tdk.jcov.instrument.DataMethod;
-import com.sun.tdk.jcov.report.AncFilter;
-import org.objectweb.asm.Opcodes;
+import java.util.Collection;
 
 /**
- * @author Alexey Fedorchenko
+ * Implementations of this interface are responsible for mapping short names provided with {@code ancdf} options to
+ * AncFilter instances. Instances of this interface are discovered through {@code ServiceLoader} API.
  */
-public class DeprecatedANCFilter implements AncFilter {
+public interface AncFilterFactory {
+    /**
+     * Creates an instance of {@code AncFilter} identified by a short name.
+     * @param shortName
+     * @return {@code AncFilter} or null, if {@code shortName} does not correspond to any filter supported by this factory.
+     */
+    AncFilter instantiate(String shortName);
 
-    @Override
-    public boolean accept(DataClass clz) {
-        return false;
-    }
-
-    @Override
-    public boolean accept(DataClass clz, DataMethod m) {
-
-        if ((m.getAccess() & Opcodes.ACC_DEPRECATED) != 0){
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
-    public boolean accept(DataMethod m, DataBlock b) {
-        return false;
-    }
-
-    @Override
-    public String getAncReason() {
-        return "Deprecated method filter";
-    }
+    /**
+     * Instantiases all supported {@code AncFilter}s, which could be instanciated without additional information,
+     * such as parameters of {@code ParameterizedAncFilter}
+     * @return
+     */
+    Collection<AncFilter> instantiateAll();
 }

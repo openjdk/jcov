@@ -99,6 +99,7 @@ public class MainTest {
                     "file:///a/path"});
     }
 
+    @Test
     public void testNoFilter() throws IOException, URISyntaxException {
         try {
             Scanner.main(new String[]{
@@ -108,5 +109,25 @@ public class MainTest {
             assertTrue(Arrays.stream(Scanner.Filter.values()).map(f -> "--" + f.name())
                     .allMatch(f -> e.getMessage().contains(f)), "Incorrect error message: " + e.getMessage());
         }
+    }
+
+    @Test
+    public void testTwoFilters() throws IOException, URISyntaxException {
+        String dir = System.getProperty("test.classes");
+        Path setters = Files.createTempFile("setters2_", ".lst");
+        Path getters = Files.createTempFile("getters2_", ".lst");
+        System.out.println("testDir output file: " + setters.toAbsolutePath().toString());
+        System.out.println("testDir output file: " + getters.toAbsolutePath().toString());
+        Scanner.main(new String[]{
+                "--setters", setters.toAbsolutePath().toString(),
+                "--getters", getters.toAbsolutePath().toString(),
+                "file://" + dir
+        });
+        assertTrue(Files.lines(setters).anyMatch(l ->
+                l.equals(SettersTest.class.getName().replace('.', '/') + "#setField(I)V")));
+        assertTrue(Files.lines(getters).anyMatch(l ->
+                l.equals(GettersTest.class.getName().replace('.', '/') + "#getField()I")));
+        Files.delete(setters);
+        Files.delete(getters);
     }
 }

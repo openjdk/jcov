@@ -191,17 +191,9 @@
 
         <mkdir dir="${jcov.classes}/META-INF"/>
         <mkdir dir="${jcov.classes}/META-INF/services"/>
-        <echo file="${jcov.classes}/META-INF/services/com.sun.tdk.jcov.report.ancfilters.DefaultAncFilter"
+        <echo file="${jcov.classes}/META-INF/services/com.sun.tdk.jcov.report.AncFilterFactory"
               append="false">
-            com.sun.tdk.jcov.report.ancfilters.ToStringANCFilter
-            com.sun.tdk.jcov.report.ancfilters.DeprecatedANCFilter
-            com.sun.tdk.jcov.report.ancfilters.EmptyANCFilter
-            com.sun.tdk.jcov.report.ancfilters.CatchANCFilter
-            com.sun.tdk.jcov.report.ancfilters.ThrowANCFilter
-            com.sun.tdk.jcov.report.ancfilters.SyntheticANCFilter
-            com.sun.tdk.jcov.report.ancfilters.GetterANCFilter
-            com.sun.tdk.jcov.report.ancfilters.SetterANCFilter
-            com.sun.tdk.jcov.report.ancfilters.ListANCFilter
+            com.sun.tdk.jcov.report.ancfilters.BuiltInAncFilters
         </echo>
 
         <jar destfile="${build.dir}/jcov.jar" basedir="${jcov.classes}" index="false">

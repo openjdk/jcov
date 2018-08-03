@@ -148,9 +148,4 @@ public class ListANCFilterTest {
     public void testReasonUninitiated() {
         new ListANCFilter().getAncReason();
     }
-
-    @Test
-    public void testGetFilterName() {
-        assertEquals(new ListANCFilter().getFilterName(), "list");
-    }
 }

@@ -27,6 +27,7 @@ package com.sun.tdk.jcov.report.ancfilters;
 import com.sun.tdk.jcov.instrument.DataBlock;
 import com.sun.tdk.jcov.instrument.DataClass;
 import com.sun.tdk.jcov.instrument.DataMethod;
+import com.sun.tdk.jcov.report.AncFilter;
 import com.sun.tdk.jcov.report.ParameterizedAncFilter;
 
 import java.io.BufferedReader;
@@ -48,7 +49,7 @@ import java.util.Set;
  *     &lt;class-name#&lt&gt;&lt;method-name-andsignature&gt;. Example:  java/lang/String#indexOf(I)I</li>
  * </ul>
  */
-public class ListANCFilter implements DefaultAncFilter, ParameterizedAncFilter {
+public class ListANCFilter implements ParameterizedAncFilter {
 
     private static final String COMMENT_PREFIX = "#";
     private static final String CLASS_METHOD_SEPARATOR = "#";
@@ -104,14 +105,6 @@ public class ListANCFilter implements DefaultAncFilter, ParameterizedAncFilter {
     public String getAncReason() {
         assertInitialized();
         return ancReason;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getFilterName() {
-        return "list";
     }
 
     /**

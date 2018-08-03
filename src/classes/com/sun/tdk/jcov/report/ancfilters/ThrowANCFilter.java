@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
 package com.sun.tdk.jcov.report.ancfilters;
 
 import com.sun.tdk.jcov.instrument.*;
+import com.sun.tdk.jcov.report.AncFilter;
 
 /**
  * @author Alexey Fedorchenko
  */
-public class ThrowANCFilter implements DefaultAncFilter {
+public class ThrowANCFilter implements AncFilter {
 
     @Override
     public boolean accept(DataClass clz) {
@@ -60,10 +61,5 @@ public class ThrowANCFilter implements DefaultAncFilter {
     @Override
     public String getAncReason() {
         return "Throw block filter";
-    }
-
-    @Override
-    public String getFilterName() {
-        return "throw";
     }
 }

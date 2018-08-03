@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import com.sun.tdk.jcov.instrument.DataField;
 import com.sun.tdk.jcov.processing.DataProcessorSPI;
 import com.sun.tdk.jcov.report.AncFilter;
 import com.sun.tdk.jcov.report.ParameterizedAncFilter;
-import com.sun.tdk.jcov.report.ancfilters.DefaultAncFilter;
+import com.sun.tdk.jcov.report.AncFilterFactory;
 import com.sun.tdk.jcov.util.Utils;
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.data.Result;
@@ -58,13 +58,13 @@ import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.SPIDescr;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.sun.tdk.jcov.tools.OptionDescr.*;
 import java.io.File;
 import java.util.Arrays;
-import java.util.ServiceLoader;
 import java.util.List;
 import org.objectweb.asm.Opcodes;
 
@@ -249,33 +249,32 @@ public class RepGen extends JCovCMDTool {
         }
 
         if (ancdeffilters != null) {
-            ServiceLoader<DefaultAncFilter> loader = ServiceLoader.load(DefaultAncFilter.class);
+            ServiceLoader<AncFilterFactory> loader = ServiceLoader.load(AncFilterFactory.class);
             List<AncFilter> defaultANCFiltersList = new ArrayList<AncFilter>();
-            if (ancfiltersClasses != null && ancfiltersClasses.length > 0){
+            if (ancfiltersClasses != null && ancfiltersClasses.length > 0) {
                 defaultANCFiltersList.addAll(Arrays.asList(ancfiltersClasses));
             }
-            if (ancdeffilters.length == 1 && ancdeffilters[0].equals("all")){
-                for (DefaultAncFilter filter : loader) {
-                    if(!(filter instanceof ParameterizedAncFilter))
-                        defaultANCFiltersList.add(filter);
+            if (ancdeffilters.length == 1 && ancdeffilters[0].equals("all")) {
+                for (AncFilterFactory factory : loader) {
+                    defaultANCFiltersList.addAll(factory.instantiateAll());
                 }
-            }
-            else {
+            } else {
                 for (String defaulAncFilter : ancdeffilters) {
                     boolean found = false;
-                    for (DefaultAncFilter filter : loader) {
-                        String filterName, filterParameters;
-                        int separatorPosition = defaulAncFilter.indexOf(ANC_FILTER_PARAMETER_SEPARATOR);
-                        if(separatorPosition > -1) {
-                            filterName = defaulAncFilter.substring(0, separatorPosition);
-                            filterParameters = defaulAncFilter.substring(separatorPosition +
-                                    ANC_FILTER_PARAMETER_SEPARATOR.length());
-                        } else {
-                            filterName = defaulAncFilter;
-                            filterParameters = null;
-                        }
-                        if (filterName.equals(filter.getFilterName())) {
-                            if(filterParameters != null) {
+                    String filterName, filterParameters;
+                    int separatorPosition = defaulAncFilter.indexOf(ANC_FILTER_PARAMETER_SEPARATOR);
+                    if (separatorPosition > -1) {
+                        filterName = defaulAncFilter.substring(0, separatorPosition);
+                        filterParameters = defaulAncFilter.substring(separatorPosition +
+                                ANC_FILTER_PARAMETER_SEPARATOR.length());
+                    } else {
+                        filterName = defaulAncFilter;
+                        filterParameters = null;
+                    }
+                    for (AncFilterFactory factory : loader) {
+                        AncFilter filter = factory.instantiate(filterName);
+                        if (filter != null) {
+                            if (filterParameters != null) {
                                 if (filter instanceof ParameterizedAncFilter) {
                                     try {
                                         ((ParameterizedAncFilter) filter).setParameter(filterParameters);
@@ -293,7 +292,7 @@ public class RepGen extends JCovCMDTool {
                         }
                     }
                     if (!found) {
-                        throw new RuntimeException("There is no default ANC filter for \""+defaulAncFilter+"\" value");
+                        throw new RuntimeException("There is no ANC filter for \"" + defaulAncFilter + "\" value");
                     }
                 }
             }
