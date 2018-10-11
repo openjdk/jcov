@@ -299,4 +299,20 @@
             description="Creates the build-distribution.">
     </target>
 
+    <target name="test" depends="build-jcov">
+        <mkdir dir="${result.dir}/test/classes" />
+        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="1.8" source="1.8"
+               srcdir="${test.src.dir}"
+               sourcepath="${test.src.dir}"
+               classpath="${testngjar}:${build.dir}/jcov.jar"
+               destdir="${result.dir}/test/classes">
+        </javac>
+        <taskdef classname="org.testng.TestNGAntTask" classpath="${testngjar}" name="testng"/>
+        <testng failureProperty="tests.failed" listeners="org.testng.reporters.VerboseReporter" outputdir="${result.dir}/test/result" suitename="jcov" testname="TestNG tests" workingDir="${result.dir}/test/work" verbose="2">
+                <classfileset dir="${result.dir}/test/classes" includes="**/*Test.class" />
+            <classpath>
+                <path path="${testngjar}:${build.dir}/jcov.jar:${result.dir}/test/classes"/>
+            </classpath>
+        </testng>
+    </target>
 </project>
