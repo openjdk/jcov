@@ -43,7 +43,7 @@ class EntryCodeMethodAdapter extends MethodVisitor {
     EntryCodeMethodAdapter(final MethodVisitor mv,
             final DataMethodEntryOnly method,
             final InstrumentationParams params) {
-        super(Opcodes.ASM6, mv);
+        super(Utils.ASM_API_VERSION, mv);
         this.method = method;
         this.params = params;
     }

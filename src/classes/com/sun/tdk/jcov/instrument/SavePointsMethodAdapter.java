@@ -24,8 +24,8 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 import static org.objectweb.asm.Opcodes.*;
 
 /**
@@ -41,7 +41,7 @@ public class SavePointsMethodAdapter extends MethodVisitor {
     private final boolean isBegin;
 
     public SavePointsMethodAdapter(final MethodVisitor mv, boolean isBegin) {
-        super(Opcodes.ASM6, mv);
+        super(Utils.ASM_API_VERSION, mv);
         this.isBegin = isBegin;
     }
 

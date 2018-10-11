@@ -24,10 +24,10 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.Opcodes;
 
 /**
  * Field visitor collecting runtime annotations
@@ -40,7 +40,7 @@ class FieldAnnotationVisitor extends FieldVisitor {
     final FieldVisitor fv;
 
     FieldAnnotationVisitor(final FieldVisitor fv, final DataField field) {
-        super(Opcodes.ASM6, fv);
+        super(Utils.ASM_API_VERSION, fv);
         this.fv = fv;
         this.field = field;
     }

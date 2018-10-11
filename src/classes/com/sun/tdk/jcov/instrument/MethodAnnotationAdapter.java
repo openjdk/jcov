@@ -24,9 +24,9 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 /**
  * Class that does nothing but collects runtime annotations
@@ -45,7 +45,7 @@ class MethodAnnotationAdapter extends MethodVisitor {
 
     MethodAnnotationAdapter(final MethodVisitor mv,
             final DataMethod method) {
-        super(Opcodes.ASM6, mv);
+        super(Utils.ASM_API_VERSION, mv);
         this.meth = method;
     }
 }

@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LdcInsnNode;
@@ -70,7 +71,7 @@ public class InvokeMethodAdapter extends MethodVisitor {
             Collections.synchronizedMap(new HashMap<String, Integer>());
 
     public InvokeMethodAdapter(MethodVisitor mv, String className, final InstrumentationParams params) {
-        super(ASM6, mv);
+        super(Utils.ASM_API_VERSION, mv);
         this.className = className;
         this.params = params;
     }

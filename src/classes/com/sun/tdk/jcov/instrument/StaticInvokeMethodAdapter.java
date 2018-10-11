@@ -69,7 +69,7 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
     public static final Map<String, Integer> map = new HashMap<String, Integer>();
 
     public StaticInvokeMethodAdapter(MethodVisitor mv, String className, String methName, int access, final InstrumentationParams params) {
-        super(Opcodes.ASM6, mv);
+        super(Utils.ASM_API_VERSION, mv);
         this.className = className;
         this.params = params;
         this.methName = methName;

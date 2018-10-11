@@ -24,13 +24,13 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ByteVector;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 
 /**
  * @author Dmitry Fazunenko
@@ -45,7 +45,7 @@ public class InstrumentedAttributeClassAdapter extends ClassVisitor {
     }
 
     public InstrumentedAttributeClassAdapter(final ClassVisitor cv) {
-        super(Opcodes.ASM6, cv);
+        super(Utils.ASM_API_VERSION, cv);
     }
 
     public void visitAttribute(Attribute attr) {

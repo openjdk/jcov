@@ -30,7 +30,6 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 import static org.objectweb.asm.Opcodes.*;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -44,7 +43,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
     private final InstrumentationParams params;
 
     public DeferringMethodClassAdapter(final ClassVisitor cv, DataClass k, InstrumentationParams params) {
-        super(ASM6, cv);
+        super(Utils.ASM_API_VERSION, cv);
         this.k = k;
         this.params = params;
     }
@@ -172,7 +171,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         MethodVisitor mv = visitMethodCoverage(access, name, desc, signature, exceptions);
 
         if ("<clinit>".equals(name) && !params.isDynamicCollect() && (k.getPackageName().startsWith("java/lang/"))) {
-            mv = new MethodVisitor(Opcodes.ASM6, mv) {
+            mv = new MethodVisitor(Utils.ASM_API_VERSION, mv) {
                 public void visitCode() {
                     mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/Collect", "init", "()V");
                     super.visitCode();
@@ -208,7 +207,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         if (params.isDataSaveFilterAccept(k.getFullname(), name, false)) {
             mv = new SavePointsMethodAdapter(mv, false);
         }
-        mv = new MethodVisitor(Opcodes.ASM6, mv) {
+        mv = new MethodVisitor(Utils.ASM_API_VERSION, mv) {
             @Override
             public void visitLocalVariable(String arg0, String arg1, String arg2, Label arg3, Label arg4, int arg5) {
                 //super.visitLocalVariable(arg0, arg1, arg2, arg3, arg4, arg5);

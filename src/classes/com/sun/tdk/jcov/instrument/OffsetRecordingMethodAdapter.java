@@ -29,7 +29,6 @@ import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 
 /**
  * OffsetRecordingMethodAdapter
@@ -45,7 +44,7 @@ class OffsetRecordingMethodAdapter extends MethodVisitor {
 
     public OffsetRecordingMethodAdapter(final MethodVisitor mv,
             final DataMethodWithBlocks method) {
-        super(Opcodes.ASM6, mv);
+        super(Utils.ASM_API_VERSION, mv);
         this.currentInstructionIndex = 0;
         this.bcis = new int[60];
         this.method = method;

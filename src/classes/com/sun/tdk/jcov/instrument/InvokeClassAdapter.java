@@ -24,9 +24,9 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 /**
  *
@@ -38,7 +38,7 @@ public class InvokeClassAdapter extends ClassVisitor {
     private final InstrumentationParams params;
 
     public InvokeClassAdapter(final ClassVisitor cv, final InstrumentationParams params) {
-        super(Opcodes.ASM6, cv);
+        super(Utils.ASM_API_VERSION, cv);
         this.params = params;
     }
 

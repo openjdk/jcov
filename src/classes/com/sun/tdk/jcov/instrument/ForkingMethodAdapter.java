@@ -24,12 +24,12 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
 
 /**
  * ForkingMethodAdapter
@@ -44,7 +44,7 @@ class ForkingMethodAdapter extends MethodVisitor {
         final AnnotationVisitor av2;
 
         DuplicatingAnnotationAdapter(final AnnotationVisitor av1, final AnnotationVisitor av2) {
-            super(Opcodes.ASM6);
+            super(Utils.ASM_API_VERSION);
             this.av1 = av1;
             this.av2 = av2;
         }
@@ -88,7 +88,7 @@ class ForkingMethodAdapter extends MethodVisitor {
      * @param mv the code visitor to which this adapter must delegate calls.
      */
     public ForkingMethodAdapter(final MethodVisitor mv1, final MethodVisitor mv2) {
-        super(Opcodes.ASM6);
+        super(Utils.ASM_API_VERSION);
         this.mv1 = mv1;
         this.mv2 = mv2;
     }

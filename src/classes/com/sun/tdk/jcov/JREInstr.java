@@ -271,7 +271,7 @@ public class JREInstr extends JCovCMDTool {
             ClassReader cr = new ClassReader(in);
             ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, cl);
 
-            ClassVisitor cv = new ClassVisitor(Opcodes.ASM6, cw) {
+            ClassVisitor cv = new ClassVisitor(Utils.ASM_API_VERSION, cw) {
                 @Override
                 public ModuleVisitor visitModule(String name, int access, String version) {
                     ModuleVisitor mv = super.visitModule(name, access, version);

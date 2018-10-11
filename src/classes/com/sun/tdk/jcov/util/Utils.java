@@ -60,12 +60,19 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import org.objectweb.asm.Opcodes;
+
 /**
  * This class implements miscellaneous utilities, necessary for Jcov
  *
  * @author Konstantin Bobrovsky
  */
 public final class Utils {
+
+    /**
+     * The ASM API version that should be used by jcov.
+     */
+    public static final int ASM_API_VERSION = Opcodes.ASM7_EXPERIMENTAL;
 
     private static Handler loggerHandler = null;
     private final static int ASCII_CHARS_TOTAL = 128;
