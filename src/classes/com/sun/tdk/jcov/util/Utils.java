@@ -100,31 +100,27 @@ public final class Utils {
             map[chars[i]] = i;
         }
     }
-    public final static int VER11 = 110;
-    public final static int VER12 = 120;
-    public final static int VER122 = 122;
-    public final static int VER13 = 130;
-    public final static int VER14 = 140;
-    public final static int VER15 = 150;
-    public final static int VER16 = 160;
-    public final static int VER9 = 190;
+
+
+    public final static int VER16  = 160;
+    public final static int VER17  = 160;
+    public final static int VER18  = 160;
+    public final static int VER90  = 900;
+    public final static int VER100 = 1000;
     private static int javaVersion = -1;
 
-
     /**
-     * @return JVM version
+     * @return JVM version: java.version * 100
      */
     public static int getJavaVersion() {
         if (javaVersion == -1){
             String ver = System.getProperty("java.version");
-            if (ver.length() > 1) {
-                javaVersion = (ver.charAt(0) - '0') * 100
-                        + (ver.charAt(2) - '0') * 10
-                        + (ver.length() > 4 ? (ver.charAt(4) - '0') : 0);
+            for(int i=1; i<=15; i++) {
+                if( ver.startsWith(String.format( (i <= 8) ? "1.%d" : "%d" , i))) {
+                    return (i <= 8) ? 100 + i*10 : i * 100;
+                }
             }
-            else{
-                javaVersion = VER9;
-            }
+            javaVersion = VER90;
         }
         return javaVersion;
     }
@@ -632,10 +628,10 @@ public final class Utils {
     }
 
     public static void initLogger() {
+        if (loggerHandler == null) {
+            setLoggerHandler(new ConsoleHandler());
+        }
         if (System.getProperty("java.util.logging.config.file") == null) {
-            if (loggerHandler == null) {
-                setLoggerHandler(new ConsoleHandler());
-            }
             InputStream in = null;
             try {
                 in = Utils.class.getResourceAsStream("/com/sun/tdk/jcov/logging.properties");
