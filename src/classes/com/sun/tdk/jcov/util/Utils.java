@@ -72,7 +72,7 @@ public final class Utils {
     /**
      * The ASM API version that should be used by jcov.
      */
-    public static final int ASM_API_VERSION = Opcodes.ASM7_EXPERIMENTAL;
+    public static final int ASM_API_VERSION = Opcodes.ASM7;
 
     private static Handler loggerHandler = null;
     private final static int ASCII_CHARS_TOTAL = 128;
