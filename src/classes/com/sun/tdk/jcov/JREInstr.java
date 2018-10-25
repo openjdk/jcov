@@ -24,14 +24,15 @@
  */
 package com.sun.tdk.jcov;
 
-import com.sun.tdk.jcov.instrument.*;
+import com.sun.tdk.jcov.instrument.HashesAttribute;
+import com.sun.tdk.jcov.instrument.InstrumentationOptions;
+import com.sun.tdk.jcov.instrument.OverriddenClassWriter;
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.*;
-import org.objectweb.asm.Attribute;
 
 import java.io.*;
 import java.net.URL;
@@ -314,20 +315,28 @@ public class JREInstr extends JCovCMDTool {
     private boolean doCommand(String command, File where, String msg) throws IOException, InterruptedException {
         Objects.requireNonNull(command);
         Objects.requireNonNull(msg);
-        Process process = Runtime.getRuntime().exec(command, null, where);
-        try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            process.waitFor();
-            if (process.exitValue() != 0) {
-                msg += command;
+        boolean success;
+        StringBuilder sb = new StringBuilder(msg + command);
+        ProcessBuilder pb = new ProcessBuilder(command.split("\\s+")).directory(where).redirectErrorStream(true);
+        Process p = null;
+        try {
+            p = pb.start();
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
                 String s;
-                while ((s = stdInput.readLine()) != null) {
-                    msg += System.lineSeparator() + '\t' + s;
+                while ((s = br.readLine()) != null) {
+                    sb.append(System.lineSeparator()).append('\t').append(s);
                 }
-                logger.log(Level.SEVERE, msg);
-                return false;
+                success = p.waitFor() == 0;
+            }
+            if (!success) {
+                logger.log(Level.SEVERE, sb.toString());
+            }
+        } finally {
+            if (p != null) {
+                p.destroy();
             }
         }
-        return true;
+        return success;
     }
 
     private File extractJMod(File jdk, File from, File to) {
