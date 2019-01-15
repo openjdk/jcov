@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,6 @@ public abstract class AbstractUniversalInstrumenter {
     /**
      * <p> Creates AbstractUniversalInstrumenter instance </p>
      *
-     * @param outDir Directory to write output files to (jars, classes,
-     * resources)
      * @param overwrite Overwrite existing binary
      * @param readOnly Do not produce instrumented binaries (template generation
      * purposes)

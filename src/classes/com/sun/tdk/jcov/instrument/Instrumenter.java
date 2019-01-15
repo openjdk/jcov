@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,15 +46,15 @@ class Instrumenter {
             il.add(new LdcInsnNode(hash));
             il.add(new LdcInsnNode(fullHash));
             il.add(new MethodInsnNode(INVOKESTATIC,
-                    "com/sun/tdk/jcov/runtime/CollectDetect", "hit", "(III)V"));
+                    "com/sun/tdk/jcov/runtime/CollectDetect", "hit", "(III)V", false));
         } else if (detectInternal) { // agent (hardcoded by default) or loaded, false otherwise
             il.add(new LdcInsnNode(id));
             il.add(new MethodInsnNode(INVOKESTATIC,
-                    "com/sun/tdk/jcov/runtime/CollectDetect", "hit", "(I)V"));
+                    "com/sun/tdk/jcov/runtime/CollectDetect", "hit", "(I)V", false));
         } else { // static
             il.add(new LdcInsnNode(id));
             il.add(new MethodInsnNode(INVOKESTATIC,
-                    "com/sun/tdk/jcov/runtime/Collect", "hit", "(I)V"));
+                    "com/sun/tdk/jcov/runtime/Collect", "hit", "(I)V", false));
         }
         return il;
     }

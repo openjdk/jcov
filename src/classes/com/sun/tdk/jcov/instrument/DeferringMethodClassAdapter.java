@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         if ("<clinit>".equals(name) && !params.isDynamicCollect() && (k.getPackageName().startsWith("java/lang/"))) {
             mv = new MethodVisitor(Utils.ASM_API_VERSION, mv) {
                 public void visitCode() {
-                    mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/Collect", "init", "()V");
+                    mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/Collect", "init", "()V", false);
                     super.visitCode();
                 }
             };
@@ -186,15 +186,14 @@ class DeferringMethodClassAdapter extends ClassVisitor {
             if (name.equals("<clinit>")) {
                 int id = (name + desc).hashCode();
                 mv.visitLdcInsn(id);
-                mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V");
+                mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V", false);
             }
 
         }
 
         if (params.isInnerInvacationsOff() && Utils.isAdvanceStaticInstrAllowed(k.getFullname(), name)) {
-
             if (name.equals("<clinit>")) {
-                mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "enterClinit", "()V");
+                mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "enterClinit", "()V", false);
             }
 
         }

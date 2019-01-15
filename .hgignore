@@ -1,0 +1,17 @@
+syntax: glob
+
+# IDEA modules
+**.iml
+
+# build
+JCOV_BUILD/**
+
+# Misc
+webrev/**
+webrev.zip
+*~
+*.log
+*.swp
+
+# MAC OS
+*.DS_Store

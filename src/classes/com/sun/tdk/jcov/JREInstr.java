@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ public class JREInstr extends JCovCMDTool {
                 logger.log(Level.SEVERE, "exception while creating mods, e = " + e);
             }
         } else if (toInstrument.getAbsolutePath().endsWith("bootmodules.jimage")) {
-            ArrayList<File> jdkImages = new ArrayList<File>();
+            ArrayList<File> jdkImages = new ArrayList<>();
             jdkImages.add(toInstrument);
             if (addJimages != null) {
                 Collections.addAll(jdkImages, addJimages);
@@ -243,9 +243,9 @@ public class JREInstr extends JCovCMDTool {
 
         ArrayList<String> srcs = null;
         if (addJars != null) {
-            srcs = new ArrayList<String>();
-            for (int i = 0; i < addJars.length; ++i) {
-                srcs.add(addJars[i].getAbsolutePath());
+            srcs = new ArrayList<>();
+            for (File addJar : addJars) {
+                srcs.add(addJar.getAbsolutePath());
             }
         }
 
@@ -255,7 +255,7 @@ public class JREInstr extends JCovCMDTool {
         }
 
         if (addTests != null) {
-            ArrayList<String> tests = new ArrayList<String>();
+            ArrayList<String> tests = new ArrayList<>();
             for (int i = 0; i < addTests.length; ++i) {
                 tests.add(addTests[i].getAbsolutePath());
             }
@@ -382,7 +382,7 @@ public class JREInstr extends JCovCMDTool {
         return new File(jmodDir.getParentFile(), "instr_jimage_dir");
     }
 
-    private void createJMod(File jmodDir, File jdk, String rt_path) {
+        private void createJMod(File jmodDir, File jdk, String rt_path) {
         try {
             File modsDir = jmodDir.getParentFile();
             StringBuilder command = new StringBuilder();
@@ -403,8 +403,17 @@ public class JREInstr extends JCovCMDTool {
                 if (subDir.getName().equals("conf")) {
                     command.append("--config " + jmodDir.getName() + File.separator + "conf ");
                 }
-                if (subDir.getName().equals("native")) {
-                    command.append("--libs " + jmodDir.getName() + File.separator + "native ");
+                if (subDir.getName().equals("lib")) {
+                    command.append("--libs " + jmodDir.getName() + File.separator + "lib ");
+                }
+                if (subDir.getName().equals("include")) {
+                    command.append("--header-files " + jmodDir.getName() + File.separator + "include ");
+                }
+                if (subDir.getName().equals("legal")) {
+                    command.append("--legal-notices " + jmodDir.getName() + File.separator + "legal ");
+                }
+                if (subDir.getName().equals("man")) {
+                    command.append("--man-pages " + jmodDir.getName() + File.separator + "man ");
                 }
             }
             command.append(" " + jmodDir.getName() + ".jmod");
@@ -675,7 +684,9 @@ public class JREInstr extends JCovCMDTool {
                         }
                     } else {
                         if (!envHandler.isSet(Instr.DSC_SUBSEQUENT)) {
-                            throw new EnvHandlingException("Backup rt.jar.bak file exisit. It can mean that JRE is already instrumented - nothing to do. Restore initial rt.jar or delete bak file.");
+                            throw new EnvHandlingException("Backup rt.jar.bak file exists.\n" +
+                                    "It can mean that JRE is already instrumented - nothing to do.\n" +
+                                    "Restore initial rt.jar or delete bak file.");
                         }
                     }
 
@@ -717,7 +728,9 @@ public class JREInstr extends JCovCMDTool {
                         }
                     } else {
                         if (!envHandler.isSet(Instr.DSC_SUBSEQUENT)) {
-                            throw new EnvHandlingException("Backup bootmodules.jimage.bak file exisit. It can mean that JRE is already instrumented - nothing to do. Restore initial bootmodules.jimage or delete bak file.");
+                            throw new EnvHandlingException("Backup bootmodules.jimage.bak file exists.\n" +
+                                    "It can mean that JRE is already instrumented - nothing to do.\n" +
+                                    "Restore initial bootmodules.jimage or delete bak file.");
                         }
                     }
                 }

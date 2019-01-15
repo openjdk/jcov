@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1344,7 +1344,6 @@ public final class Utils {
     }
 
     public static boolean isAdvanceStaticInstrAllowed(String classname, String methodname) {
-
         if ((!classname.equals("java/lang/System"))
                 && (!classname.equals("java/lang/String"))
                 && (!classname.equals("java/lang/StringLatin1"))
@@ -1357,8 +1356,6 @@ public final class Utils {
                 && (!classname.equals("java/lang/Class"))) {
             return true;
         }
-
-
         if (!methodname.equals("<clinit>")
                 && !methodname.equals("<init>")
                 && !methodname.equals("init")
@@ -1371,16 +1368,14 @@ public final class Utils {
                 && !methodname.equals("checkAccess")
                 && !methodname.equals("checkParentAccess")
                 && !methodname.equals("getSecurityManager")
+                && !methodname.equals("allowSecurityManager")
                 && !methodname.equals("registerNatives")
                 && !methodname.equals("currentTimeMillis")
                 && !methodname.equals("identityHashCode")
                 && !methodname.equals("nanoTime")
                 && !methodname.equals("getId")) {
-
             return true;
         }
-
-
         return false;
     }
 }

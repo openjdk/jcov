@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,8 @@ public class ClassMorph {
 
             if (!params.isDynamicCollect() && !rtClassesInstrumented && isPreVMLoadClass(fullname)) {
                 rtClassesInstrumented = true;
-                logger.log(Level.WARNING, "It's possible that you are instrumenting classes which are loaded before VM is loaded. It's recomended to add saveatend at java/lang/Shutdown.runHooks method. Data could be lost otherwise.");
+                logger.log(Level.WARNING, "It's possible that you are instrumenting classes which are loaded before VM is loaded.\n" +
+                        "It's recomended to add saveatend at java/lang/Shutdown.runHooks method. Data could be lost otherwise.");
             }
 
             return res;
@@ -269,7 +270,8 @@ public class ClassMorph {
 
             if (!params.isDynamicCollect() && !rtClassesInstrumented && isPreVMLoadClass(fullname)) {
                 rtClassesInstrumented = true;
-                logger.log(Level.WARNING, "It's possible that you are instrumenting classes which are loaded before VM is loaded. It's recomended to add saveatend at java/lang/Shutdown.runHooks method. Data could be lost otherwise.");
+                logger.log(Level.WARNING, "It's possible that you are instrumenting classes which are loaded before VM is loaded.\n" +
+                        "It's recommended to add saveatend at java/lang/Shutdown.runHooks method. Data could be lost otherwise.");
             }
 
             return res;

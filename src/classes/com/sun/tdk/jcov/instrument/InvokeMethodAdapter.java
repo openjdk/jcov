@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class InvokeMethodAdapter extends MethodVisitor {
                 && params.isCallerFilterAccept(className)) {
             InsnList il = new InsnList();
             il.add(new LdcInsnNode(getInvokeID(owner, name, desc)));
-            il.add(new MethodInsnNode(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "invokeHit", "(I)V"));
+            il.add(new MethodInsnNode(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "invokeHit", "(I)V", false));
             il.accept(this);
         }
         super.visitFieldInsn(opcode, owner, name, desc);
@@ -156,9 +156,9 @@ public class InvokeMethodAdapter extends MethodVisitor {
                 super.visitInsn(DUP);
 
                 super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/instrument/InvokeMethodAdapter",
-                        "getMethodHash", "(Ljava/lang/Object;)I");
+                        "getMethodHash", "(Ljava/lang/Object;)I", false);
                 super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect",
-                        "setExpectedFull", "(I)V");
+                        "setExpectedFull", "(I)V", false);
                 break;
             case METHOD:
                 super.visitInsn(DUP2_X1);
@@ -167,9 +167,9 @@ public class InvokeMethodAdapter extends MethodVisitor {
                 super.visitInsn(DUP);
 
                 super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/instrument/InvokeMethodAdapter",
-                        "getMethodHash", "(Ljava/lang/Object;)I");
+                        "getMethodHash", "(Ljava/lang/Object;)I", false);
                 super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect",
-                        "setExpectedFull", "(I)V");
+                        "setExpectedFull", "(I)V", false);
                 super.visitInsn(DUP_X2);
                 super.visitInsn(POP);
                 break;
@@ -178,9 +178,9 @@ public class InvokeMethodAdapter extends MethodVisitor {
                 super.visitInsn(POP);
 
                 super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/instrument/InvokeMethodAdapter",
-                        "getMethodHash", "(Ljava/lang/Object;)I");
+                        "getMethodHash", "(Ljava/lang/Object;)I", false);
                 super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect",
-                        "setExpectedFull", "(I)V");
+                        "setExpectedFull", "(I)V", false);
                 break;
             default:
                 break;

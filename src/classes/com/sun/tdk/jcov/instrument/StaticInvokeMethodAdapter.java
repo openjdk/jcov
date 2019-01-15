@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
                 InsnList il = new InsnList();
                 il.add(new LdcInsnNode(id));
                 il.add(new MethodInsnNode(INVOKESTATIC,
-                        "com/sun/tdk/jcov/runtime/Collect", "hit", "(I)V"));
+                        "com/sun/tdk/jcov/runtime/Collect", "hit", "(I)V", false));
 
                 il.accept(this);
             }
@@ -141,9 +141,9 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
                     if (!methName.equals("<clinit>")) {
                         int id = 0;
                         super.visitLdcInsn(id);
-                        super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V");
+                        super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V", false);
                     } else {
-                        super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "leaveClinit", "()V");
+                        super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "leaveClinit", "()V", false);
                     }
                 }
                 break;
