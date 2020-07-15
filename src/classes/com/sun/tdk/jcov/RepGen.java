@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,7 +240,7 @@ public class RepGen extends JCovCMDTool {
                 try {
                     String ancfilter = ancfilters[i];
                     Class ancFilteClass = Class.forName(ancfilter);
-                    ancfiltersClasses[i] = (AncFilter) ancFilteClass.newInstance();
+                    ancfiltersClasses[i] = (AncFilter) ancFilteClass.getDeclaredConstructor().newInstance();
                 } catch (Exception e) {
                     throw new Error("Cannot create an instance of "
                             + "AncFilter: ", e);
@@ -326,18 +326,12 @@ public class RepGen extends JCovCMDTool {
 
         try {
             ProductCoverage coverage = new ProductCoverage(file_image, options.getSrcRootPaths(), options.getJavapClasses(), isPublicAPI, noAbstract, anonym, ancfiltersClasses);
-
-            logger.log(Level.INFO, "- Starting ReportGenerator {0}", rg.getClass().getName());
+            logger.log(Level.INFO, "-- Starting ReportGenerator {0}", rg.getClass().getName());
             rg.generateReport(coverage, options);
-        } catch (Throwable ex) {
-            if (ex.getMessage() != null) {
-                throw new Exception("ReportGenerator produced exception " + ex.getMessage(), ex);
-            } else {
-                throw new Exception("ReportGenerator produced exception " + ex, ex);
-            }
+        } catch (Throwable e) {
+            throw e;
         }
-
-        logger.log(Level.INFO, "- Report generation done");
+        logger.log(Level.INFO, "-- Report generation done");
         return;
     }
 
@@ -364,9 +358,8 @@ public class RepGen extends JCovCMDTool {
     }
 
     protected DataRoot readDataRootFile(String filename, boolean readScales, String[] include, String[] exclude, String[] modif) throws FileFormatException {
-        DataRoot file_image = null;
         ClassSignatureFilter acceptor = new ClassSignatureFilter(include, exclude, m_include, m_exclude, modif);
-        file_image = Reader.readXML(filename, readScales, acceptor);
+        DataRoot file_image = Reader.readXML(filename, readScales, acceptor);
         return file_image;
     }
 
@@ -657,11 +650,11 @@ public class RepGen extends JCovCMDTool {
                     }
                 }
 
-                return 0;
+                return SUCCESS_EXIT_CODE;
             }
         } catch (IOException ex) {
             logger.log(Level.SEVERE, "Error while reading testlist", ex);
-            return 1;
+            return ERROR_CMDLINE_EXIT_CODE;
         }
 
         if (classesPath != null) {
@@ -669,10 +662,10 @@ public class RepGen extends JCovCMDTool {
                 logger.log(Level.INFO, "-- Creating javap report");
                 setDataProcessorsSPIs(null);
                 new JavapRepGen(this).run(filenames[0], classesPath, outputDir);
-                return 0;
+                return SUCCESS_EXIT_CODE;
             } catch (Exception ex) {
                 logger.log(Level.SEVERE, "Error while creating javap report", ex);
-                return 1;
+                return ERROR_CMDLINE_EXIT_CODE;
             }
         }
 
@@ -685,9 +678,7 @@ public class RepGen extends JCovCMDTool {
 
             return 0;
         } catch (FileFormatException e) {
-//            logger.log(Level.SEVERE, "malformed jcov file \"{0}", filename);
             logger.log(Level.SEVERE, e.getMessage(), Arrays.toString(filenames));
-        } catch (ProcessingException ex) {
         } catch (Exception ex) {
             logger.log(Level.SEVERE, ex.getMessage(), ex);
         }

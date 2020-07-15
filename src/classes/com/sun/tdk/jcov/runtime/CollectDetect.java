@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class CollectDetect extends Collect {
      */
     private static class ThreadInfo {
 
-        public static int MAX_STACK = 1000; // not used
+        private static int INFO_LENGTH = 100;
         long id; // thread id
         int instLevel; // not-zero instLevel means that this thread entered into instrumentation (agent) or saving code when it shouldn't collect hits
         int expected = 0; // used for CallerInclude/CallerExclude - caller() method is instrumented with setExpected() method
@@ -76,16 +76,25 @@ public class CollectDetect extends Collect {
     static volatile boolean lock = false;
 
     static {
+        CollectDetect.init();
+        CollectDetect.enableInvokeCounts();
+    }
+
+    public static void init() {
         if (info == null) {
             // do initialization
             underConstruction = new ThreadInfo(0L);
             underConstruction.instLevel++;
             if (Thread.currentThread() != null) {
-                info = new ThreadInfo[100];
+                info = new ThreadInfo[ThreadInfo.INFO_LENGTH];
                 long id = Thread.currentThread().getId();
                 prevInfo = infoForThread(id);
             }
         }
+    }
+
+    public static void enableInvokeCounts() {
+        invokeCounts = new long[MAX_SLOTS];
     }
 
     public static void enableDetectInternal() {
@@ -93,7 +102,7 @@ public class CollectDetect extends Collect {
             // do initialization
             underConstruction = new ThreadInfo(0L);
             underConstruction.instLevel++;
-            info = new ThreadInfo[100];
+            info = new ThreadInfo[ThreadInfo.INFO_LENGTH];
             long id = Thread.currentThread().getId();
             prevInfo = infoForThread(id);
         }
@@ -101,7 +110,10 @@ public class CollectDetect extends Collect {
 
     private static ThreadInfo infoForThread(long id) {
         ThreadInfo ti;
-        int hash = (int) (id % info.length);
+        if( info == null ) {
+            info = new ThreadInfo[ThreadInfo.INFO_LENGTH];
+        }
+        int hash = (int) (id % ThreadInfo.INFO_LENGTH);
         for (ti = info[hash]; ti != null; ti = ti.next) {
             if (ti.id == id) {
                 prevInfo = ti;
@@ -124,33 +136,39 @@ public class CollectDetect extends Collect {
     }
 
     public static void hit(int slot) {
-        //lock = true;
-        long id = Thread.currentThread().getId();
-        ThreadInfo ti = prevInfo;
+        Thread t = Thread.currentThread();
+        if ( t != null ) {
+            long id = Thread.currentThread().getId();
+            ThreadInfo ti = prevInfo;
 
-        if (ti.id != id) {
-            ti = infoForThread(id);
-        }
-        if (ti.enabled()) {
-            Collect.hit(slot);
+            if (ti.id != id) {
+                ti = infoForThread(id);
+            }
+
+            if (ti.enabled()) {
+                Collect.hit(slot);
+            }
         }
     }
 
     public static void hit(int slot, int hash, int fullHash) {
+        Thread t = Thread.currentThread();
+        if( t != null ) {
+            long id = t.getId();
+            ThreadInfo ti = prevInfo;
 
-        long id = Thread.currentThread().getId();
-        ThreadInfo ti = prevInfo;
+            if (ti == null || ti.id != id) {
+                ti = infoForThread(id);
+            }
 
-        if (ti.id != id) {
-            ti = infoForThread(id);
-        }
-        if (ti.enabled(hash)) {
-            ti.expected = 0;
-            Collect.hit(slot);
-        }
-        if (ti.enabledFull(fullHash)) {
-            ti.expectedFull = 0;
-            Collect.hit(slot);
+            if (ti.enabled(hash)) {
+                ti.expected = 0;
+                Collect.hit(slot);
+            }
+            if (ti.enabledFull(fullHash)) {
+                ti.expectedFull = 0;
+                Collect.hit(slot);
+            }
         }
     }
 
@@ -227,9 +245,6 @@ public class CollectDetect extends Collect {
     }
     private static long[] invokeCounts;
 
-    public static void enableInvokeCounts() {
-        invokeCounts = new long[MAX_SLOTS];
-    }
 
     public static void invokeHit(int id) {
         invokeCounts[id]++;
@@ -245,9 +260,5 @@ public class CollectDetect extends Collect {
 
     public static void setInvokeCountFor(int id, long count) {
         invokeCounts[id] = count;
-    }
-
-    static {
-        enableInvokeCounts();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
  */
 package com.sun.tdk.jcov.runtime;
 
+import java.util.Objects;
+
 /**
- * <p> Strores all runtime coverage information. Coverage information is stored
+ * <p> Stores all runtime coverage information. Coverage information is stored
  * in array of longs (counts[MAX_SLOTS]). </p> <p> Here should be no imports!
  * Collect should be usable in the earliest VM lifecycle - eg in String class
  * loading. </p> <p> slots count can be optimized at instrumentation time
@@ -42,22 +44,22 @@ public class Collect {
     public static int SLOTS = MAX_SLOTS;
     private static final int MAX_SAVERS = 10;
     private static int nextSlot = 0;
-    private static long counts[];
-    private static long counts_[];
+    private static long[] counts;
+    private static long[] counts_;
     // -- coverage data
     // savers
     private static JCovSaver[] savers = new JCovSaver[MAX_SAVERS];
     private static int nextSaver = 0;
-    private static Class extension = null;
+    private static Class<SaverDecorator> extension = null;
     // This constant is replaced in ANT build script (see files se.replace.properties, me.replace.properties and so on)
     private final static String saverClassnameString = "/*@BUILD_MODIFIED_SAVER_STRING@*/";
     // -- savers
     // saving state
     public static boolean enabled = false;
-    public static boolean saveEnabled = true;
-    public static boolean saveAtShutdownEnabled = true;
-    public static boolean isInitialized = false;
-    public static boolean isInternal = false;
+    static boolean saveEnabled = true;
+    static boolean saveAtShutdownEnabled = true;
+    static boolean isInitialized = false;
+    static boolean isInternal = false;
     // -- saving state
 
     /**
@@ -231,7 +233,7 @@ public class Collect {
             }
             for (int j = 0; j < i; j++) {
                 try {
-                    instantiateSaver(saver[j]).saveResults();
+                    Objects.requireNonNull(instantiateSaver(saver[j])).saveResults();
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
@@ -239,7 +241,8 @@ public class Collect {
         } else {
             for (int i = 0; i < nextSaver; i++) {
                 try {
-                    savers[i].saveResults();
+                    if (savers[i] != null)
+                        savers[i].saveResults();
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
@@ -252,7 +255,7 @@ public class Collect {
     /**
      * <p> Loads satellite class if it's not loaded. </p>
      */
-    public static void loadSaverExtension() {
+    private static void loadSaverExtension() {
         if (extension != null) {
             return;
         }
@@ -263,7 +266,7 @@ public class Collect {
                 m = "com.sun.tdk.jcov.runtime.NetworkSatelliteDecorator";
             }
             try {
-                extension = Class.forName(m);
+                extension = (Class<SaverDecorator>) Class.forName(m);
             } catch (Throwable t) {
                 t.printStackTrace();
             }
@@ -277,9 +280,9 @@ public class Collect {
      * @param name Saver to create
      * @return Created Saver
      */
-    public static JCovSaver instantiateSaver(String name) {
+    private static JCovSaver instantiateSaver(String name) {
         try {
-            return decorateSaver((JCovSaver) Class.forName(name).newInstance());
+            return decorateSaver((JCovSaver) Class.forName(name).getDeclaredConstructor().newInstance());
         } catch (Throwable t) {
             t.printStackTrace();
         }
@@ -289,7 +292,7 @@ public class Collect {
     public static JCovSaver decorateSaver(JCovSaver saver) {
         if (extension != null) {
             try {
-                SaverDecorator s = (SaverDecorator) extension.newInstance();
+                SaverDecorator s = extension.getDeclaredConstructor().newInstance();
                 s.init(saver);
                 return s;
             } catch (Throwable t) {
@@ -312,17 +315,15 @@ public class Collect {
                 if (!saverClassnameString.startsWith("/*@")) {
                     addSaver(instantiateSaver(saverClassnameString));
                     PropertyFinder.addAutoShutdownSave();
-                    isInitialized = true;
-                } else {
-                    isInitialized = true;
                 }
+                isInitialized = true;
             }
             isInternal = false;
         }
     }
 
     static {
-        enableCounts();
-        init();
+        Collect.enableCounts();
+        Collect.init();
     }
 }
