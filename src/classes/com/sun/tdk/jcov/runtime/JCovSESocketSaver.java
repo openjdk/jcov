@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,16 @@ public class JCovSESocketSaver extends JCovSocketSaver {
     public static final String HOST_PROPERTIES_NAME = "host";
 
     static {
-
+        URL url = null;
         File file = null;
         String urlString = "";
-        URL url = ClassLoader.getSystemClassLoader().getResource(JCovSESocketSaver.class.getCanonicalName().replaceAll("\\.", "/") + ".class");
+        try {
+            url = ClassLoader.getSystemClassLoader().getResource(
+                    JCovSESocketSaver.class.
+                            getCanonicalName().
+                            replace('.', '/') + ".class");
+        } catch( Exception ignore ) {
+        }
         if (url != null) {
             urlString = url.toString();
             if (urlString.contains("file:") && urlString.contains("!")) {
@@ -61,13 +67,20 @@ public class JCovSESocketSaver extends JCovSocketSaver {
             }
         }
 
-        if (file == null){
-            file = new File(System.getProperty("java.home")+File.separator + NETWORK_DEF_PROPERTIES_FILENAME);
+        if (file == null) {
+            try {
+                file = new File(System.getProperty("java.home") +
+                        File.separator +
+                        NETWORK_DEF_PROPERTIES_FILENAME);
+            } catch( Exception ignore ) {
+            }
         }
 
         if (file != null && file.exists()) {
 
-            File defProperties = new File(file.getParent() + File.separator + NETWORK_DEF_PROPERTIES_FILENAME);
+            File defProperties = new File(file.getParent() +
+                    File.separator +
+                    NETWORK_DEF_PROPERTIES_FILENAME);
 
             if (defProperties.exists()) {
 
