@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
   DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
   This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@
         <mkdir dir="${jcov.src.update}/com/sun/tdk/jcov/tools"/>
         <echo file="${jcov.src.update}/com/sun/tdk/jcov/tools/JcovVersion.java">
             /*
-            * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+            * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
             * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
             *
             * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@
             public static final String jcovBuildNumber = "${build.number}";
             public static final String jcovBuildDate = "${date}";
             public static String getJcovVersion() {
-                return String.format("%s%s-%s built: %s", jcovVersion, jcovMilestone, jcovBuildNumber, jcovBuildDate);
+                return String.format(" %s_%s (%s) %s", jcovVersion, jcovBuildNumber, jcovMilestone, jcovBuildDate);
               }
             }
         </echo>
@@ -162,13 +162,13 @@
     <target name="compile"  depends="prepare, build-date"
             description="compile main tools">
 
-        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="1.7" source="1.7"
+        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="8" source="8"
                srcdir="${jcov.src.update}"
                destdir="${jcov.classes}"
                classpath="${jcov.classpath}">
         </javac>
 
-        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="1.7" source="1.7"
+        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="8" source="8"
                srcdir="${src.dir}"
                destdir="${jcov.classes}"
                classpath="${jcov.classpath}">
@@ -234,7 +234,7 @@
                 </filterreader>
             </filterchain>
         </copy>
-        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="1.7" source="1.7"
+        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="8" source="8"
                srcdir="${jcov.filesaver.src}"
                sourcepath=""
                classpath="${jcov.filesaver.classes}"
@@ -268,7 +268,7 @@
                 </filterreader>
             </filterchain>
         </copy>
-        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="1.7" source="1.7"
+        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="8" source="8"
                srcdir="${jcov.networksaver.src}"
                sourcepath=""
                classpath="${jcov.networksaver.classes}"
@@ -285,7 +285,7 @@
 
     <target name="build-jt.observer" depends="prepare" if ="javatest.present" description="build jtobserver jar">
         <mkdir dir="${jcov.jtobserver.classes}"/>
-        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="1.7" source="1.7"
+        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="8" source="8"
                srcdir="${src.dir}"
                sourcepath=""
                destdir="${jcov.jtobserver.classes}" classpath="${javatestjar}">
@@ -301,7 +301,7 @@
 
     <target name="test" depends="build-jcov">
         <mkdir dir="${result.dir}/test/classes" />
-        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="1.8" source="1.8"
+        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="8" source="8"
                srcdir="${test.src.dir}"
                sourcepath="${test.src.dir}"
                classpath="${testngjar}:${build.dir}/jcov.jar"
