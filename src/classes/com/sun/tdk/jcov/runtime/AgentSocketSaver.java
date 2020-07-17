@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -81,7 +79,7 @@ public class AgentSocketSaver extends JCovSocketSaver {
                     break;
                 } catch (UnknownHostException e) {
                     System.err.println("JCovRT: Can't resolve hostname " + host
-                            + " - unknown host. Exiting. ");
+                            + " - unknown host. Exiting.");
                     return;
                 } catch (IOException e) {
                     System.err.println("JCovRT: Attempt to connect to " + host + ":"
@@ -104,9 +102,9 @@ public class AgentSocketSaver extends JCovSocketSaver {
             root.writeObject(out);
             out.close();
             s.close();
-        } catch (InterruptedException ex) {
+        } catch (InterruptedException ignored) {
         } catch (IOException ex) {
-            Logger.getLogger(FileSaver.class.getName()).log(Level.SEVERE, null, ex);
+            System.err.println("JCovRT: " + ex);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ import java.io.*;
 import java.net.Socket;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -101,14 +99,13 @@ public class NetworkSatelliteDecorator implements SaverDecorator {
                     }
 
                 } catch (Exception e) {
-                    Logger.getLogger(NetworkSatelliteDecorator.class.getName()).log(Level.SEVERE, "SocketClient: ", e);
+                    System.err.println("JCovRT SocketClient: " + e);
                 }
             }
 
         });
         socketClientThread.setDaemon(true);
         socketClientThread.start();
-
     }
 
     public void saveResults() {
