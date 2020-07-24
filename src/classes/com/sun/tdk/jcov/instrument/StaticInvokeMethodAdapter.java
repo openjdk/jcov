@@ -105,21 +105,25 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
                 il.accept(this);
             }
         }
+
         if (params.isCallerFilterOn()
                 && params.isCallerFilterAccept(className)) {
-
             int id = (name + desc).hashCode();
             super.visitLdcInsn(id);
-            super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V", false);
-
+            super.visitMethodInsn(INVOKESTATIC,
+                    "com/sun/tdk/jcov/runtime/CollectDetect",
+                    "setExpected",
+                    "(I)V", false);
         }
 
         if (params.isInnerInvacationsOff() && Utils.isAdvanceStaticInstrAllowed(className, name)) {
-            if (!owner.equals("java/lang/Object") && params.isInnerInstrumentationIncludes(className)) {
-                int id = -1;
+            if (!owner.equals("java/lang/Object")) {
+                int id = params.isInnerInstrumentationIncludes(className) ? 0 : -1;
                 super.visitLdcInsn(id);
-                super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V", false);
-
+                super.visitMethodInsn(INVOKESTATIC,
+                        "com/sun/tdk/jcov/runtime/CollectDetect",
+                        "setExpected",
+                        "(I)V", false);
             }
         }
 
