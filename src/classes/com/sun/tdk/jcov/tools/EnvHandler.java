@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import java.util.Properties;
  */
 public class EnvHandler {
 
-    public final static String sccsVersion = "1.6 01/17/03";
     public static final String OPTION_SPECIFIER = "-";
     public static final String OPT_VAL_DELIM = "=";
     public static final String PROP_FILE_SPECIFIER = "@";
@@ -73,9 +72,7 @@ public class EnvHandler {
      */
     protected JCovTool tool;
     /**
-     * Properties read from CLI (
-     *
-     * @ support)
+     * Properties read from CLI (@ support)
      */
     Properties CLProperties = new Properties();
     private List<SPIDescr> spiDescrs = new LinkedList<SPIDescr>();
@@ -134,7 +131,7 @@ public class EnvHandler {
      * variables, properties and so on. </p>
      *
      * @param name SPIDescr name
-     * @return
+     * @return SPI descriptor
      */
     public SPIDescr getSPIDescrByName(String name) {
         for (SPIDescr spi : spiDescrs) {
@@ -182,23 +179,15 @@ public class EnvHandler {
      * Note that this ServiceProvider will be registered in the EnvHandler
      * automatically as <b>spiClass</b>. Pass null to <b>spiClass</b> to disable
      * registering. </p>
-     *
-     * @param spiClass
-     * @param className
-     * @return
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     * @throws ClassNotFoundException
      */
-    private ServiceProvider instantiateServiceProvider(SPIDescr spi, String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException, Exception {
+    private ServiceProvider instantiateServiceProvider(SPIDescr spi, String className) throws Exception {
         ServiceProvider alias = spi.getPreset(className);
         if (alias != null) {
             addSPI(spi, alias);
             return alias;
         }
 
-        //Class<? extends ServiceProvider> customProviderClass = (Class<? extends ServiceProvider>) classLoader.loadClass(className);
-        ServiceProvider customProviderInstance = (ServiceProvider) classLoader.loadClass(className).newInstance();
+        ServiceProvider customProviderInstance = (ServiceProvider) classLoader.loadClass(className).getDeclaredConstructor().newInstance();
 
         addSPI(spi, customProviderInstance);
         return customProviderInstance;
@@ -674,8 +663,11 @@ public class EnvHandler {
         }
         out.println("Usage:");
         out.println("> " + tool.usageString());
+        if( tool.noteString() != null ) {
+            out.println(tool.noteString());
+        }
         if (validOptions != null) {
-            out.println("    options:");
+            out.println("    Options:");
             for (OptionDescr od : validOptions) {
                 if (SHARED_OPTIONS.contains(od)) {
                     continue;

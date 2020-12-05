@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * <p> A tool to statically instrument classfiles to collect coverage. </p> <p>
+ * <p> A tool to statically instrument class files to collect coverage. </p> <p>
  * There are 2 coverage collection modes: static and dynamic. In static mode
  * JCov reads and modifies classes bytecode inserting there some instructions
  * which will use JCov RT libraries. In dynamic mode (aka Agent mode) a VM agent
@@ -99,7 +99,7 @@ public class Instr extends JCovCMDTool {
      * classfiles and jars
      * @param outDir Directory to write instrumented data to. Be careful - all
      * instrumented data will be written to the root of outDir. When null -
-     * instrumented data will owerwrite source binaries
+     * instrumented data will overwrite source binaries
      * @param includeRTJar Runtime jar path to be implanted into instrumented
      * data. For jar files - rt will be integrated into result jar. For
      * directories - rt will be unpacked into outDir. Null if nothing should be
@@ -329,16 +329,28 @@ public class Instr extends JCovCMDTool {
         }
     }
 
+
     protected String usageString() {
-        return "java com.sun.tdk.jcov.Instr [-option value] target";
+        return "java com.sun.tdk.jcov.Instr [-option value] source1 sourceN";
     }
 
+    /**
+     * @return Command note
+     * @see com.sun.tdk.jcov.tools.JCovTool#noteString()
+     */
+    @Override
+    protected String noteString() {
+        return "  Note: Starting from JDK 9, the sources: source1,sourceN should be added to the class path of the command line.";
+    }
+
+
     protected String exampleString() {
-        return "java -cp jcov.jar com.sun.tdk.jcov.Instr -include java.lang.* -type block -output classes_instrumented classes";
+        return "java -cp jcov.jar:source1:source2 com.sun.tdk.jcov.Instr -include java.lang.* " +
+                "-type block -output instrumented_classes source1 source2";
     }
 
     protected String getDescr() {
-        return "instruments classfiles and creates template.xml";
+        return "instruments class files and creates template.xml";
     }
 
     /**
