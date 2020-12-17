@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,9 @@ package com.sun.tdk.jcov.util;
 
 import com.sun.tdk.jcov.tools.JCovTool.EnvHandlingException;
 import com.sun.tdk.jcov.tools.LoggingFormatter;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import org.objectweb.asm.Opcodes;
+
+import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -47,20 +38,15 @@ import java.net.UnknownHostException;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.util.*;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
+import java.util.logging.*;
 import java.util.regex.Matcher;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
-
-import org.objectweb.asm.Opcodes;
 
 /**
  * This class implements miscellaneous utilities, necessary for Jcov
@@ -526,22 +512,36 @@ public final class Utils {
         public int b;
     }
 
-    public static void addToClasspath(String[] path) {
+    public static void addToClasspath(String[] paths) {
         if (ClassLoader.getSystemClassLoader() instanceof URLClassLoader) {
-            URLClassLoader sysloader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-            Class sysclass = URLClassLoader.class;
-
+            URLClassLoader systemClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+            Class sClass = URLClassLoader.class;
             try {
-                Method method = sysclass.getDeclaredMethod("addURL", new Class[]{URL.class});
+                Method method = sClass.getDeclaredMethod("addURL", new Class[]{URL.class});
                 method.setAccessible(true);
 
-                URL[] urls = new URL[path.length];
-                for (int i = 0; i < path.length; i++) {
-                    urls[i] = new File(path[i]).toURI().toURL();
-                    method.invoke(sysloader, new Object[]{urls[i]});
+                URL[] urls = new URL[paths.length];
+                for (int i = 0; i < paths.length; i++) {
+                    urls[i] = new File(paths[i]).toURI().toURL();
+                    method.invoke(systemClassLoader, new Object[]{urls[i]});
                 }
             } catch (Throwable t) {
                 t.printStackTrace();
+            }
+        } else {
+            // Java 9+
+            String[] classpath = System.getProperty("java.class.path").split(File.pathSeparator);
+            for (int i = 0; i < paths.length; i++) {
+                String path = paths[i];
+                if ( !Arrays.stream(classpath).anyMatch(cp -> cp.equals(path)) ) {
+                    String cps = Arrays.stream(paths).collect(Collectors.joining("#"));
+                    String s1 = cps.replaceAll("#", ":");
+                    String s2 = cps.replaceAll("#", " ");
+                    System.err.format("Warning: Add input source(s) to the classpath: -cp jcov.jar:%s%n" +
+                                    "Example: java -cp jcov.jar:%s com.sun.tdk.jcov.Instr -t <template> -o <output> %s%n",
+                            s1, s1, s2);
+                    break;
+                }
             }
         }
     }
@@ -553,9 +553,9 @@ public final class Utils {
      */
     public static void addToClasspath(File directory) {
         if (directory.exists() && directory.isDirectory()) {
-            ArrayList<String> classes = new ArrayList<String>();
+            ArrayList<String> classes = new ArrayList<>();
             getClassesAndJars(directory, classes);
-            Utils.addToClasspath((String[]) classes.toArray(new String[0]));
+            Utils.addToClasspath(classes.toArray(new String[0]));
         }
     }
 
@@ -632,39 +632,23 @@ public final class Utils {
             setLoggerHandler(new ConsoleHandler());
         }
         if (System.getProperty("java.util.logging.config.file") == null) {
-            InputStream in = null;
-            try {
-                in = Utils.class.getResourceAsStream("/com/sun/tdk/jcov/logging.properties");
+            try (InputStream in = Utils.class.getResourceAsStream("/com/sun/tdk/jcov/logging.properties")) {
                 if (ClassLoader.getSystemClassLoader().equals(Utils.class.getClassLoader())) {
                     LogManager.getLogManager().readConfiguration(in);
                 } else {
                     LogManager.getLogManager().reset();
                 }
-            } catch (Exception ex) {
-            } finally {
-                try {
-                    if (in != null) {
-                        in.close();
-                    }
-                } catch (IOException ex1) {
-                }
-            }
+            } catch (Exception ignore) {}
         }
     }
 
     public static void initLogger(String propfile) {
         if (System.getProperty("java.util.logging.config.file") == null) {
-            InputStream in = null;
-            try {
-                System.setProperty("java.util.logging.config.file", propfile);
-                in = Utils.class.getResourceAsStream(propfile);
+            System.setProperty("java.util.logging.config.file", propfile);
+
+            try (InputStream in = Utils.class.getResourceAsStream(propfile)) {
                 LogManager.getLogManager().readConfiguration(in);
-            } catch (Exception ex) {
-                try {
-                    in.close();
-                } catch (IOException ex1) {
-                }
-            }
+            } catch (Exception ignore) {}
         }
     }
 

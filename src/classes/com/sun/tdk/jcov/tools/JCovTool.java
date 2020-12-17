@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,6 @@ public abstract class JCovTool {
     public static final int ERROR_CMDLINE_EXIT_CODE = 1;
     public static final int ERROR_EXEC_EXIT_CODE = 2;
     private static HashMap<String, Class> spis;
-//    public static OptionDescr[] VALID_OPTIONS;
     protected boolean readPlugins = false;
 
     protected JCovTool() {
@@ -73,6 +72,15 @@ public abstract class JCovTool {
     }
 
     protected abstract String usageString();
+
+    /**
+     * Placeholder for command notes if needed
+     *
+     * @return Command note
+     */
+    protected String noteString() {
+        return null;
+    }
 
     protected abstract String exampleString();
 
@@ -129,7 +137,7 @@ public abstract class JCovTool {
             Object o = null;
             try {
                 c = Class.forName(str);
-                o = c.newInstance();
+                o = c.getDeclaredConstructor().newInstance();
                 h = (JCovTool) o;
             } catch (NoClassDefFoundError cndfe){
                 if ("com.sun.tdk.jcov.IssueCoverage".equals(str)){
@@ -157,7 +165,7 @@ public abstract class JCovTool {
     /**
      * Prints help by tool`s classname
      *
-     * @param toolClass tool to load
+     * @param toolClassObject tool to load
      * @param args checks whether -help-verbose was mentioned
      */
     public static void printHelp(JCovTool toolClassObject, String[] args) {
