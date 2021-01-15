@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
   DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
   This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
   questions.
 -->
 
-<project name="JCov" default="build" basedir=".">
+<project name="JCov" default="build" basedir="." xmlns:if="ant:if">
 
     <property file="release.properties"/>
     <property file="build.properties"/>
     <import file="check-dependecies.xml"/>
+    
+    <property environment="env"/>
 
     <!-- Build area -->
     <property name="build.dir" location="${result.dir}/jcov_${build.version}"/>
@@ -115,12 +117,12 @@
 
     <target name="build-date" description="adds bild and date information">
         <tstamp>
-            <format property="date" pattern="dd MMMM yyyy" locale="en"/>
+            <format property="date" pattern="MMMM dd, yyyy" locale="en"/>
         </tstamp>
         <mkdir dir="${jcov.src.update}/com/sun/tdk/jcov/tools"/>
         <echo file="${jcov.src.update}/com/sun/tdk/jcov/tools/JcovVersion.java">
             /*
-            * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+            * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
             * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
             *
             * This code is free software; you can redistribute it and/or modify it
@@ -294,9 +296,35 @@
         <jar destfile ="${build.dir}/jtobserver.jar" basedir="${jcov.jtobserver.classes}" index="false"/>
     </target>
 
+    <target name="-check-build-result" description="checks the jars existence">
+        <fileset id="jars" dir="${build.dir}" includes="**/*.jar"/>
+        <condition property="jars.ok">
+            <resourcecount refid="jars" when="eq" count="4"/>
+        </condition>
+    </target>
+
     <target name="build"
-            depends="build-jcov, build-file.saver, build-network.saver, build-jt.observer"
+            depends="build-jcov, build-file.saver, build-network.saver, build-jt.observer, -create-release.file"
             description="Creates the build-distribution.">
+    </target>
+
+    <target name="-create-release.file" depends="-check-build-result" if="jars.ok">
+        <available file="git" filepath="${env.PATH}" property="git.present"/>
+        <exec executable="git" failonerror="false" failifexecutionfails="false" outputproperty="git.revision"
+              if:set="git.present">
+            <arg line="log -1 --format=%H"/>
+        </exec>
+        <condition property="git.revision" value="N/A">
+            <not>
+                <isset property="git.revision"/>
+            </not>
+        </condition>
+        <echo file="${build.dir}/release">
+SOURCE="git:${git.revision}"
+VERSION="${build.version}_${build.number}"
+VERSION_DATE="${date}"
+MILESTONE="${build.milestone}"
+        </echo>
     </target>
 
     <target name="test" depends="build-jcov">
