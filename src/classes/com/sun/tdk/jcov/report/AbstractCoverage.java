@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ public abstract class AbstractCoverage implements Comparable {
      * @return List of testnames covering this member
      */
     public List<String> getCoveringTests(String testlist[]) {
-        ArrayList<String> list = new ArrayList<String>(testlist.length / 10);
+        ArrayList<String> list = new ArrayList<>(testlist.length / 10);
         for (int i = 0; i < testlist.length; ++i) {
             if (isCoveredByTest(i)) {
                 list.add(testlist[i]);
@@ -153,24 +153,24 @@ public abstract class AbstractCoverage implements Comparable {
     /**
      * CoverageFormatter serves to format CoverageData objects into strings
      */
-    public static interface CoverageFormatter {
+    public interface CoverageFormatter {
 
         /**
          *
          * @param data CoverageData object to format
          * @return formatted coverage data
          */
-        public String format(CoverageData data);
+        String format(CoverageData data);
     }
 
-    public static interface CoverageANCFormatter {
+    public interface CoverageANCFormatter {
 
         /**
          * @param data CoverageData object to format
          * @param withAnc Show acceptable not covered data
          * @return formatted coverage data
          */
-        public String format(CoverageData data, boolean withAnc);
+        String format(CoverageData data, boolean withAnc);
 
     }
 
@@ -184,7 +184,8 @@ public abstract class AbstractCoverage implements Comparable {
             if (data.total == 0) {
                 return " -";
             } else {
-                return String.format("%0$4.0f%% (%d/%d)", (float) data.covered / data.total * 100., data.covered, data.total);
+                return String.format("%4d%% (%d/%d)",
+                        Math.floorDiv(data.covered * 100, data.total), data.covered, data.total);
             }
         }
 
@@ -193,9 +194,11 @@ public abstract class AbstractCoverage implements Comparable {
                 return " -";
             } else {
                 if (!withAnc) {
-                    return String.format("%0$4.0f%% (%d/%d)", (float) data.covered / data.total * 100., data.covered, data.total);
+                    return String.format("%4d%% (%d/%d)",
+                            Math.floorDiv(data.covered * 100, data.total), data.covered, data.total);
                 }
-                return String.format("%0$4.0f%% (%d/%d/%d)", (float) (data.covered + data.anc) / (data.total) * 100., data.covered, data.anc, data.total);
+                return String.format("%4d%% (%d/%d/%d)",
+                        Math.floorDiv((data.covered + data.anc) * 100, data.total), data.covered, data.anc, data.total);
             }
         }
     }
