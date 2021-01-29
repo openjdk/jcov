@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public final class Utils {
     /**
      * The ASM API version that should be used by jcov.
      */
-    public static final int ASM_API_VERSION = Opcodes.ASM7;
+    public static final int ASM_API_VERSION = Opcodes.ASM9;
 
     private static Handler loggerHandler = null;
     private final static int ASCII_CHARS_TOTAL = 128;
