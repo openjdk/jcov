@@ -311,7 +311,7 @@
         <testng failureProperty="tests.failed" listeners="org.testng.reporters.VerboseReporter" outputdir="${result.dir}/test/result" suitename="jcov" testname="TestNG tests" workingDir="${result.dir}/test/work" verbose="2">
                 <classfileset dir="${result.dir}/test/classes" includes="**/*Test.class" />
             <classpath>
-                <path path="${testngjar}:${build.dir}/jcov.jar:${result.dir}/test/classes"/>
+                <path path="${testngjar}:${build.dir}/jcov.jar:${result.dir}/test/classes:${jcommander.jar}"/>
             </classpath>
         </testng>
     </target>

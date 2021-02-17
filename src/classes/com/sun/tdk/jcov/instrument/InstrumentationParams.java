@@ -34,6 +34,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -68,7 +69,9 @@ public class InstrumentationParams {
     private Pattern[] all_modules;
     private Pattern[] inner_alls;
     private boolean innerInvocations = true;
+    private InstrumentationPlugin plugin;
 
+    //TODO replace by a builder!!!
     public InstrumentationParams(boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, InstrumentationMode mode) {
         this(dynamicCollect, instrumentNative, instrumentFields, detectInternal, instrumentAbstract, includes, excludes, callerIncludes, callerExcludes, mode, null, null);
     }
@@ -102,6 +105,9 @@ public class InstrumentationParams {
     }
 
     public InstrumentationParams(boolean innerInvocations, boolean classesReload, boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, String[] m_includes, String[] m_excludes, InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
+        this(innerInvocations, classesReload, dynamicCollect, instrumentNative, instrumentFields, detectInternal, instrumentAbstract, includes, excludes, callerIncludes, callerExcludes, null, null, mode, saveBegin, saveEnd, null);
+    }
+    public InstrumentationParams(boolean innerInvocations, boolean classesReload, boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, String[] m_includes, String[] m_excludes, InstrumentationMode mode, String[] saveBegin, String[] saveEnd, InstrumentationPlugin plugin) {
 
         this.innerInvocations = innerInvocations;
         this.detectInternal = detectInternal;
@@ -143,6 +149,7 @@ public class InstrumentationParams {
         this.alls = Utils.concatFilters(includes, excludes);
         this.all_modules = Utils.concatModuleFilters(m_includes, m_excludes);
         this.inner_alls = Utils.concatFilters(inner_includes, inner_excludes);
+        this.plugin = plugin;
     }
 
     public boolean isDetectInternal() {
@@ -171,6 +178,10 @@ public class InstrumentationParams {
 
     public boolean isInstrumentAnonymous() {
         return instrumentAnonymous;
+    }
+
+    public InstrumentationPlugin getInstrumentationPlugin() {
+        return plugin;
     }
 
 //    public boolean skipNotCoveredClasses() {
@@ -329,6 +340,11 @@ public class InstrumentationParams {
         return this;
     }
 
+    public InstrumentationParams setInstrumentationPlugin(InstrumentationPlugin plugin) {
+        this.plugin = plugin;
+        return this;
+    }
+
     void writeObject(DataOutput out) throws IOException {
         DataAbstract.writeStrings(out, excludes);
         DataAbstract.writeStrings(out, includes);
@@ -361,5 +377,6 @@ public class InstrumentationParams {
         innerInvocations = in.readBoolean();
         instrumentAbstract = ABSTRACTMODE.values()[in.readByte()];
         mode = InstrumentationMode.values()[in.readByte()];
+        this.plugin = null;
     }
 }

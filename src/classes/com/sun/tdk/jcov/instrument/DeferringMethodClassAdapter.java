@@ -217,7 +217,10 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         } else {
             mv = new StaticInvokeMethodAdapter(mv, k.getFullname(), name, access, params);
         }
-        return mv;
+
+        InstrumentationPlugin plugin = params.getInstrumentationPlugin();
+        if(plugin != null)
+            mv = plugin.methodVisitor(access, k.getFullname(), name, desc, mv);        return mv;
     }
 
     @Override

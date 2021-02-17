@@ -30,6 +30,7 @@ import com.sun.tdk.jcov.instrument.InstrumentationOptions;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.InstrumentationMode;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.MERGE;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.LoggingFormatter;
@@ -82,6 +83,7 @@ public class Instr extends JCovCMDTool {
     private ClassMorph morph;
     private ClassLoader cl = null;
     private static final Logger logger;
+    private InstrumentationPlugin plugin;
 
     static {
         Utils.initLogger();
@@ -240,7 +242,8 @@ public class Instr extends JCovCMDTool {
                     .setInstrumentAnonymous(genanonymous)
                     .setInnerInvocations(innerinvocations)
                     .setInnerIncludes(innerInclude)
-                    .setInnerExcludes(innerExclude);
+                    .setInnerExcludes(innerExclude)
+                    .setInstrumentationPlugin(plugin);
             if (subsequentInstr) {
                 morph = new ClassMorph(params, template);
             } else {
@@ -451,6 +454,10 @@ public class Instr extends JCovCMDTool {
         this.exclude = exclude;
     }
 
+    public void setPlugin(InstrumentationPlugin plugin) {
+        this.plugin = plugin;
+    }
+
     public String[] getSave_beg() {
         return save_beg;
     }
@@ -548,6 +555,7 @@ public class Instr extends JCovCMDTool {
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SYNTHETIC,
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_ANONYM,
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INNERINVOCATION,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INSTR_PLUGIN,
                 ClassMorph.DSC_FLUSH_CLASSES,
                 DSC_INCLUDE_RT,
                 DSC_RECURSE,}, this);
@@ -643,6 +651,14 @@ public class Instr extends JCovCMDTool {
         }
         include_rt = opts.getValue(DSC_INCLUDE_RT);
         Utils.checkFileCanBeNull(include_rt, "JCovRT library jarfile", Utils.CheckOptions.FILE_EXISTS, Utils.CheckOptions.FILE_ISFILE, Utils.CheckOptions.FILE_CANREAD);
+
+        try {
+            String pluginClass = opts.getValue(InstrumentationOptions.DSC_INSTR_PLUGIN);
+            if(pluginClass != null && !pluginClass.isEmpty())
+                plugin = (InstrumentationPlugin) Class.forName(opts.getValue(InstrumentationOptions.DSC_INSTR_PLUGIN)).newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
 
         return SUCCESS_EXIT_CODE;
     }

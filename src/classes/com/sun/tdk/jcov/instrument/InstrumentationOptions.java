@@ -156,6 +156,9 @@ public class InstrumentationOptions {
             new OptionDescr("inner_exclude", new String[]{"ie"}, "", OptionDescr.VAL_MULTI,
             "Specify excluded classes by regular expression, no inner invocations instrumentaion will be\n" +
             "added to the specified classes (only for innerinvocation off)");
+    public final static OptionDescr DSC_INSTR_PLUGIN =
+            new OptionDescr("instr_plugin", new String[0], "", OptionDescr.VAL_SINGLE,
+                    "TODO");
 
     public static enum ABSTRACTMODE {
 

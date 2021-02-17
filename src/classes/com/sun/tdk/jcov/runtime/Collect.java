@@ -24,6 +24,7 @@
  */
 package com.sun.tdk.jcov.runtime;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -314,8 +315,9 @@ public class Collect {
                 loadSaverExtension();
                 if (!saverClassnameString.startsWith("/*@")) {
                     addSaver(instantiateSaver(saverClassnameString));
-                    PropertyFinder.addAutoShutdownSave();
                 }
+                //TODO is there any other way to test the shutdownhook?
+                PropertyFinder.addAutoShutdownSave();
                 isInitialized = true;
             }
             isInternal = false;

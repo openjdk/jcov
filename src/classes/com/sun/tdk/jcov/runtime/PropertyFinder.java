@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Calendar;
 import java.util.Properties;
@@ -466,6 +467,19 @@ public final class PropertyFinder {
                     public void run() {
                         Collect.disable();
                         Collect.saveResults();
+                        //TODO is this the right place and the right way to handle the saver?
+                        String s = PropertyFinder.findValue("data-saver", null);
+                        if(s != null) {
+                            try {
+                                Class clz = Class.forName(s);
+                                Object saver = clz.getConstructor().newInstance();
+                                Method mthd = clz.getMethod("saveResults", new Class[] {});
+                                mthd.invoke(saver);
+                            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | 
+                                     InvocationTargetException | InstantiationException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
                         Collect.enable();
                         Collect.saveAtShutdownEnabled = false;
                         Collect.saveEnabled = false;
