@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,11 @@ import static org.objectweb.asm.Opcodes.*;
  **/
 public class StaticInvokeMethodAdapter extends MethodVisitor {
 
-    static int invokeCount = 0;
     private final String className;
     private final InstrumentationParams params;
+    // method attributes
     private String methName;
+    private int methAccess;
 
     public static int getInvokeID(String owner, String name, String descr) {
         String sig = owner + "." + name + descr;
@@ -66,13 +67,16 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
         }
         return -1;
     }
-    public static final Map<String, Integer> map = new HashMap<String, Integer>();
+    public static final Map<String, Integer> map = new HashMap<>();
 
-    public StaticInvokeMethodAdapter(MethodVisitor mv, String className, String methName, int access, final InstrumentationParams params) {
+    public StaticInvokeMethodAdapter(MethodVisitor mv, String className,
+                                     String methName, int methAccess,
+                                     final InstrumentationParams params) {
         super(Utils.ASM_API_VERSION, mv);
         this.className = className;
-        this.params = params;
         this.methName = methName;
+        this.methAccess = methAccess;
+        this.params = params;
     }
 
     @Override
@@ -108,6 +112,7 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
 
         if (params.isCallerFilterOn()
                 && params.isCallerFilterAccept(className)) {
+
             int id = (name + desc).hashCode();
             super.visitLdcInsn(id);
             super.visitMethodInsn(INVOKESTATIC,
@@ -117,8 +122,8 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
         }
 
         if (params.isInnerInvacationsOff() && Utils.isAdvanceStaticInstrAllowed(className, name)) {
-            if (!owner.equals("java/lang/Object")) {
-                int id = params.isInnerInstrumentationIncludes(className) ? 0 : -1;
+            if (!owner.equals("java/lang/Object") && params.isInnerInstrumentationIncludes(className)) {
+              int id =  ( (this.methAccess & ACC_BRIDGE) == 0x0) ? -1 : 0;
                 super.visitLdcInsn(id);
                 super.visitMethodInsn(INVOKESTATIC,
                         "com/sun/tdk/jcov/runtime/CollectDetect",
@@ -128,7 +133,6 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
         }
 
         super.visitMethodInsn(opcode, owner, name, desc, itf);
-
     }
 
     @Override
