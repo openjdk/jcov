@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.util.List;
  */
 public class JCovXMLFileSaver extends FileSaver {
 
-    private static boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+    // private final static boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
 
     public JCovXMLFileSaver(DataRoot root, InstrumentationOptions.MERGE mergeMode) {
         super(root, mergeMode);
@@ -138,16 +138,14 @@ public class JCovXMLFileSaver extends FileSaver {
                 new File(tmpname).delete();
             }
 
-
         } else {
             String tmpFileName = dest + RuntimeUtils.genSuffix();
             try {
                 this.saveResults(tmpFileName);
-                PrintStream ps = System.out;
                 if (scale) {
-                    Merger.innerMain(new String[]{"-output", dest, "-scale", "-compress", tmpFileName, src}, ps);
+                    Merger.main(new String[]{"-output", dest, "-scale", "-compress", tmpFileName, src});
                 } else {
-                    Merger.innerMain(new String[]{"-output", dest, tmpFileName, src}, ps);
+                    Merger.main(new String[]{"-output", dest, tmpFileName, src});
                 }
             } finally {
                 new File(tmpFileName).delete();
