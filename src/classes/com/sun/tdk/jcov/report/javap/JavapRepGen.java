@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import com.sun.tdk.jcov.instrument.DataRoot;
 import com.sun.tdk.jcov.io.ClassSignatureFilter;
 import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.util.Utils;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -44,6 +45,8 @@ import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.String.format;
+
 /**
  * Report generation for classfiles (javap output will be used as source).
  *
@@ -51,7 +54,9 @@ import java.util.logging.Logger;
  */
 public class JavapRepGen {
 
-    private RepGen repGen;
+    private final RepGen repGen;
+
+    private static String strMsg = "";
 
     public JavapRepGen(RepGen repGen){
         this.repGen = repGen;
@@ -81,30 +86,30 @@ public class JavapRepGen {
     /**
      * main method to create report with javap output for classes
      *
-     * @param templatePath - path to the result.xml (xml file for creating
-     * report)
+     * @param templatePath - path to the result.xml (xml file for creating report)
      * @param classesPath - path to the product classes
      * @param outPath - path where report should be saved
      */
     public void run(String templatePath, String classesPath, String outPath) {
 
-        DataRoot file_image = null;
+        DataRoot file_image;
         ClassSignatureFilter acceptor = new ClassSignatureFilter(null, null, null);
         try {
             file_image = Reader.readXML(templatePath, false, acceptor);
         } catch (FileFormatException ex) {
             Logger.getLogger(JavapRepGen.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
-        }
-
-        if (classesPath == null) {
-            System.out.println("no input classes specified");
             return;
         }
 
-        ArrayList<File> classFiles = new ArrayList<File>();
-        ArrayList<String> classFilesInJar = new ArrayList<String>();
+        if (classesPath == null) {
+            JavapRepGen.printErrorMsg("no input classes specified");
+            return;
+        }
+
+        ArrayList<File> classFiles = new ArrayList<>();
+        ArrayList<String> classFilesInJar = new ArrayList<>();
         File rootFile = new File(classesPath);
-        HashMap<String, JavapClass> classes = new HashMap<String, JavapClass>();
+        HashMap<String, JavapClass> classes = new HashMap<>();
 
         if (rootFile.isDirectory()) {
             finder(rootFile, classFiles);
@@ -119,10 +124,10 @@ public class JavapRepGen {
             } else {
                 try {
                     JarFile jarFile = new JarFile(rootFile);
-                    Enumeration entries = jarFile.entries();
+                    Enumeration<JarEntry> entries = jarFile.entries();
                     while (entries.hasMoreElements()) {
 
-                        JarEntry entry = (JarEntry) entries.nextElement();
+                        JarEntry entry = entries.nextElement();
                         if (entry.getName().endsWith(".class")) {
                             classFilesInJar.add(entry.getName().replaceAll("/", ".")
                                     .replace("\\", ".").substring(0, entry.getName().lastIndexOf(".class")));
@@ -135,7 +140,7 @@ public class JavapRepGen {
         }
 
         if (classFiles.isEmpty() && classFilesInJar.isEmpty()) {
-            System.out.println("no .class files found at the specified path: " + classesPath);
+            JavapRepGen.printErrorMsg("no .class files found at the specified path: " + classesPath);
             return;
         }
 
@@ -158,7 +163,7 @@ public class JavapRepGen {
         for (DataClass dataClass : file_image.getClasses()) {
             for (DataMethod dataMethod : dataClass.getMethods()) {
 
-                ArrayList<Integer> visitedBlocksNumbers = new ArrayList<Integer>();
+                ArrayList<Integer> visitedBlocksNumbers = new ArrayList<>();
                 for (DataBlock dataBlock : dataMethod.getBlocks()) {
                     if (dataBlock.getCount() > 0) {
                         for (int index = dataBlock.startBCI(); index <= dataBlock.endBCI(); index++) {
@@ -176,23 +181,23 @@ public class JavapRepGen {
                     }
                 }
 
-                List<JavapLine> methodLines = null;
+                List<JavapLine> methodLines;
                 JavapClass javapClass = classes.get(dataClass.getName());
-
                 if (javapClass != null) {
                     methodLines = javapClass.getMethod(dataMethod.getName() + dataMethod.getVmSignature());
-                }
-
                 if (methodLines != null) {
-
                     for (JavapLine javapLine : methodLines) {
-
                         if ((javapLine instanceof JavapCodeLine) && visitedBlocksNumbers.contains(((JavapCodeLine) javapLine).getCodeNumber())) {
                             ((JavapCodeLine) javapLine).setVisited(true);
                         }
                     }
                 }
-
+                } else {
+                    JavapRepGen.printErrorMsg(format("Can't get javap output for %s.class (%s) at the specified path: %s",
+                            dataClass.getName(),
+                            templatePath,
+                            classesPath));
+                }
             }
         }
 
@@ -200,14 +205,21 @@ public class JavapRepGen {
             Result res = new Result(templatePath);
             repGen.generateReport(repGen.getDefaultReportGenerator(), outPath, res, null, new ArrayList(classes.values()));
         } catch (Exception e) {
-            System.err.println("error in report generation: " + e);
+            JavapRepGen.printErrorMsg("error in report generation: " + e);
         }
 
     }
 
+    private static void printErrorMsg(String msg) {
+        if ( strMsg.hashCode() != msg.hashCode() ) {
+            strMsg = msg;
+            System.err.println(msg);
+        }
+    }
+
     private void filterClasses(ArrayList<File> files, String classesPath) {
 
-        ArrayList<File> newFiles = new ArrayList<File>();
+        ArrayList<File> newFiles = new ArrayList<>();
         if (files.size() > 1) {
 
             classesPath = new File(classesPath+"/").getAbsolutePath().replaceAll("\\\\","/");
@@ -235,18 +247,14 @@ public class JavapRepGen {
 
     private void filterClassesInJar(ArrayList<String> filesInJar) {
 
-        ArrayList<String> newFilesInJar = new ArrayList<String>();
+        ArrayList<String> newFilesInJar = new ArrayList<>();
 
         for (String classFile : filesInJar) {
-
             if (Utils.accept(Utils.concatFilters(repGen.getInclude(), repGen.getExclude()), null, "/" + classFile.replaceAll("\\.", "/"), null)) {
                 newFilesInJar.add(classFile);
             }
-
         }
-
         filesInJar.clear();
         filesInJar.addAll(newFilesInJar);
-
     }
 }

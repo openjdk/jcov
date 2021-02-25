@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class SavePointsMethodAdapter extends MethodVisitor {
     @Override
     public void visitCode() {
         if (isBegin) {
-            mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/Collect", "saveResults", "()V");
+            mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/Collect", "saveResults", "()V", false);
         }
         super.visitCode();
     }
@@ -65,7 +65,7 @@ public class SavePointsMethodAdapter extends MethodVisitor {
                 case DRETURN:
                 case ARETURN:
                 case RETURN:
-                    mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/Collect", "saveResults", "()V");
+                    mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/Collect", "saveResults", "()V", false);
                     break;
                 default:
                     break;

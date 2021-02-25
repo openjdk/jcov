@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,9 +83,10 @@ class ForkingMethodAdapter extends MethodVisitor {
     protected MethodVisitor mv2;
 
     /**
-     * Constructs a new {@link MethodAdapter} object.
+     * Constructs a new {@link ForkingMethodAdapter} object.
      *
-     * @param mv the code visitor to which this adapter must delegate calls.
+     * @param mv1 the first code visitor to which this adapter must delegate calls.
+     * @param mv2 the second code visitor to which this adapter must delegate calls.
      */
     public ForkingMethodAdapter(final MethodVisitor mv1, final MethodVisitor mv2) {
         super(Utils.ASM_API_VERSION);
@@ -165,13 +166,10 @@ class ForkingMethodAdapter extends MethodVisitor {
         mv2.visitFieldInsn(opcode, owner, name, desc);
     }
 
-    public void visitMethodInsn(
-            final int opcode,
-            final String owner,
-            final String name,
-            final String desc) {
-        mv1.visitMethodInsn(opcode, owner, name, desc);
-        mv2.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(final int opcode, final String owner, final String name, final String desc,
+                                final boolean isInterface) {
+        mv1.visitMethodInsn(opcode, owner, name, desc, isInterface);
+        mv2.visitMethodInsn(opcode, owner, name, desc, isInterface);
     }
 
     public void visitJumpInsn(final int opcode, final Label label) {

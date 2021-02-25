@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014,2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,9 @@ public class JavapClass {
     private String packageName;
     private String className;
     // class as list of JavapLines
-    private ArrayList<JavapLine> lines = new ArrayList<JavapLine>();
+    private final ArrayList<JavapLine> lines = new ArrayList<>();
     // method in the class is list of lines numbers in the javap output
-    private HashMap<String, ArrayList<Integer>> methods = new HashMap<String, ArrayList<Integer>>();
+    private final HashMap<String, ArrayList<Integer>> methods = new HashMap<>();
 
     /**
      * return method in the class like list of JavapLines
@@ -67,7 +67,6 @@ public class JavapClass {
         }
 
         return lines.subList(numbers.get(0), numbers.get(numbers.size() - 1) + 1);
-
     }
 
     public String getClassName() {
@@ -93,7 +92,7 @@ public class JavapClass {
     void parseJavapFile(String filePath, String jarPath) {
 
         try {
-            BufferedReader inStream = null;
+            BufferedReader inStream;
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             PrintWriter pw = new PrintWriter(new OutputStreamWriter(out, Charset.defaultCharset()));
 
@@ -115,8 +114,7 @@ public class JavapClass {
 
                 // try to find class in javap output
                 if (textLine.contains("class") && textLine.contains("{")) {
-                    parseClassName(textLine);
-                    parsePackageName(textLine);
+                    parsePackageAndClassNames(textLine);
                 }
                 // try to find method in javap output
                 if (textLine.contains("(") && (textLine.contains(");") || textLine.contains(") throws"))) {
@@ -126,11 +124,11 @@ public class JavapClass {
                     } else {
                         lastMethodString = parseClassString(textLine);
                     }
-                    methods.put(lastMethodString, new ArrayList<Integer>());
+                    methods.put(lastMethodString, new ArrayList<>());
                 } else {
                     if (textLine.trim().equals("static {};")) {
                         lastMethodString = parseStaticBlockString();
-                        methods.put(lastMethodString, new ArrayList<Integer>());
+                        methods.put(lastMethodString, new ArrayList<>());
                     }
                 }
                 // try to find code lines which could be covered
@@ -154,51 +152,41 @@ public class JavapClass {
 
     }
 
-    private void parseClassName(String textLine) {
+    final private static String[] JavaClassTokens = new String[] {"implements", "extends", "{"};
 
-        if (textLine.contains("implements")) {
-            textLine = textLine.substring(0, textLine.indexOf("implements"));
+    private void parsePackageAndClassNames(String textLine) {
+
+         for( String s :  JavaClassTokens) {
+             if (textLine.contains(s)) {
+                 textLine = textLine.substring(0, textLine.indexOf(s));
+            }
         }
 
-        if (textLine.contains("extends")) {
-            textLine = textLine.substring(0, textLine.indexOf("extends"));
-        }
-        textLine = textLine + "{";
+         textLine = textLine.substring(textLine.indexOf("class")+5).trim();
 
-        className = substringBetween(textLine, "\\.", "\\ ", false);
-        if(className != null && className.contains("<") && className.contains(">")){
-            className = className.substring(0, className.indexOf('<'));
-        }
-
-        if (className.startsWith("class")){
-            className = className.substring(6, className.length());
-        }
+         int ind = textLine.indexOf('<');
+         if(ind != -1){
+             textLine = textLine.substring(0, ind);
     }
 
-    private void parsePackageName(String textLine) {
-
-        if (textLine.contains("implements")) {
-            textLine = textLine.substring(0, textLine.indexOf("implements"));
+         ind = textLine.lastIndexOf('.');
+         if( ind > 0 ) {
+             packageName = textLine.substring(0,ind);
+             className = textLine.substring(ind+1);
+         } else {
+             className = textLine;
+             packageName = "";
         }
-
-        if (textLine.contains("extends")) {
-            textLine = textLine.substring(0, textLine.indexOf("extends"));
-        }
-        textLine = textLine + "{";
-
-        packageName = substringBetween(textLine, "\\ ", "\\.", false);
     }
 
     private String parseStaticBlockString() {
-        String nameAndVMSig = "<clinit>()V";
-        return nameAndVMSig;
+        return "<clinit>()V";
     }
 
     private String parseClassString(String textLine) {
         textLine = removeGenericsInfo(textLine);
         String vmSig = encodeVmSignature(substringBetween(textLine, "\\(", "\\)", false), null);
-        String nameAndVMSig = "<init>" + vmSig;
-        return nameAndVMSig;
+        return "<init>" + vmSig;
     }
 
     private String parseMethodString(String textLine) {
@@ -215,34 +203,54 @@ public class JavapClass {
         String className = oneMethodParam.replaceAll("[\\,\\[\\]]", "");
         String s = className;
         if (className.lastIndexOf(".") > -1) {
-            s = className.substring(className.lastIndexOf("."), className.length());
+            s = className.substring(className.lastIndexOf("."));
         }
         String dim = oneMethodParam.replaceAll("[^\\[\\]]", "");
-        String newType = "";
-        if ("boolean".equals(s) || "Boolean".equals(s)) {
-            newType = "Z";
-        } else if ("void".equals(s) || "Void".equals(s)) {
-            newType = "V";
-        } else if ("int".equals(s) || "Integer".equals(s)) {
-            newType = "I";
-        } else if ("long".equals(s) || "Long".equals(s)) {
-            newType = "J";
-        } else if ("char".equals(s) || "Character".equals(s)) {
-            newType = "C";
-        } else if ("byte".equals(s) || "Byte".equals(s)) {
-            newType = "B";
-        } else if ("double".equals(s) || "Double".equals(s)) {
-            newType = "D";
-        } else if ("short".equals(s) || "Short".equals(s)) {
-            newType = "S";
-        } else if ("float".equals(s) || "Number".equals(s)) {
-            newType = "F";
-        } else {
-            newType = "L";
+        String newType;
+        switch (s) {
+            case "boolean":
+            case "Boolean":
+                newType = "Z";
+                break;
+            case "void":
+            case "Void":
+                newType = "V";
+                break;
+            case "int":
+            case "Integer":
+                newType = "I";
+                break;
+            case "long":
+            case "Long":
+                newType = "J";
+                break;
+            case "char":
+            case "Character":
+                newType = "C";
+                break;
+            case "byte":
+            case "Byte":
+                newType = "B";
+                break;
+            case "double":
+            case "Double":
+                newType = "D";
+                break;
+            case "short":
+            case "Short":
+                newType = "S";
+                break;
+            case "float":
+            case "Number":
+                newType = "F";
+                break;
+            default:
+                newType = "L";
+                break;
         }
-        String prefix = "";
+        StringBuilder prefix = new StringBuilder();
         for (int i = 0; i < dim.length() / 2; i++) {
-            prefix += "[";
+            prefix.append("[");
         }
         if (className.lastIndexOf(".") > -1) {
             return prefix + newType + className.replaceAll("\\.", "/") + ";";
@@ -266,15 +274,15 @@ public class JavapClass {
             return "()V";
         }
 
-        String vmSig = "";
+        StringBuilder vmSig = new StringBuilder();
         if (params != null) {
 
             if (params.contains(" ")) {
                 for (String p : params.split(" ")) {
-                    vmSig += encodeVmType(p);
+                    vmSig.append(encodeVmType(p));
                 }
             } else {
-                vmSig += encodeVmType(params);
+                vmSig.append(encodeVmType(params));
             }
         }
 
@@ -317,8 +325,7 @@ public class JavapClass {
         // does not allow any characters from the "close" string in the end
         String regexStringLast = "([^" + open + "]+)(?=" + close + "[^" + close + "]*$)";
         // just try to find string between open and close
-        String regexStringFirst = "([^" + open + "]+)(?=" + close + ")";
-        String regexString = regexStringFirst;
+        String regexString = "([^" + open + "]+)(?=" + close + ")";
 
         if (!firstValue) {
             regexString = regexStringLast;
