@@ -41,6 +41,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.sun.tdk.jcov.instrument.plugin.FieldsPlugin.INSTRUMENTATION_COMPLETE;
+import static java.lang.Integer.parseInt;
 import static java.util.stream.Collectors.joining;
 import static org.testng.Assert.*;
 
@@ -60,8 +62,19 @@ public class FieldsTest {
         instr = new InstrProxy(test_dir);
         instr.copyBytecode(FieldsClass.class.getName());
         System.getProperties().setProperty("jcov.selftest", "true");
+        int[] instrumentationCompleteTimes = new int[1];
         instr.instr(new String[]{"-instr_plugin", "com.sun.tdk.jcov.instrument.plugin.FieldsPlugin"},
+                line -> {
+                    if(line.startsWith(INSTRUMENTATION_COMPLETE))
+                        instrumentationCompleteTimes[0] =
+                                parseInt(line.substring(INSTRUMENTATION_COMPLETE.length()));
+                }, null,
                 FieldsClass.class.getName());
+        assertEquals(instrumentationCompleteTimes[0], 1);
+        //this does not work because
+        //Warning: Add input source(s) to the classpath: -cp jcov.jar:...
+        //see InstrProxy class for more info
+        //assertEquals(FieldsPlugin.completeCount.intValue(), 1);
     }
 
     /**

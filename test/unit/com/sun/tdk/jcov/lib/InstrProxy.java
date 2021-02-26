@@ -26,9 +26,11 @@ package com.sun.tdk.jcov.lib;
 
 import com.sun.tdk.jcov.Instr;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -38,6 +40,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static java.io.File.pathSeparator;
 import static java.util.stream.Collectors.joining;
@@ -66,7 +71,7 @@ public class InstrProxy {
         };
     }
 
-    public void instr(String[] options, String... classes) throws IOException, InterruptedException {
+    public int instr(String[] options, Consumer<String> outConsumer, Consumer<String> errConsumer, String... classes) throws IOException, InterruptedException {
         if(!Files.exists(outputDir) || !Files.isDirectory(outputDir)) {
             Files.createDirectories(outputDir);
         }
@@ -92,10 +97,27 @@ public class InstrProxy {
         command.addAll(Arrays.asList(options));
         command.addAll(files);
         System.out.println(command.stream().collect(joining(" ")));
-        new ProcessBuilder().command(command.toArray(new String[0]))
-                .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-                .redirectError(ProcessBuilder.Redirect.INHERIT)
-                .start().waitFor();
+        ProcessBuilder pb = new ProcessBuilder().command(command.toArray(new String[0]));
+        if(outConsumer == null)
+            pb = pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        if(errConsumer == null)
+            pb = pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        Process p = pb.start();
+        if(outConsumer != null) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+                String line;
+                while((line = in.readLine()) != null)
+                    outConsumer.accept(line);
+            }
+        }
+        if(errConsumer != null) {
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
+                String line;
+                while((line = in.readLine()) != null)
+                    errConsumer.accept(line);
+            }
+        }
+        return p.waitFor();
     }
 
     public String classFile(String className) {
@@ -103,7 +125,7 @@ public class InstrProxy {
     }
 
     public Class runClass(String className, String[] argv)
-            throws MalformedURLException, ClassNotFoundException, NoSuchMethodException,
+            throws ClassNotFoundException, NoSuchMethodException,
             InvocationTargetException, IllegalAccessException {
         ClassLoader offOutputDir = new InstrumentedClassLoader();
         Class cls = offOutputDir.loadClass(className);

@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<coverage
+        xmlns='http://java.sun.com/jcov/namespace'
+        xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+        xsi:schemaLocation='http://java.sun.com/jcov/namespace coverage.xsd'>
+
+	<head>
+		<property name='coverage.generator.args' val='data-saver=com.sun.tdk.jcov.instrument.plugin.DataSaver,'/>
+		<property name='coverage.generator.mode' val='BRANCH'/>
+		<property name='coverage.generator.internal' val='detect'/>
+		<property name='coverage.generator.include' val=''/>
+		<property name='coverage.generator.exclude' val=''/>
+		<property name='coverage.generator.caller_include' val='.*'/>
+		<property name='coverage.generator.caller_exclude' val=''/>
+		<property name='coverage.created.date' val='2021-01-30'/>
+		<property name='coverage.created.time' val='01:14:08'/>
+		<property name='coverage.generator.fullversion' val='DEV'/>
+		<property name='coverage.generator.name' val='jcov'/>
+		<property name='coverage.generator.version' val='DEV'/>
+		<property name='coverage.spec.version' val='1.3'/>
+		<property name='dynamic.collected' val='true'/>
+		<property name='id.count' val='0'/>
+	</head>
+</coverage>

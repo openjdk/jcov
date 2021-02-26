@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.String.format;
 import static org.objectweb.asm.Opcodes.*;
@@ -47,6 +48,7 @@ import static org.objectweb.asm.Opcodes.*;
 public class FieldsPlugin implements InstrumentationPlugin, JCovSaver {
 
     public static final Map<String, Set<Object>> values = new HashMap<>();
+    public static final String INSTRUMENTATION_COMPLETE = "Instrumentation complete: ";
 
     public static void recordFieldValue(Object value, String field) {
         Set<Object> fieldValues = values.getOrDefault(field, new HashSet<>());
@@ -81,6 +83,14 @@ public class FieldsPlugin implements InstrumentationPlugin, JCovSaver {
                 super.visitFieldInsn(opcode, owner, name, descriptor);
             }
         };
+    }
+
+    final static AtomicInteger completeCount = new AtomicInteger(0);
+
+    @Override
+    public void instrumentationComplete() throws Exception {
+        completeCount.incrementAndGet();
+        System.out.println(INSTRUMENTATION_COMPLETE + completeCount);
     }
 
     @Override

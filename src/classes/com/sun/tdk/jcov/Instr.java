@@ -38,6 +38,7 @@ import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -309,7 +310,7 @@ public class Instr extends JCovCMDTool {
      *
      * @param outTemplate template path
      */
-    public void finishWork(String outTemplate) {
+    public void finishWork(String outTemplate) throws Exception {
         if (instrumenter != null) {
             if (subsequentInstr) {
                 morph.saveData(outTemplate, MERGE.MERGE); // template should be initialized
@@ -317,6 +318,7 @@ public class Instr extends JCovCMDTool {
                 morph.saveData(outTemplate, null, MERGE.OVERWRITE); // template should be initialized
             }
         }
+        if(plugin != null) plugin.instrumentationComplete();
     }
 
     /**
@@ -655,8 +657,10 @@ public class Instr extends JCovCMDTool {
         try {
             String pluginClass = opts.getValue(InstrumentationOptions.DSC_INSTR_PLUGIN);
             if(pluginClass != null && !pluginClass.isEmpty())
-                plugin = (InstrumentationPlugin) Class.forName(opts.getValue(InstrumentationOptions.DSC_INSTR_PLUGIN)).newInstance();
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                plugin = (InstrumentationPlugin) Class.forName(opts.getValue(InstrumentationOptions.DSC_INSTR_PLUGIN))
+                        .getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
+                NoSuchMethodException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
 

@@ -35,4 +35,10 @@ public interface InstrumentationPlugin {
      * Supplies a MethodVisitor to perform additional instrumentation.
      */
     MethodVisitor methodVisitor(int access, String owner, String name, String desc, MethodVisitor visitor);
+
+    /**
+     * Called after all instrumentation is complete.
+     * @throws Exception should some
+     */
+    void instrumentationComplete() throws Exception;
 }

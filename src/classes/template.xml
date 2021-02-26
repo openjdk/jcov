@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<coverage
+        xmlns='http://java.sun.com/jcov/namespace'
+        xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+        xsi:schemaLocation='http://java.sun.com/jcov/namespace coverage.xsd'>
+
+	<head>
+		<property name='coverage.generator.args' val=''/>
+		<property name='coverage.generator.mode' val='BRANCH'/>
+		<property name='coverage.generator.internal' val='include'/>
+		<property name='coverage.generator.include' val=''/>
+		<property name='coverage.generator.exclude' val=''/>
+		<property name='coverage.generator.caller_include' val='.*'/>
+		<property name='coverage.generator.caller_exclude' val=''/>
+		<property name='coverage.created.date' val='2021-02-26'/>
+		<property name='coverage.created.time' val='21:50:26'/>
+		<property name='coverage.generator.fullversion' val='DEV'/>
+		<property name='coverage.generator.name' val='jcov'/>
+		<property name='coverage.generator.version' val='DEV'/>
+		<property name='coverage.spec.version' val='1.3'/>
+		<property name='java.runtime.version' val='16-ea+16-712'/>
+		<property name='java.version' val='16-ea'/>
+		<property name='os.arch' val='x86_64'/>
+		<property name='os.name' val='Mac OS X'/>
+		<property name='os.version' val='10.15.7'/>
+		<property name='user.name' val='shura'/>
+		<property name='dynamic.collected' val='false'/>
+		<property name='id.count' val='4'/>
+	</head>
+	<package name="com.sun.tdk.jcov.instrument.plugin" moduleName="no_module">
+		<class name="FieldsClass" supername="java/lang/Object" checksum="3124532361" source="FieldsClass.java" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="11">
+				<bl s="0" e="10">
+					<methenter s="0" e="10" id="0" count="0"/>
+					<exit s="10" e="10" opcode="return"/>
+				</bl>
+				<lt>0=30;4=32;</lt>
+			</meth>
+			<meth name="setField1" vmsig="(I)V" flags=' public' access="1" length="6">
+				<bl s="0" e="5">
+					<methenter s="0" e="5" id="1" count="0"/>
+					<exit s="5" e="5" opcode="return"/>
+				</bl>
+				<lt>0=35;5=36;</lt>
+			</meth>
+			<meth name="setField2" vmsig="(Ljava/lang/String;)V" flags=' public' access="1" length="6">
+				<bl s="0" e="5">
+					<methenter s="0" e="5" id="2" count="0"/>
+					<exit s="5" e="5" opcode="return"/>
+				</bl>
+				<lt>0=39;5=40;</lt>
+			</meth>
+			<meth name="main" vmsig="([Ljava/lang/String;)V" flags=' public static' access="9" length="31">
+				<bl s="0" e="30">
+					<methenter s="0" e="30" id="3" count="0"/>
+					<exit s="30" e="30" opcode="return"/>
+				</bl>
+				<lt>0=43;8=44;13=45;19=46;24=47;30=48;</lt>
+			</meth>
+		</class>
+	</package>
+</coverage>

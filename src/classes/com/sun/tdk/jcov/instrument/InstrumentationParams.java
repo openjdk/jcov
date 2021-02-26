@@ -72,43 +72,89 @@ public class InstrumentationParams {
     private InstrumentationPlugin plugin;
 
     //TODO replace by a builder!!!
-    public InstrumentationParams(boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, InstrumentationMode mode) {
-        this(dynamicCollect, instrumentNative, instrumentFields, detectInternal, instrumentAbstract, includes, excludes, callerIncludes, callerExcludes, mode, null, null);
+    public InstrumentationParams(boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields,
+                                 boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes,
+                                 String[] excludes, String[] callerIncludes, String[] callerExcludes,
+                                 InstrumentationMode mode) {
+        this(dynamicCollect, instrumentNative, instrumentFields, detectInternal, instrumentAbstract,
+                includes, excludes, callerIncludes, callerExcludes, mode, null, null);
     }
 
-    public InstrumentationParams(boolean instrumentNative, boolean instrumentFields, boolean instrumentAbstract, String[] includes, String[] excludes, InstrumentationMode mode) {
-        this(false, instrumentNative, instrumentFields, false, instrumentAbstract ? ABSTRACTMODE.DIRECT : ABSTRACTMODE.NONE, includes, excludes, null, null, mode, null, null);
+    public InstrumentationParams(boolean instrumentNative, boolean instrumentFields, boolean instrumentAbstract,
+                                 String[] includes, String[] excludes, InstrumentationMode mode) {
+        this(false, instrumentNative, instrumentFields, false,
+                instrumentAbstract ? ABSTRACTMODE.DIRECT : ABSTRACTMODE.NONE, includes, excludes,
+                null, null, mode, null, null);
     }
 
-    public InstrumentationParams(boolean instrumentNative, boolean instrumentFields, boolean instrumentAbstract,  String[] includes, String[] excludes, String[] m_includes, String[] m_excludes, InstrumentationMode mode) {
-        this(false, false, false, instrumentNative, instrumentFields, false, instrumentAbstract ? ABSTRACTMODE.DIRECT : ABSTRACTMODE.NONE, includes, excludes, null, null, m_includes, m_excludes, mode, null, null);
+    public InstrumentationParams(boolean instrumentNative, boolean instrumentFields, boolean instrumentAbstract,
+                                 String[] includes, String[] excludes, String[] m_includes, String[] m_excludes,
+                                 InstrumentationMode mode) {
+        this(false, false, false, instrumentNative, instrumentFields,
+                false, instrumentAbstract ? ABSTRACTMODE.DIRECT : ABSTRACTMODE.NONE, includes, excludes,
+                null, null, m_includes, m_excludes, mode, null, null);
     }
 
-    public InstrumentationParams(boolean instrumentNative, boolean instrumentFields, boolean instrumentAbstract, String[] includes, String[] excludes, InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
-        this(false, instrumentNative, instrumentFields, false, instrumentAbstract ? ABSTRACTMODE.DIRECT : ABSTRACTMODE.NONE, includes, excludes, null, null, mode, saveBegin, saveEnd);
+    public InstrumentationParams(boolean instrumentNative, boolean instrumentFields, boolean instrumentAbstract,
+                                 String[] includes, String[] excludes, InstrumentationMode mode,
+                                 String[] saveBegin, String[] saveEnd) {
+        this(false, instrumentNative, instrumentFields, false,
+                instrumentAbstract ? ABSTRACTMODE.DIRECT : ABSTRACTMODE.NONE, includes, excludes,
+                null, null, mode, saveBegin, saveEnd);
     }
 
-    public InstrumentationParams(boolean instrumentNative, boolean instrumentFields, boolean instrumentAbstract, String[] includes, String[] excludes, String[] callerincludes, String[] callersexcludes, InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
-        this(false, instrumentNative, instrumentFields, false, instrumentAbstract ? ABSTRACTMODE.DIRECT : ABSTRACTMODE.NONE, includes, excludes, callerincludes, callersexcludes, mode, saveBegin, saveEnd);
+    public InstrumentationParams(boolean instrumentNative, boolean instrumentFields, boolean instrumentAbstract,
+                                 String[] includes, String[] excludes,
+                                 String[] callerincludes, String[] callersexcludes,
+                                 InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
+        this(false, instrumentNative, instrumentFields, false,
+                instrumentAbstract ? ABSTRACTMODE.DIRECT : ABSTRACTMODE.NONE,
+                includes, excludes, callerincludes, callersexcludes, mode, saveBegin, saveEnd);
     }
 
-    public InstrumentationParams(boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
-        this(false, dynamicCollect, instrumentNative, instrumentFields, detectInternal, instrumentAbstract, includes, excludes, callerIncludes, callerExcludes, mode, saveBegin, saveEnd);
+    public InstrumentationParams(boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields,
+                                 boolean detectInternal, ABSTRACTMODE instrumentAbstract,
+                                 String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes,
+                                 InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
+        this(false, dynamicCollect, instrumentNative, instrumentFields, detectInternal, instrumentAbstract,
+                includes, excludes, callerIncludes, callerExcludes, mode, saveBegin, saveEnd);
     }
 
-    public InstrumentationParams(boolean classesReload, boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
-        this(true, classesReload, dynamicCollect, instrumentNative, instrumentFields, detectInternal, instrumentAbstract, includes, excludes, callerIncludes, callerExcludes, mode, saveBegin, saveEnd);
+    public InstrumentationParams(boolean classesReload, boolean dynamicCollect, boolean instrumentNative,
+                                 boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract,
+                                 String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes,
+                                 InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
+        this(true, classesReload, dynamicCollect, instrumentNative, instrumentFields, detectInternal,
+                instrumentAbstract, includes, excludes, callerIncludes, callerExcludes, mode, saveBegin, saveEnd);
     }
 
-    public InstrumentationParams(boolean innerInvocations, boolean classesReload, boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
-        this(innerInvocations, classesReload, dynamicCollect, instrumentNative, instrumentFields, detectInternal, instrumentAbstract, includes, excludes, callerIncludes, callerExcludes, null, null, mode, saveBegin, saveEnd);
+    public InstrumentationParams(boolean innerInvocations, boolean classesReload, boolean dynamicCollect,
+                                 boolean instrumentNative, boolean instrumentFields, boolean detectInternal,
+                                 ABSTRACTMODE instrumentAbstract,
+                                 String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes,
+                                 InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
+        this(innerInvocations, classesReload, dynamicCollect, instrumentNative, instrumentFields, detectInternal,
+                instrumentAbstract, includes, excludes, callerIncludes, callerExcludes,
+                null, null, mode, saveBegin, saveEnd);
     }
 
-    public InstrumentationParams(boolean innerInvocations, boolean classesReload, boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, String[] m_includes, String[] m_excludes, InstrumentationMode mode, String[] saveBegin, String[] saveEnd) {
-        this(innerInvocations, classesReload, dynamicCollect, instrumentNative, instrumentFields, detectInternal, instrumentAbstract, includes, excludes, callerIncludes, callerExcludes, null, null, mode, saveBegin, saveEnd, null);
+    public InstrumentationParams(boolean innerInvocations, boolean classesReload, boolean dynamicCollect,
+                                 boolean instrumentNative, boolean instrumentFields, boolean detectInternal,
+                                 ABSTRACTMODE instrumentAbstract,
+                                 String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes,
+                                 String[] m_includes, String[] m_excludes, InstrumentationMode mode,
+                                 String[] saveBegin, String[] saveEnd) {
+        this(innerInvocations, classesReload, dynamicCollect, instrumentNative, instrumentFields, detectInternal,
+                instrumentAbstract, includes, excludes, callerIncludes, callerExcludes,
+                null, null, mode, saveBegin, saveEnd, null);
     }
-    public InstrumentationParams(boolean innerInvocations, boolean classesReload, boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields, boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes, String[] m_includes, String[] m_excludes, InstrumentationMode mode, String[] saveBegin, String[] saveEnd, InstrumentationPlugin plugin) {
 
+    public InstrumentationParams(boolean innerInvocations, boolean classesReload, boolean dynamicCollect,
+                                 boolean instrumentNative, boolean instrumentFields, boolean detectInternal,
+                                 ABSTRACTMODE instrumentAbstract,
+                                 String[] includes, String[] excludes, String[] callerIncludes, String[] callerExcludes,
+                                 String[] m_includes, String[] m_excludes, InstrumentationMode mode,
+                                 String[] saveBegin, String[] saveEnd, InstrumentationPlugin plugin) {
         this.innerInvocations = innerInvocations;
         this.detectInternal = detectInternal;
         this.dynamicCollect = dynamicCollect;
