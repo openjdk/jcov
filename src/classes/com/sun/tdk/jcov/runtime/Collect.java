@@ -316,7 +316,6 @@ public class Collect {
                 if (!saverClassnameString.startsWith("/*@")) {
                     addSaver(instantiateSaver(saverClassnameString));
                 }
-                //TODO is there any other way to test the shutdownhook?
                 PropertyFinder.addAutoShutdownSave();
                 isInitialized = true;
             }

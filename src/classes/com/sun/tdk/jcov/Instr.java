@@ -297,11 +297,12 @@ public class Instr extends JCovCMDTool {
      * it will be merged. <p> Template is written to the place Instrumenter was
      * created with
      */
-    public void finishWork() {
+    public void finishWork() throws Exception {
         if (instrumenter != null) {
             instrumenter.finishWork();
             // destroy instrumenter & morph?
         }
+        if(plugin != null) plugin.instrumentationComplete();
     }
 
     /**

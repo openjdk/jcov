@@ -56,14 +56,14 @@ public class FieldsTest {
     /**
      * Perform the instrumentation.
      */
-    @BeforeClass
+    @Test
     public void instrument() throws IOException, InterruptedException {
         test_dir = Paths.get(System.getProperty("user.dir")).resolve("plugin_test");
         instr = new InstrProxy(test_dir);
         instr.copyBytecode(FieldsClass.class.getName());
         System.getProperties().setProperty("jcov.selftest", "true");
         int[] instrumentationCompleteTimes = new int[1];
-        instr.instr(new String[]{"-instr_plugin", "com.sun.tdk.jcov.instrument.plugin.FieldsPlugin"},
+        instr.instr(new String[]{"-instr_plugin", FieldsPlugin.class.getName()},
                 line -> {
                     if(line.startsWith(INSTRUMENTATION_COMPLETE))
                         instrumentationCompleteTimes[0] =
@@ -80,7 +80,7 @@ public class FieldsTest {
     /**
      * Check collected field values at runtime in the same VM.
      */
-    @Test
+    @Test(dependsOnMethods = "instrument")
     public void fields() throws IOException, ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         instr.runClass(FieldsClass.class.getName(), new String[0]);
         testFieldValuesSameVM("field1", Set.of(1, 2));
@@ -94,7 +94,7 @@ public class FieldsTest {
     /**
      * Test that data saver is called.
      */
-    @Test
+    @Test(dependsOnMethods = "instrument")
     public void testSaver() throws IOException, InterruptedException {
         List<String> command = new ArrayList<>();
         command.add(System.getProperty("java.home") + "/bin/java");

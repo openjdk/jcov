@@ -467,7 +467,9 @@ public final class PropertyFinder {
                     public void run() {
                         Collect.disable();
                         Collect.saveResults();
-                        //TODO is this the right place and the right way to handle the saver?
+                        Collect.enable();
+                        Collect.saveAtShutdownEnabled = false;
+                        Collect.saveEnabled = false;
                         String s = PropertyFinder.findValue("data-saver", null);
                         if(s != null) {
                             try {
@@ -475,18 +477,16 @@ public final class PropertyFinder {
                                 Object saver = clz.getConstructor().newInstance();
                                 Method mthd = clz.getMethod("saveResults", new Class[] {});
                                 mthd.invoke(saver);
-                            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | 
-                                     InvocationTargetException | InstantiationException e) {
+                            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
+                                    InvocationTargetException | InstantiationException e) {
                                 throw new RuntimeException(e);
                             }
                         }
-                        Collect.enable();
-                        Collect.saveAtShutdownEnabled = false;
-                        Collect.saveEnabled = false;
                     }
                 });
             } catch (Exception ignore) {
                 System.err.println("Can't set shutdown hook.");
+                ignore.printStackTrace();
             }
         }
     }

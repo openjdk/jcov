@@ -26,6 +26,7 @@ package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.instrument.HashesAttribute;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.instrument.OverriddenClassWriter;
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
@@ -471,6 +472,7 @@ public class JREInstr extends JCovCMDTool {
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INNERINVOCATION,
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INNER_INCLUDE,
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INNER_EXCLUDE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INSTR_PLUGIN,
                 Instr.DSC_SUBSEQUENT,
                 DSC_JAVAC_HACK,
                 DCS_ADD_JAR,
