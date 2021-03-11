@@ -24,7 +24,7 @@
  */
 package com.sun.tdk.jcov.report.javap;
 
-import com.sun.tools.javap.Main;
+//import com.sun.tools.javap.Main;
 import java.io.File;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
@@ -47,9 +47,9 @@ public class JavapClassReader {
 
         try {
             if (jarPath == null) {
-                Main.run(new String[]{"-c", "-p", filePath}, pw);
+//                Main.run(new String[]{"-c", "-p", filePath}, pw);
             } else {
-                Main.run(new String[]{"-c", "-p", "-classpath", jarPath, filePath}, pw);
+//                Main.run(new String[]{"-c", "-p", "-classpath", jarPath, filePath}, pw);
             }
         } catch (NoClassDefFoundError error) {
 
