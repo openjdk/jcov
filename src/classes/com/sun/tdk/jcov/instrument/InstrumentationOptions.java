@@ -156,6 +156,9 @@ public class InstrumentationOptions {
             new OptionDescr("inner_exclude", new String[]{"ie"}, "", OptionDescr.VAL_MULTI,
             "Specify excluded classes by regular expression, no inner invocations instrumentaion will be\n" +
             "added to the specified classes (only for innerinvocation off)");
+    public final static OptionDescr DSC_INSTR_PLUGIN =
+            new OptionDescr("instr_plugin", new String[0], "Instrumentation plugin", OptionDescr.VAL_SINGLE,
+                    "Defines instrumentation to be performed additionaly to already performed by JCov");
 
     public static enum ABSTRACTMODE {
 
