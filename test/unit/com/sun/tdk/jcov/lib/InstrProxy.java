@@ -89,6 +89,7 @@ public class InstrProxy {
         List<String> command = new ArrayList<>();
         command.add(System.getProperty("java.home") + "/bin/java");
         command.add("-Djcov.selftest=true");
+        command.add("-Djcov.stacktrace=true");
         command.add("-cp");
         command.add(System.getProperty("java.class.path") +
                         pathSeparator + files.stream()

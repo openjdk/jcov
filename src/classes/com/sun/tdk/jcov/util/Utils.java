@@ -24,6 +24,7 @@
  */
 package com.sun.tdk.jcov.util;
 
+import com.sun.tdk.jcov.runtime.PropertyFinder;
 import com.sun.tdk.jcov.tools.JCovTool.EnvHandlingException;
 import com.sun.tdk.jcov.tools.LoggingFormatter;
 import org.objectweb.asm.Opcodes;
@@ -37,13 +38,13 @@ import java.net.URLClassLoader;
 import java.net.UnknownHostException;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Formatter;
 import java.util.logging.*;
 import java.util.regex.Matcher;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -87,6 +88,35 @@ public final class Utils {
         }
     }
 
+    public enum FILE_TYPE {
+        ZIP, JAR, WAR, CLASS;
+        public String getExtension() {
+            return "." + this.name().toLowerCase();
+        }
+
+        public static boolean hasExtension(String fileName, FILE_TYPE... fTypes) {
+           for(FILE_TYPE ftype : fTypes) {
+               if( fileName.endsWith(ftype.getExtension()) ) {
+                   return true;
+               }
+           }
+           return false;
+        }
+    }
+
+    /**
+     * It's possible to set custom classfile extension by "clext" property (through jcov.clext system property, JCOV_CLEXT
+     * environment variable and so on) - for example "clazz:.klass".
+     */
+    public static final List<String>  CUSTOM_CLASS_FILE_EXTENSIONS =
+            Arrays.asList(PropertyFinder.findValue("clext", "").split(":").clone());
+
+    public static boolean isClassFile(String fileName) {
+        if(FILE_TYPE.hasExtension(fileName, FILE_TYPE.CLASS)) {
+            return true;
+        }
+        return CUSTOM_CLASS_FILE_EXTENSIONS.stream().anyMatch(ext->fileName.endsWith(ext));
+    }
 
     public final static int VER16  = 160;
     public final static int VER17  = 160;
@@ -101,7 +131,7 @@ public final class Utils {
     public static int getJavaVersion() {
         if (javaVersion == -1){
             String ver = System.getProperty("java.version");
-            for(int i=1; i<=15; i++) {
+            for(int i=1; i<=20; i++) {
                 if( ver.startsWith(String.format( (i <= 8) ? "1.%d" : "%d" , i))) {
                     return (i <= 8) ? 100 + i*10 : i * 100;
                 }
@@ -512,7 +542,7 @@ public final class Utils {
         public int b;
     }
 
-    public static void addToClasspath(String[] paths) {
+    public static void addToClasspath(String[] sourcePaths) {
         if (ClassLoader.getSystemClassLoader() instanceof URLClassLoader) {
             URLClassLoader systemClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
             Class sClass = URLClassLoader.class;
@@ -520,9 +550,9 @@ public final class Utils {
                 Method method = sClass.getDeclaredMethod("addURL", new Class[]{URL.class});
                 method.setAccessible(true);
 
-                URL[] urls = new URL[paths.length];
-                for (int i = 0; i < paths.length; i++) {
-                    urls[i] = new File(paths[i]).toURI().toURL();
+                URL[] urls = new URL[sourcePaths.length];
+                for (int i = 0; i < sourcePaths.length; i++) {
+                    urls[i] = new File(sourcePaths[i]).toURI().toURL();
                     method.invoke(systemClassLoader, new Object[]{urls[i]});
                 }
             } catch (Throwable t) {
@@ -531,14 +561,33 @@ public final class Utils {
         } else {
             // Java 9+
             String[] classpath = System.getProperty("java.class.path").split(File.pathSeparator);
-            for (int i = 0; i < paths.length; i++) {
-                String path = paths[i];
+            // eliminate paths that could be missed in classpath
+            //1. For class files in a(n) (un)named package, the class path ends
+            //   with the directory that contains the class files. (should be in classpath)
+            //2. jar,zip,war should be a part of classpath (should be in classpath)
+            List<String> paths = new ArrayList<>();
+            Arrays.stream(sourcePaths).
+                    forEach(
+                            path -> {
+                                File file = Paths.get(path).toFile();
+                                if (file.isDirectory()) {
+                                    if(!file.getName().equalsIgnoreCase("jmods")) {
+                                        paths.add(path);
+                                    }
+                                } else if (file.isFile()) {
+                                    if( FILE_TYPE.hasExtension(path, FILE_TYPE.ZIP, FILE_TYPE.JAR, FILE_TYPE.WAR) ) {
+                                        paths.add(path);
+                                    }
+                                }
+                            }
+                    );
+            for (String path : paths) {
                 if ( !Arrays.stream(classpath).anyMatch(cp -> cp.equals(path)) ) {
-                    String cps = Arrays.stream(paths).collect(Collectors.joining("#"));
+                    String cps = paths.stream().collect(Collectors.joining("#"));
                     String s1 = cps.replaceAll("#", ":");
                     String s2 = cps.replaceAll("#", " ");
                     System.err.format("Warning: Add input source(s) to the classpath: -cp jcov.jar:%s%n" +
-                                    "Example: java -cp jcov.jar:%s com.sun.tdk.jcov.Instr -t <template> -o <output> %s%n",
+                                    "Example: java -cp jcov.jar:%s ToolName -t <template> -o <output> %s%n",
                             s1, s1, s2);
                     break;
                 }
@@ -555,7 +604,7 @@ public final class Utils {
         if (directory.exists() && directory.isDirectory()) {
             ArrayList<String> classes = new ArrayList<>();
             getClassesAndJars(directory, classes);
-            Utils.addToClasspath(classes.toArray(new String[0]));
+            Utils.addToClasspath(classes.toArray(new String[]{}));
         }
     }
 
@@ -564,7 +613,7 @@ public final class Utils {
             if (f.isDirectory()) {
                 getClassesAndJars(f, classes);
             } else {
-                if (f.getAbsolutePath().endsWith(".jar") || f.getAbsolutePath().endsWith(".class")) {
+                if (FILE_TYPE.hasExtension(f.getAbsolutePath(), FILE_TYPE.JAR, FILE_TYPE.CLASS) ) {
                     classes.add(f.getAbsolutePath());
                 }
             }
@@ -1044,11 +1093,19 @@ public final class Utils {
         return false;
     }
 
-    public static enum CheckOptions {
-
-        FILE_EXISTS, FILE_NOTEXISTS, FILE_ISFILE, FILE_ISDIR, FILE_NOTISDIR,
-        FILE_PARENTEXISTS, FILE_CANREAD, FILE_CANWRITE, INT_NONNEGATIVE,
-        INT_POSITIVE, INT_NOT_NULL, FILE_NOTISFILE
+    public enum CheckOptions {
+        FILE_EXISTS,
+        FILE_NOTEXISTS,
+        FILE_ISFILE,
+        FILE_ISDIR,
+        FILE_NOTISDIR,
+        FILE_PARENTEXISTS,
+        FILE_CANREAD,
+        FILE_CANWRITE,
+        INT_NONNEGATIVE,
+        INT_POSITIVE,
+        INT_NOT_NULL,
+        FILE_NOTISFILE
     }
 
     /**
@@ -1105,11 +1162,11 @@ public final class Utils {
     }
 
     /**
-     * <p> Checks a file for some criterias </p>
+     * <p> Checks a file for some criteria </p>
      *
      * @param file File to check. Can't be null.
      * @param description File description
-     * @param opts criterias to check
+     * @param opts criteria to check
      * @throws com.sun.tdk.jcov.tools.JCovTool.EnvHandlingException
      */
     public static void checkFile(File file, String description, CheckOptions... opts) throws EnvHandlingException {
@@ -1130,11 +1187,11 @@ public final class Utils {
                         throw new EnvHandlingException("Incorrect " + description + " (" + file.getPath() + ") - can't read");
                     }
                     break;
-//                case FILE_CANWRITE:
-//                    if (!file.canWrite()) {
-//                        throw new EnvHandlingException("Incorrect " + message + " (" + file.getPath() + ") - can't write");
-//                    }
-//                    break;
+                case FILE_CANWRITE:
+                    if (!file.canWrite()) {
+                        throw new EnvHandlingException("Incorrect " + description + " (" + file.getPath() + ") - can't write");
+                    }
+                    break;
                 case FILE_ISFILE:
                     if (!file.isFile()) {
                         throw new EnvHandlingException("Incorrect " + description + " (" + file.getPath() + ") - is not a file");

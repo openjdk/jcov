@@ -25,7 +25,6 @@
 package com.sun.tdk.jcov.insert;
 
 import com.sun.tdk.jcov.instrument.OverriddenClassWriter;
-import com.sun.tdk.jcov.runtime.PropertyFinder;
 import com.sun.tdk.jcov.util.Utils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -48,32 +47,21 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import static com.sun.tdk.jcov.util.Utils.FILE_TYPE;
+import static com.sun.tdk.jcov.util.Utils.FILE_TYPE.*;
+import static com.sun.tdk.jcov.util.Utils.isClassFile;
+
 /**
  * @author Dmitry Fazunenko
  * @author Alexey Fedorchenko
  */
 public abstract class AbstractUniversalInstrumenter {
 
-    private static final String ZIP_EXT = ".zip";
-    private static final String JAR_EXT = ".jar";
-    private static final String WAR_EXT = ".war";
-    private static final String CLASS_EXT = ".class";
-    private static final String CUST_CLASS_EXTS[];
-
-    static {
-        String t = PropertyFinder.findValue("clext", null);
-        if (t == null) {
-            CUST_CLASS_EXTS = new String[]{};
-        } else {
-            CUST_CLASS_EXTS = t.split(":");
-        }
-    }
     private String INSTR_FILE_SUFF = "i";
     private int fileCount = 0; // counter of processed files
     private int classCount = 0; // counter of processed classes
     private int iClassCount = 0; // counter of successfully instrumented classes
-//    protected Log log; // where to print messages to
-//
+
     private static final Logger logger;
 
     static {
@@ -182,10 +170,12 @@ public abstract class AbstractUniversalInstrumenter {
         try {
             if (f.length() < 4) {
                 if (f.length() == 0) {
-                    logger.log(Level.SEVERE, "  Error reading data from ''{0}'': File is empty\n - skipped", fname);
+                    logger.log(Level.SEVERE, "  Error reading data from ''{0}'': File is empty\n - skipped",
+                            fname);
                     instredFine = false;
                 } else {
-                    logger.log(Level.SEVERE, "  Error reading data from ''{0}'': File is too small ({1}) - skipped", new Object[]{fname, f.length()});
+                    logger.log(Level.SEVERE, "  Error reading data from ''{0}'': File is too small ({1}) - skipped",
+                            new Object[]{fname, f.length()});
                     instredFine = false;
                 }
             } else {
@@ -203,7 +193,7 @@ public abstract class AbstractUniversalInstrumenter {
             instredFine = false;
         }
         if (outBuf == null) {
-            // class is not instrumentable or is already instrumented
+            // class can't be/is already instrumented
             instredFine = false;
             outBuf = classBuf;
         } else {
@@ -216,7 +206,6 @@ public abstract class AbstractUniversalInstrumenter {
                 outFile = f;
                 f.delete();
             }
-
 
             // create "super" directories if necessary
             String parentName = outFile.getParent();
@@ -244,13 +233,12 @@ public abstract class AbstractUniversalInstrumenter {
         String[] entries = dir.list();
         Arrays.sort(entries);
         for (int i = 0; i < entries.length; i++) {
-//            this.root = dir;
             File f = new File(dir.getPath() + File.separator + entries[i]);
             if (f.isDirectory()) {
                 processClassDir(f, new File(outDir, entries[i]));
             } else {
                 fileCount++;
-                if (f.getPath().endsWith(CLASS_EXT)) {
+                if (FILE_TYPE.hasExtension(f.getPath(), CLASS)) {
                     classCount++;
                     if (processClassFile(f, new File(outDir, entries[i]))) {
                         iClassCount++;
@@ -268,13 +256,14 @@ public abstract class AbstractUniversalInstrumenter {
      */
     protected void processArc(File arc, File outArc, String rtPath) {
         logger.log(Level.INFO, " - Instrumenting archive ''{0}''...", arc);
-        String outFilename = outArc == null ? makeInstrumentedFileName(arc.getPath()) : outArc.getPath() + File.separator + arc.getName();
+        String outFilename = outArc == null ? makeInstrumentedFileName(arc.getPath()) :
+                outArc.getPath() + File.separator + arc.getName();
         logger.log(Level.CONFIG, "  Output archive ''{0}''", outFilename);
         if (rtPath != null) {
             logger.log(Level.CONFIG, "  RT to implant: ''{0}''", rtPath);
         }
         CRC32 crc32 = new CRC32();
-        ZipInputStream in = null;
+        ZipInputStream in;
         try {
             in = new ZipInputStream(new BufferedInputStream(new FileInputStream(arc)));
         } catch (Exception ex) {
@@ -336,9 +325,8 @@ public abstract class AbstractUniversalInstrumenter {
                 logger.log(Level.SEVERE, "  Error reading archive entry '" + ename + "' in '" + arc.getPath() + "' - skipped", ex);
             }
 
-
-            byte[] res = null;
-            boolean isClass = ename.endsWith(CLASS_EXT) && !isDir;
+            byte[] res;
+            boolean isClass = ename.endsWith(CLASS.getExtension()) && !isDir;
             if (isClass) {
                 // does the entry represent a class file?
                 classCount++;
@@ -418,12 +406,12 @@ public abstract class AbstractUniversalInstrumenter {
         try {
             // coping JCovRT classes to the output jar
             if (rtPath != null) {
-                logger.log(Level.INFO, "  Adding saver libray...");
+                logger.log(Level.INFO, "  Adding saver library...");
                 File rt = new File(rtPath);
                 if (!rt.exists()) {
                     throw new IOException("Runtime file doesn't exist " + rt);
                 }
-                if (!rt.isFile() || (!rt.getName().endsWith(JAR_EXT) && !rt.getName().endsWith(ZIP_EXT))) {
+                if (!rt.isFile() || !FILE_TYPE.hasExtension(rt.getName(), JAR, ZIP)) {
                     throw new IOException("Malformed runtime archive " + rt);
                 }
                 ZipInputStream rtIn = new ZipInputStream(new BufferedInputStream(new FileInputStream(rt)));
@@ -480,9 +468,11 @@ public abstract class AbstractUniversalInstrumenter {
                             }
                             if (checking.getName().equals(e1.getName())) {
                                 if (checking.getSize() != e1.getSize()) {
-                                    // logger.log(Level.WARNING, "Output jar contains file {0} that was found in runtime jar but files sizes differ, skipping", checking.getName());
+                                    // logger.log(Level.WARNING, "Output jar contains file {0} that was found in runtime jar but files sizes differ, skipping",
+                                    // checking.getName());
                                 } else {
-                                    // logger.log(Level.INFO, "Output jar contains file {0} that was found in runtime jar, skipping", checking.getName());
+                                    // logger.log(Level.INFO, "Output jar contains file {0} that was found in runtime jar, skipping",
+                                    // checking.getName());
                                 }
                                 inJar.close();
                                 continue outer;
@@ -520,10 +510,12 @@ public abstract class AbstractUniversalInstrumenter {
         }
         if (!readOnly && outArc == null && overwrite) {
             if (!arc.delete()) {
-                logger.log(Level.WARNING, " Can''t remove initial JAR file ''{0}''", arc.getAbsolutePath());
+                logger.log(Level.WARNING, " Can''t remove initial JAR file ''{0}''",
+                        arc.getAbsolutePath());
             }
             if (!outFile.renameTo(arc)) {
-                logger.log(Level.WARNING, " Can''t rename result JAR file ''{0}' to ''{1}''. Please move manually", new Object[]{outFile.getAbsolutePath(), arc.getAbsolutePath()});
+                logger.log(Level.WARNING, " Can''t rename result JAR file ''{0}' to ''{1}''. Please move manually",
+                        new Object[]{outFile.getAbsolutePath(), arc.getAbsolutePath()});
             }
         }
     }
@@ -562,7 +554,9 @@ public abstract class AbstractUniversalInstrumenter {
      * @param recursive insrument method will recurse through initial directory
      * if true instrumenting each file in the tree
      */
-    public void instrument(File instrumentingPath, File destinationPath, String rtPath, ArrayList<String> rtClassDirTargets, boolean recursive) throws IOException {
+    public void instrument(File instrumentingPath, File destinationPath,
+                           String rtPath, ArrayList<String> rtClassDirTargets,
+                           boolean recursive) throws IOException {
         fileCount = 0;
         classCount = 0;
         iClassCount = 0;
@@ -588,7 +582,6 @@ public abstract class AbstractUniversalInstrumenter {
                     instrument(entries[i], new File(destinationPath, entries[i].getName()), rtPath, rtClassDirTargets, recursive);
                 }
             } else {
-//                this.root = instrumentingPath;
                 logger.log(Level.INFO, "Instrumenting directory ''{0}''...", instrumentingPath);
                 processClassDir(instrumentingPath, destinationPath);
                 if (rtPath != null) {
@@ -599,7 +592,7 @@ public abstract class AbstractUniversalInstrumenter {
                     }
                 }
             }
-        } else if (instrumentingPath.getName().endsWith(JAR_EXT) || instrumentingPath.getName().endsWith(ZIP_EXT) || instrumentingPath.getName().endsWith(WAR_EXT)) {
+        } else if ( FILE_TYPE.hasExtension(instrumentingPath.getName(), JAR, ZIP, WAR) ) {
             // initially instrument(jar, toJar) meant create instrumented "toJar/jar". But in recursive mode it should be just "toJar".
             if (rtClassDirTargets == null || rtClassDirTargets.contains(instrumentingPath.getPath())) {
                 if (recursive) {
@@ -630,7 +623,8 @@ public abstract class AbstractUniversalInstrumenter {
             return;
         }
         if (!isClassFile) {
-            logger.log(Level.INFO, "Summary for ''{0}'': files total={1}, classes total={2}, instrumented classes total={3}", new Object[]{instrumentingPath, fileCount, classCount, iClassCount});
+            logger.log(Level.INFO, "Summary for ''{0}'': files total={1}, classes total={2}, instrumented classes total={3}",
+                    new Object[]{instrumentingPath, fileCount, classCount, iClassCount});
         }
     }
 
@@ -726,13 +720,6 @@ public abstract class AbstractUniversalInstrumenter {
 
     public abstract void finishWork();
 
-//    /**
-//     * sets the log where all messages will be printed to
-//     */
-//    public void setLog(Log log) {
-//        this.log = log;
-//    }
-//
     /**
      * Get classfiles from a jar file. Use to implant rt classfiles to unpacked
      * binaries.
@@ -749,7 +736,7 @@ public abstract class AbstractUniversalInstrumenter {
         if (!rt.exists()) {
             throw new IOException("Runtime file doesn't exist " + rt);
         }
-        if (!rt.isFile() || (!rt.getName().endsWith(JAR_EXT) && !rt.getName().endsWith(ZIP_EXT))) {
+        if (!rt.isFile() || !FILE_TYPE.hasExtension(rt.getName(), JAR, ZIP)) {
             throw new IOException("Malformed runtime archive " + rt);
         }
 
@@ -789,10 +776,12 @@ public abstract class AbstractUniversalInstrumenter {
             File outFile = new File(output.getPath() + File.separator + e0.getName());
             if (!e0.isDirectory()) {
                 if (outFile.exists()) {
-                    // logger.log(Level.WARNING, "Output classfile directory contains file {0} that was found in runtime jar, skipping without contains checking", e0.getName());
+                    // logger.log(Level.WARNING, "Output classfile directory contains file {0} that was found in runtime jar,
+                    // skipping without contains checking", e0.getName());
                     continue;
                 } else {
-                    // logger.log(Level.INFO, "Adding runtime file {0} to output directory {1}", new Object[]{e1.getName, outDir.getName()})
+                    // logger.log(Level.INFO, "Adding runtime file {0} to output directory {1}",
+                    // new Object[]{e1.getName, outDir.getName()})
                     String parentName = outFile.getAbsoluteFile().getParent();
                     if (parentName != null) {
                         File parent = new File(parentName);
@@ -807,17 +796,5 @@ public abstract class AbstractUniversalInstrumenter {
             }
         }
         in.close();
-    }
-
-    private boolean isClassFile(String fileName) {
-        if (fileName.endsWith(CLASS_EXT)) {
-            return true;
         }
-        for (String s : CUST_CLASS_EXTS) {
-            if (fileName.endsWith(s)) {
-                return true;
-            }
-        }
-        return false;
-    }
 }

@@ -30,6 +30,7 @@ import com.sun.tdk.jcov.runtime.Collect;
 import com.sun.tdk.jcov.runtime.CollectDetect;
 import com.sun.tdk.jcov.util.Utils;
 import com.sun.tdk.jcov.util.Utils.Pattern;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -68,7 +69,7 @@ public class InstrumentationParams {
     private Pattern[] alls;
     private Pattern[] all_modules;
     private Pattern[] inner_alls;
-    private boolean innerInvocations = true;
+    private boolean innerInvocations;
     private InstrumentationPlugin plugin;
 
     //TODO replace by a builder!!!

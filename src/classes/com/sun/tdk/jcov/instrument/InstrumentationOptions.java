@@ -150,12 +150,13 @@ public class InstrumentationOptions {
             }, "Allows to filter inner invocations in the instrumented product", "on");
     public final static OptionDescr DSC_INNER_INCLUDE =
             new OptionDescr("inner_include", new String[]{"ii"}, "", OptionDescr.VAL_MULTI,
-            "Specify included classes by regular expression for adding inner invocations instrumentaion\n" +
+            "Specify included classes by regular expression for adding inner invocations instrumentation\n" +
             "(only for innerinvocation off)");
     public final static OptionDescr DSC_INNER_EXCLUDE =
             new OptionDescr("inner_exclude", new String[]{"ie"}, "", OptionDescr.VAL_MULTI,
-            "Specify excluded classes by regular expression, no inner invocations instrumentaion will be\n" +
+            "Specify excluded classes by regular expression, no inner invocations instrumentation will be\n" +
             "added to the specified classes (only for innerinvocation off)");
+
     public final static OptionDescr DSC_INSTR_PLUGIN =
             new OptionDescr("instr_plugin", new String[0], "Instrumentation plugin", OptionDescr.VAL_SINGLE,
                     "Defines instrumentation to be performed additionaly to already performed by JCov");
