@@ -669,6 +669,16 @@ public class Instr extends JCovCMDTool {
             throw new EnvHandlingException("'" + DSC_INSTR_PLUGIN.name + "' parameter error: '" + e + "'");
         }
 
+        try {
+            String pluginClass = opts.getValue(InstrumentationOptions.DSC_INSTR_PLUGIN);
+            if(pluginClass != null && !pluginClass.isEmpty())
+                plugin = (InstrumentationPlugin) Class.forName(opts.getValue(InstrumentationOptions.DSC_INSTR_PLUGIN))
+                        .getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
+                NoSuchMethodException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+
         return SUCCESS_EXIT_CODE;
     }
 
