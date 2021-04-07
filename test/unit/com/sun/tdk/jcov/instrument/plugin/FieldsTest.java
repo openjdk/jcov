@@ -25,7 +25,6 @@
 package com.sun.tdk.jcov.instrument.plugin;
 
 import com.sun.tdk.jcov.lib.InstrProxy;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.BufferedReader;
@@ -36,9 +35,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.sun.tdk.jcov.instrument.plugin.FieldsPlugin.INSTRUMENTATION_COMPLETE;
@@ -83,8 +82,10 @@ public class FieldsTest {
     @Test(dependsOnMethods = "instrument")
     public void fields() throws IOException, ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         instr.runClass(FieldsClass.class.getName(), new String[0]);
-        testFieldValuesSameVM("field1", Set.of(1, 2));
-        testFieldValuesSameVM("field2", Set.of("", "two", "one"));
+        Set<Object> set = new HashSet<Object>(){{ add(1); add(2);  }};
+        testFieldValuesSameVM("field1", set);
+        set = new HashSet<Object>(){{ add(""); add("two"); add("one");  }};
+        testFieldValuesSameVM("field2", set);
     }
     private void testFieldValuesSameVM(String field, Set<Object> values) {
         String fullName = FieldsClass.class.getName().replace('.','/') + "." + field;
@@ -109,8 +110,10 @@ public class FieldsTest {
                 .start();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             List<String> lines = in.lines().collect(Collectors.toList());
-            testFieldValuesOtherVM("field1", Set.of(1, 2), lines);
-            testFieldValuesOtherVM("field2", Set.of("", "two", "one"), lines);
+            Set<Object> set = new HashSet<Object>(){{ add(1); add(2);  }};
+            testFieldValuesOtherVM("field1", set, lines);
+            set = new HashSet<Object>(){{ add(""); add("two"); add("one");  }};
+            testFieldValuesOtherVM("field2", set, lines);
         }
         assertEquals(p.waitFor(), 0);
     }

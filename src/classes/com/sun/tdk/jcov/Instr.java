@@ -26,22 +26,22 @@ package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter;
 import com.sun.tdk.jcov.instrument.ClassMorph;
-import com.sun.tdk.jcov.instrument.InstrumentationOptions;
-import com.sun.tdk.jcov.instrument.InstrumentationOptions.InstrumentationMode;
-import com.sun.tdk.jcov.instrument.InstrumentationOptions.MERGE;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
-import com.sun.tdk.jcov.tools.LoggingFormatter;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.sun.tdk.jcov.instrument.InstrumentationOptions.*;
+import static com.sun.tdk.jcov.util.Utils.CheckOptions.*;
 
 /**
  * <p> A tool to statically instrument class files to collect coverage. </p> <p>
@@ -66,7 +66,7 @@ public class Instr extends JCovCMDTool {
     private String[] innerExclude;
     private String[] save_beg = null;
     private String[] save_end = null;
-    private boolean genabstract = false;
+    private boolean genAbstract = false;
     private boolean gennative = false;
     private boolean genfield = false;
     private boolean gensynthetic = true;
@@ -213,7 +213,7 @@ public class Instr extends JCovCMDTool {
 
     public void instrumentTests(String[] files, File outDir, String implantRT) throws IOException {
 
-        if (gennative || genabstract) {
+        if (gennative || genAbstract) {
             morph.fillIntrMethodsIDs(morph.getRoot());
         }
 
@@ -238,7 +238,22 @@ public class Instr extends JCovCMDTool {
     private void setDefaultInstrumenter() {
 
         if (morph == null) {
-            InstrumentationParams params = new InstrumentationParams(innerinvocations, false, false, gennative, genfield, false, genabstract ? InstrumentationOptions.ABSTRACTMODE.DIRECT : InstrumentationOptions.ABSTRACTMODE.NONE, include, exclude, callerInclude, callerExclude, m_include, m_exclude, mode, save_beg, save_end)
+            InstrumentationParams params = new InstrumentationParams(innerinvocations,
+                    false,
+                    false,
+                    gennative,
+                    genfield,
+                    false,
+                    genAbstract ? ABSTRACTMODE.DIRECT : ABSTRACTMODE.NONE,
+                    include,
+                    exclude,
+                    callerInclude,
+                    callerExclude,
+                    m_include,
+                    m_exclude,
+                    mode,
+                    save_beg,
+                    save_end)
                     .setInstrumentSynthetic(gensynthetic)
                     .setInstrumentAnonymous(genanonymous)
                     .setInnerInvocations(innerinvocations)
@@ -270,7 +285,7 @@ public class Instr extends JCovCMDTool {
                         if (filePath != null){
                             String mpath = filePath.toAbsolutePath().toString();
                             mpath = mpath.substring("/modules/".length());
-                            if (mpath.indexOf("/") != -1){
+                            if (mpath.contains("/")){
                                 String module_name = mpath.substring(0, mpath.indexOf("/"));
                                 morph.setCurrentModuleName(module_name);
                             }
@@ -337,7 +352,7 @@ public class Instr extends JCovCMDTool {
 
 
     protected String usageString() {
-        return "java com.sun.tdk.jcov.Instr [-option value] source1 sourceN";
+        return "java -cp jcov.jar:source1:sourceN com.sun.tdk.jcov.Instr [-option value] source1 sourceN";
     }
 
     /**
@@ -349,10 +364,9 @@ public class Instr extends JCovCMDTool {
         return "  Note: Starting from JDK 9, the sources: source1,sourceN should be added to the class path of the command line.";
     }
 
-
     protected String exampleString() {
-        return "java -cp jcov.jar:source1:source2 com.sun.tdk.jcov.Instr -include java.lang.* " +
-                "-type block -output instrumented_classes source1 source2";
+        return "java -cp jcov.jar:source1:sourceN com.sun.tdk.jcov.Instr -include java.lang.* " +
+                "-type block -output instrumented_classes source1 sourceN";
     }
 
     protected String getDescr() {
@@ -381,11 +395,11 @@ public class Instr extends JCovCMDTool {
     }
 
     public boolean isGenAbstract() {
-        return genabstract;
+        return genAbstract;
     }
 
-    public void setGenAbstract(boolean abstact) {
-        this.genabstract = abstact;
+    public void setGenAbstract(boolean genAbstract) {
+        this.genAbstract = genAbstract;
     }
 
     public String[] getExclude() {
@@ -528,8 +542,7 @@ public class Instr extends JCovCMDTool {
             instrumentFiles(srcs, outDir, include_rt);
             finishWork(template);
         } catch (IOException ex) {
-            LoggingFormatter.printStackTrace = true;
-            throw new Exception("Critical exception: ", ex);
+            throw new EnvHandlingException("Critical exception: " + ex);
         }
         return SUCCESS_EXIT_CODE;
     }
@@ -539,26 +552,26 @@ public class Instr extends JCovCMDTool {
         return new EnvHandler(new OptionDescr[]{
                 DSC_OUTPUT,
                 DSC_VERBOSE,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_TYPE,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE_LIST,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_INCLUDE,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_EXCLUDE,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE_LIST,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SAVE_BEGIN,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SAVE_AT_END,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_TEMPLATE,
+                DSC_TYPE,
+                DSC_INCLUDE,
+                DSC_INCLUDE_LIST,
+                DSC_EXCLUDE,
+                DSC_CALLER_INCLUDE,
+                DSC_CALLER_EXCLUDE,
+                DSC_EXCLUDE_LIST,
+                DSC_MINCLUDE,
+                DSC_MEXCLUDE,
+                DSC_SAVE_BEGIN,
+                DSC_SAVE_AT_END,
+                DSC_TEMPLATE,
                 DSC_SUBSEQUENT,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_ABSTRACT,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_NATIVE,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FIELD,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SYNTHETIC,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_ANONYM,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INNERINVOCATION,
-                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INSTR_PLUGIN,
+                DSC_ABSTRACT,
+                DSC_NATIVE,
+                DSC_FIELD,
+                DSC_SYNTHETIC,
+                DSC_ANONYM,
+                DSC_INNERINVOCATION,
+                DSC_INSTR_PLUGIN,
                 ClassMorph.DSC_FLUSH_CLASSES,
                 DSC_INCLUDE_RT,
                 DSC_RECURSE,}, this);
@@ -572,88 +585,89 @@ public class Instr extends JCovCMDTool {
         outDir = null;
         if (opts.isSet(DSC_OUTPUT)) { // compatibility
             outDir = new File(opts.getValue(DSC_OUTPUT));
-            Utils.checkFile(outDir, "output directory", Utils.CheckOptions.FILE_NOTISFILE);
+            Utils.checkFile(outDir, "output directory", FILE_NOTISFILE);
             if (!outDir.exists()) {
                 outDir.mkdirs();
                 logger.log(Level.INFO, "The directory {0} was created.", outDir.getAbsolutePath());
             }
         }
 
-        save_beg = opts.getValues(InstrumentationOptions.DSC_SAVE_BEGIN);
-        save_end = opts.getValues(InstrumentationOptions.DSC_SAVE_AT_END);
+        save_beg = opts.getValues(DSC_SAVE_BEGIN);
+        save_end = opts.getValues(DSC_SAVE_AT_END);
 
-        String abstractValue = opts.getValue(InstrumentationOptions.DSC_ABSTRACT);
+        String abstractValue = opts.getValue(DSC_ABSTRACT);
         if (abstractValue.equals("off")) {
-            genabstract = false;
+            genAbstract = false;
         } else if (abstractValue.equals("on")) {
-            genabstract = true;
+            genAbstract = true;
         } else {
-            throw new EnvHandlingException("'" + InstrumentationOptions.DSC_ABSTRACT.name + "' parameter value error: expected 'on' or 'off'; found: '" + abstractValue + "'");
+            throw new EnvHandlingException("'" + DSC_ABSTRACT.name +
+                    "' parameter value error: expected 'on' or 'off'; found: '" + abstractValue + "'");
         }
 
-        String nativeValue = opts.getValue(InstrumentationOptions.DSC_NATIVE);
+        String nativeValue = opts.getValue(DSC_NATIVE);
         if (nativeValue.equals("on")) {
             gennative = true;
         } else if (nativeValue.equals("off")) {
             gennative = false;
         } else {
-            throw new EnvHandlingException("'" + InstrumentationOptions.DSC_NATIVE.name + "' parameter value error: expected 'on' or 'off'; found: '" + nativeValue + "'");
+            throw new EnvHandlingException("'" + DSC_NATIVE.name +
+                    "' parameter value error: expected 'on' or 'off'; found: '" + nativeValue + "'");
         }
 
-        String fieldValue = opts.getValue(InstrumentationOptions.DSC_FIELD);
+        String fieldValue = opts.getValue(DSC_FIELD);
         if (fieldValue.equals("on")) {
             genfield = true;
         } else if (fieldValue.equals("off")) {
             genfield = false;
         } else {
             // can't happen - check is in EnvHandler
-            throw new EnvHandlingException("'" + InstrumentationOptions.DSC_FIELD.name + "' parameter value error: expected 'on' or 'off'; found: '" + fieldValue + "'");
+            throw new EnvHandlingException("'" + DSC_FIELD.name +
+                    "' parameter value error: expected 'on' or 'off'; found: '" + fieldValue + "'");
         }
 
-        String anonym = opts.getValue(InstrumentationOptions.DSC_ANONYM);
-        if (anonym.equals("on")) {
-            genanonymous = true;
-        } else { // off
-            genanonymous = false;
-        }
+        String anonym = opts.getValue(DSC_ANONYM);
+        genanonymous = anonym.equals("on");
 
-        String synthetic = opts.getValue(InstrumentationOptions.DSC_SYNTHETIC);
-        if (synthetic.equals("on")) {
-            gensynthetic = true;
-        } else { // if (fieldValue.equals("off"))
-            gensynthetic = false;
-        }
+        String synthetic = opts.getValue(DSC_SYNTHETIC);
+        gensynthetic = synthetic.equals("on");
 
-        String innerInvocation = opts.getValue(InstrumentationOptions.DSC_INNERINVOCATION);
-        if ("off".equals(innerInvocation)) {
-            innerinvocations = false;
-        } else {
-            innerinvocations = true;
-        }
+        String innerInvocation = opts.getValue(DSC_INNERINVOCATION);
+        innerinvocations = ! "off".equals(innerInvocation);
 
-        callerInclude = opts.getValues(InstrumentationOptions.DSC_CALLER_INCLUDE);
-        callerExclude = opts.getValues(InstrumentationOptions.DSC_CALLER_EXCLUDE);
+        callerInclude = opts.getValues(DSC_CALLER_INCLUDE);
+        callerExclude = opts.getValues(DSC_CALLER_EXCLUDE);
 
         recurse = opts.isSet(DSC_RECURSE);
 
-        mode = InstrumentationOptions.InstrumentationMode.fromString(opts.getValue(InstrumentationOptions.DSC_TYPE));
-        template = opts.getValue(InstrumentationOptions.DSC_TEMPLATE);
-        Utils.checkFileNotNull(template, "template filename", Utils.CheckOptions.FILE_NOTISDIR, Utils.CheckOptions.FILE_PARENTEXISTS);
+        mode = InstrumentationMode.fromString(opts.getValue(DSC_TYPE));
+        template = opts.getValue(DSC_TEMPLATE);
+        Utils.checkFileNotNull(template, "template filename", FILE_NOTISDIR, FILE_PARENTEXISTS);
 
         subsequentInstr = opts.isSet(DSC_SUBSEQUENT);
 
-        include = InstrumentationOptions.handleInclude(opts);
-        exclude = InstrumentationOptions.handleExclude(opts);
+        include = handleInclude(opts);
+        exclude = handleExclude(opts);
 
-        m_include = InstrumentationOptions.handleMInclude(opts);
-        m_exclude = InstrumentationOptions.handleMExclude(opts);
+        m_include = handleMInclude(opts);
+        m_exclude = handleMExclude(opts);
 
         flushPath = opts.getValue(ClassMorph.DSC_FLUSH_CLASSES);
         if ("none".equals(flushPath)) {
             flushPath = null;
         }
         include_rt = opts.getValue(DSC_INCLUDE_RT);
-        Utils.checkFileCanBeNull(include_rt, "JCovRT library jarfile", Utils.CheckOptions.FILE_EXISTS, Utils.CheckOptions.FILE_ISFILE, Utils.CheckOptions.FILE_CANREAD);
+        Utils.checkFileCanBeNull(include_rt, "JCovRT library jarfile", FILE_EXISTS, FILE_ISFILE, FILE_CANREAD);
+
+        try {
+            String pluginClass = opts.getValue(DSC_INSTR_PLUGIN);
+            if(pluginClass != null && !pluginClass.isEmpty())
+                plugin = (InstrumentationPlugin) Class.forName(opts.getValue(DSC_INSTR_PLUGIN))
+                        .getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
+                NoSuchMethodException | InvocationTargetException e) {
+            throw new EnvHandlingException("'" + DSC_INSTR_PLUGIN.name + "' parameter error: '" + e + "'");
+        }
 
         try {
             String pluginClass = opts.getValue(InstrumentationOptions.DSC_INSTR_PLUGIN);
@@ -674,20 +688,26 @@ public class Instr extends JCovCMDTool {
         if (srcs == null || srcs.length == 0) {
             throw new EnvHandlingException("No sources specified");
         }
-
         return handleEnv_(opts);
     }
+
     final static OptionDescr DSC_OUTPUT =
             new OptionDescr("instr.output", new String[]{"output", "o"}, "Output directory for instrumented classes",
                     OptionDescr.VAL_SINGLE,
-                    "Specifies output directory, default directory is current. Instr command could process different dirs and different jars: \n "
-                            + "all classes from input dirs and all jars will be placed in output directory.");
+                    "Specifies output directory, default directory is current. " +
+                            "Instr command could process different dirs and different jars: \n " +
+                            "all classes from input dirs and all jars will be placed in output directory.");
     final static OptionDescr DSC_VERBOSE =
             new OptionDescr("verbose", "Verbose mode", "Enable verbose mode.");
     final static OptionDescr DSC_INCLUDE_RT =
-            new OptionDescr("implantrt", new String[]{"rt"}, "Runtime management", OptionDescr.VAL_SINGLE, "Allows to implant needed for runtime files into instrumented data: -includert jcov_rt.jar");
+            new OptionDescr("implantrt", new String[]{"rt"}, "Runtime management", OptionDescr.VAL_SINGLE,
+                    "Allows to implant needed for runtime files into instrumented data: -includert jcov_rt.jar");
     final static OptionDescr DSC_SUBSEQUENT =
-            new OptionDescr("subsequent", "", OptionDescr.VAL_NONE, "Template would be used to decide what should not be instrumented - all existing in template would be treated as already instrumented");
+            new OptionDescr("subsequent", "", OptionDescr.VAL_NONE,
+                    "Template would be used to decide what should not be instrumented - " +
+                            "all existing in template would be treated as already instrumented");
     final static OptionDescr DSC_RECURSE =
-            new OptionDescr("recursive", "", OptionDescr.VAL_NONE, "Recurse through specified directories instrumenting everything inside. With -flush option it will be able to instrument duplicate classes. ");
+            new OptionDescr("recursive", "", OptionDescr.VAL_NONE,
+                    "Recurse through specified directories instrumenting everything inside. " +
+                            "With -flush option it will be able to instrument duplicate classes");
 }

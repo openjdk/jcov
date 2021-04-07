@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ public class JavapClassReader {
 
     public static void read(String filePath, String jarPath, PrintWriter pw) {
 
+        // Note: if the RepGen is being started by JDK 9 and above then
+        // the option "--add-exports jdk.jdeps/com.sun.tools.javap=ALL-UNNAMED" should be added to the JVM command-line.
         try {
             if (jarPath == null) {
 //                Main.run(new String[]{"-c", "-p", filePath}, pw);
@@ -67,9 +69,9 @@ public class JavapClassReader {
                             classLoader = new URLClassLoader(new URL[]{toolsJar.toURI().toURL()}, ClassLoader.getSystemClassLoader());
                             Class classToLoad = Class.forName("com.sun.tools.javap.Main", true, classLoader);
                             method = classToLoad.getDeclaredMethod("run", String[].class, PrintWriter.class);
-                            instance = classToLoad.newInstance();
+                            instance = classToLoad.getDeclaredConstructor().newInstance();
 
-                            String[] params = null;
+                            String[] params;
 
                             if (jarPath == null) {
                                 params = new String[]{"-c", "-p", filePath};
@@ -98,7 +100,7 @@ public class JavapClassReader {
                 }
             } else {
 
-                String[] params = null;
+                String[] params;
 
                 if (jarPath == null) {
                     params = new String[]{"-c", "-p", filePath};
@@ -106,17 +108,16 @@ public class JavapClassReader {
                     params = new String[]{"-c", "-p", "-classpath", jarPath, filePath};
                 }
                 try {
-                    Object result = method.invoke(instance, params, pw);
+                    method.invoke(instance, params, pw);
                 } catch (Exception ex) {
                     printToolsJarError();
                 }
             }
         }
-
     }
 
     private static void printToolsJarError() {
-        System.err.println("cannot execute javap, perhaps jdk7+/lib/tools.jar is missing from the classpath and from java.home");
+        System.err.println("cannot execute javap, perhaps jdk8/lib/tools.jar is missing from the classpath and from java.home");
         System.err.println("example: java -cp jcov.jar:tools.jar com.sun.tdk.jcov.RepGen -javap path_to_classes -o path_to_javap_output path_to_result.xml");
         return;
     }

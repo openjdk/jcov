@@ -31,6 +31,7 @@ import java.io.FilenameFilter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.logging.FileHandler;
 
 /**
@@ -102,7 +103,9 @@ public abstract class JCovCMDTool extends JCovTool {
 
             handler.getOut().println(" Command line error: " + ex.getMessage() + "\n");
             String name = this.getClass().getName();
-            handler.getOut().println("Use \"java -jar jcov.jar " + name.substring(name.lastIndexOf(".") + 1) + " -h\" for command-line help or \"java -jar jcov.jar " + name.substring(name.lastIndexOf(".") + 1) + " -hv\" for wider description");
+            handler.getOut().println("Use \"java -jar jcov.jar " + name.substring(name.lastIndexOf(".") + 1) +
+                    " -h\" for command-line help or \"java -jar jcov.jar " + name.substring(name.lastIndexOf(".") + 1) +
+                    " -hv\" for wider description");
             return ERROR_CMDLINE_EXIT_CODE;
         }
 
@@ -139,7 +142,9 @@ public abstract class JCovCMDTool extends JCovTool {
         } catch (EnvHandlingException ex) {
             handler.getOut().println("Command line error: " + ex.getMessage() + "\n");
             String name = this.getClass().getName();
-            handler.getOut().println("Use \"java -jar jcov.jar " + name.substring(name.lastIndexOf(".") + 1) + " -h\" for command-line help or \"java -jar jcov.jar " + name.substring(name.lastIndexOf(".") + 1) + " -hv\" for wider description");
+            handler.getOut().println("Use \"java -jar jcov.jar " + name.substring(name.lastIndexOf(".") + 1) +
+                    " -h\" for command-line help or \"java -jar jcov.jar " + name.substring(name.lastIndexOf(".") + 1) +
+                    " -hv\" for wider description");
             if (handler.isSet(EnvHandler.PRINT_ENV)) {
                 handler.printEnv();
             }
@@ -158,9 +163,12 @@ public abstract class JCovCMDTool extends JCovTool {
         try {
             return run();
         } catch (Exception e) {
-            System.out.println("Execution error: " + e.getMessage());
-            if (PropertyFinder.findValue("stacktrace", "false").equals("true")) {
-                e.printStackTrace(System.out);
+            if( ! e.getMessage().isEmpty()  ) {
+                System.err.println(e.getMessage());
+            }
+            if ( e.getMessage().isEmpty() ||
+                    PropertyFinder.findValue("stacktrace", "").equals("true")) {
+                e.printStackTrace(System.err);
             }
             return ERROR_EXEC_EXIT_CODE;
         }

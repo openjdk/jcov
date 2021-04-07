@@ -134,11 +134,13 @@ public final class PropertyFinder {
                                 break;
                         }
                     }
-                } else if (ch == 'F') { // field
-                    String className = patt.substring(2, patt.lastIndexOf('.'));
+                } else if (ch == 'F') { // static field
+                    int ind = patt.lastIndexOf('.');
+                    String className = patt.substring(2, ind );
+
                     try {
                         Class c = Class.forName(className);
-                        Field f = c.getDeclaredField(patt.substring(patt.lastIndexOf('.') + 1, patt.length()));
+                        Field f = c.getDeclaredField(patt.substring(ind + 1));
                         boolean changed = false;
                         if (!f.isAccessible()) {
                             f.setAccessible(true);
@@ -160,11 +162,12 @@ public final class PropertyFinder {
                         --end; // including last % to next search
                         buf.append(patt);
                     }
-                } else if (ch == 'M') { // method
-                    String className = patt.substring(2, patt.lastIndexOf('.'));
+                } else if (ch == 'M') { // static method
+                    int ind = patt.lastIndexOf('.');
+                    String className = patt.substring(2, ind);
                     try {
                         Class c = Class.forName(className);
-                        Method m = c.getDeclaredMethod(patt.substring(patt.lastIndexOf('.') + 1, patt.length()), (Class[]) null);
+                        Method m = c.getDeclaredMethod(patt.substring(ind + 1), (Class[]) null);
                         boolean changed = false;
                         if (!m.isAccessible()) {
                             m.setAccessible(true);
