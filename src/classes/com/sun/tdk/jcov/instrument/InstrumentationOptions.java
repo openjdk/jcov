@@ -160,10 +160,6 @@ public class InstrumentationOptions {
             new OptionDescr("instr_plugin", new String[0], "Instrumentation plugin", OptionDescr.VAL_SINGLE,
                     "Defines instrumentation to be performed additionaly to already performed by JCov");
 
-    public final static OptionDescr DSC_INSTR_PLUGIN =
-            new OptionDescr("instr_plugin", new String[0], "Instrumentation plugin", OptionDescr.VAL_SINGLE,
-                    "Defines instrumentation to be performed additionaly to already performed by JCov");
-
     public static enum ABSTRACTMODE {
 
         NONE, IMPLEMENTATION, DIRECT
