@@ -24,7 +24,6 @@
  */
 package com.sun.tdk.jcov.runtime;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 /**

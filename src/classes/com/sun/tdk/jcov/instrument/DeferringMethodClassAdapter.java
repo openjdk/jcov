@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,6 @@ class DeferringMethodClassAdapter extends ClassVisitor {
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
         if (!params.isInstrumentSynthetic() && (access & ACC_SYNTHETIC) != 0) {
             return super.visitMethod(access, name, desc, signature, exceptions);
-//            return null;
         }
         MethodVisitor mv = visitMethodCoverage(access, name, desc, signature, exceptions);
 
@@ -193,12 +192,14 @@ class DeferringMethodClassAdapter extends ClassVisitor {
 
         if (params.isInnerInvacationsOff() && Utils.isAdvanceStaticInstrAllowed(k.getFullname(), name)) {
             if (name.equals("<clinit>")) {
-                mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "enterClinit", "()V", false);
+                mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect",
+                        "enterClinit",
+                        "()V",
+                        false);
             }
 
         }
 
-        // System.out.println("Seeing " + k.fullname + "." + name);
         if (params.isDataSaveFilterAccept(k.getFullname(), name, true)) {
             mv = new SavePointsMethodAdapter(mv, true);
         }
@@ -220,7 +221,9 @@ class DeferringMethodClassAdapter extends ClassVisitor {
 
         InstrumentationPlugin plugin = params.getInstrumentationPlugin();
         if(plugin != null)
-            mv = plugin.methodVisitor(access, k.getFullname(), name, desc, mv);        return mv;
+            mv = plugin.methodVisitor(access, k.getFullname(), name, desc, mv);
+
+        return mv;
     }
 
     @Override

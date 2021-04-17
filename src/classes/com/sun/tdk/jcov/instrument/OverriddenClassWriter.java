@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021,  Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.util.List;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 
+import static com.sun.tdk.jcov.util.Utils.CUSTOM_CLASS_FILE_EXTENSIONS;
+
 /**
  * <p> Extention to ClassWriter where getCommonSuperClass() is overridden. </p>
  * <p> It's possible to set custom classfile extension by "clext" property
@@ -49,7 +51,6 @@ import org.objectweb.asm.ClassWriter;
 public class OverriddenClassWriter extends ClassWriter {
 
     private final ClassLoader loader;
-    private static String[] customExtentions = PropertyFinder.findValue("clext", "").split(":");
 
     public OverriddenClassWriter(final ClassReader classReader, final int flags, ClassLoader loader) {
         super(classReader, flags);
@@ -331,14 +332,12 @@ public class OverriddenClassWriter extends ClassWriter {
         } catch (Throwable ignore) {
         }
 
-        for (int i = 0; i < customExtentions.length; ++i) {
+        // trying to get class with custom extension(s) mentioned in "jcov.clext" system property
+        for(String fileExt : CUSTOM_CLASS_FILE_EXTENSIONS) {
             try {
-                InputStream in = loader.getResourceAsStream(name + "." + customExtentions[i]);
-                if (in != null) {
-                    return in;
-                }
-            } catch (Throwable ignore) {
-            }
+                InputStream in = loader.getResourceAsStream(name + (fileExt.startsWith(".") ? fileExt : "." + fileExt));
+                if (in != null) return in;
+            } catch (Throwable ignore) {}
         }
 
         // trying to get class with priveleges
