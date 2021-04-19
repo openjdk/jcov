@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,7 @@
  */
 package com.sun.tdk.jcov;
 
-import com.sun.tdk.jcov.instrument.HashesAttribute;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.instrument.OverriddenClassWriter;
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
@@ -38,13 +36,17 @@ import org.objectweb.asm.*;
 import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.sun.tdk.jcov.util.Utils.CheckOptions.*;
+import static com.sun.tdk.jcov.util.Utils.getListFiles;
 
 /**
  * <p> A tool to statically instrument JRE. </p> <p> There are 2 coverage
@@ -65,11 +67,6 @@ public class JREInstr extends JCovCMDTool {
     private File[] addJimages;
     private File[] addTests;
     private File implant;
-    private File javac;
-    private String[] callerInclude;
-    private String[] callerExclude;
-    private String[] innerInclude;
-    private String[] innerExclude;
     private static final Logger logger;
     private String host = null;
     private Integer port = null;
@@ -82,7 +79,7 @@ public class JREInstr extends JCovCMDTool {
     /**
      * tries to find class in the specified jars
      */
-    public class StaticJREInstrClassLoader extends URLClassLoader {
+    public static class StaticJREInstrClassLoader extends URLClassLoader {
 
         StaticJREInstrClassLoader(URL[] urls) {
             super(urls);
@@ -93,7 +90,7 @@ public class JREInstr extends JCovCMDTool {
             InputStream in = null;
             try {
                 in = findResource(s).openStream();
-            } catch (IOException ex) {
+            } catch (IOException ignore) {
                 //nothing to do
             }
             if (in != null) {
@@ -120,26 +117,25 @@ public class JREInstr extends JCovCMDTool {
             }
             File jmodsTemp = new File(toInstrument.getParentFile(), "jmod_temp");
 
-            ArrayList<URL> urls = new ArrayList<URL>();
-            for (File mod : toInstrument.listFiles()) {
+            ArrayList<URL> urls = new ArrayList<>();
+            for (File mod : getListFiles(toInstrument)) {
                 File jmodDir = extractJMod(jdk, mod.getAbsoluteFile(), jmodsTemp);
                 urls.add(new File(jmodDir, "classes").toURI().toURL());
             }
             urls.add(toInstrument.toURI().toURL());
 
-            cl = new StaticJREInstrClassLoader(urls.toArray(new URL[urls.size()]));
+            cl = new StaticJREInstrClassLoader(urls.toArray(new URL[0]));
             instr.setClassLoader(cl);
 
             try {
-                for (File mod : jmodsTemp.listFiles()) {
+                for (File mod : getListFiles(jmodsTemp)) {
                     if (mod != null && mod.isDirectory()) {
-
                         File modClasses = new File(mod, "classes");
                         if ("java.base".equals(mod.getName())) {
-                            addJCovRuntimeToJavaBase(new File(modClasses, "module-info.class"), cl);
+                            File mInfo = new File(modClasses, "module-info.class");
+                            addJCovRuntimeToJavaBase(mInfo, cl);
+                            updateHashes(mInfo, cl);
                         }
-                        updateHashes(new File(modClasses, "module-info.class"), cl);
-
                         instr.instrumentFile(modClasses.getAbsolutePath(), null, null, mod.getName());
                         createJMod(mod, jdk, implant.getAbsolutePath());
                     }
@@ -192,14 +188,14 @@ public class JREInstr extends JCovCMDTool {
                 File dirtoInstrument = new File(jimageInstr.getParent(), tempDirName);
                 //still need it
                 Utils.addToClasspath(new String[]{dirtoInstrument.getAbsolutePath()});
-                for (File file : dirtoInstrument.listFiles()) {
+                for (File file : getListFiles(dirtoInstrument)) {
                     if (file.isDirectory()) {
                         Utils.addToClasspath(new String[]{file.getAbsolutePath()});
                     }
                 }
 
                 if (jimageInstr.equals(toInstrument)) {
-                    for (File mod : dirtoInstrument.listFiles()) {
+                    for (File mod : getListFiles(dirtoInstrument)) {
                         if (mod != null && mod.isDirectory()) {
 
                             if ("java.base".equals(mod.getName())) {
@@ -210,7 +206,7 @@ public class JREInstr extends JCovCMDTool {
                         }
                     }
                 } else {
-                    for (File mod : dirtoInstrument.listFiles()) {
+                    for (File mod : getListFiles(dirtoInstrument)) {
                         if (mod != null && mod.isDirectory()) {
                             instr.instrumentFile(mod.getAbsolutePath(), null, null, mod.getName());
                         }
@@ -257,8 +253,8 @@ public class JREInstr extends JCovCMDTool {
 
         if (addTests != null) {
             ArrayList<String> tests = new ArrayList<>();
-            for (int i = 0; i < addTests.length; ++i) {
-                tests.add(addTests[i].getAbsolutePath());
+            for (File addTest : addTests) {
+                tests.add(addTest.getAbsolutePath());
             }
             instr.instrumentTests(tests.toArray(new String[0]), null, null);
         }
@@ -267,49 +263,60 @@ public class JREInstr extends JCovCMDTool {
         return SUCCESS_EXIT_CODE;
     }
 
-
+    /**
+     * Add com/sun/tdk/jcov/runtime to the module exports to be visible externally
+     *
+     * @param file  module-info.class file of java.base
+     * @param cl    class loader
+     */
     private void addJCovRuntimeToJavaBase(File file, ClassLoader cl) {
         try {
-            InputStream in = new FileInputStream(file.getCanonicalPath());
-            ClassReader cr = new ClassReader(in);
-            ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, cl);
-
-            ClassVisitor cv = new ClassVisitor(Utils.ASM_API_VERSION, cw) {
-                @Override
-                public ModuleVisitor visitModule(String name, int access, String version) {
-                    ModuleVisitor mv = super.visitModule(name, access, version);
-                    mv.visitPackage("com/sun/tdk/jcov/runtime");
-                    mv.visitExport("com/sun/tdk/jcov/runtime", 0);
-                    return mv;
-                }
-            };
-
-            cr.accept(cv, 0);
-
-            DataOutputStream dout = new DataOutputStream(new FileOutputStream(file.getCanonicalPath()));
-            dout.write(cw.toByteArray());
-            dout.flush();
-            in.close();
-            dout.close();
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "can not update java.base", e);
+            updateModuleInfoFile(file, cl, classWriter ->
+                    new ClassVisitor(Utils.ASM_API_VERSION, classWriter) {
+                        @Override
+                        public ModuleVisitor visitModule(String name, int access, String version) {
+                            ModuleVisitor mv = super.visitModule(name, access, version);
+                            mv.visitPackage("com/sun/tdk/jcov/runtime");
+                            mv.visitExport("com/sun/tdk/jcov/runtime", 0);
+                            return mv;
+                        }
+                    });
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, "Can't update java.base/module-info", ex);
         }
     }
 
+    /**
+     * Remove ModuleHashes attribute to skip a check that there are no qualified exports to upgradeable modules
+     *
+     * @param file  module-info.class file of java.base
+     * @param cl    class loader
+     */
     private void updateHashes(File file, ClassLoader cl) {
         try {
-            InputStream in = new FileInputStream(file.getCanonicalPath());
-            ClassReader cr = new ClassReader(in);
-            ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, cl);
-            cr.accept(cw, new Attribute[]{new HashesAttribute()}, 0);
+            updateModuleInfoFile(file, cl, classWriter ->
+                    new ClassVisitor(Utils.ASM_API_VERSION, classWriter) {
+                        @Override
+                        public void visitAttribute(final Attribute attribute) {
+                            if (!attribute.type.equals("ModuleHashes")) {
+                                super.visitAttribute(attribute);
+                            }
+                        }
+                    });
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, "Can't remove module hashes from java.base/module-info", ex);
+        }
+    }
 
-            DataOutputStream doutn = new DataOutputStream(new FileOutputStream(file.getCanonicalPath()));
-            doutn.write(cw.toByteArray());
-            doutn.flush();
-            in.close();
-            doutn.close();
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "can not update module hashes", e);
+    private void updateModuleInfoFile(File file, ClassLoader cl, Function<ClassWriter, ClassVisitor> func) throws Exception {
+        try( InputStream inputStream = new FileInputStream(file.getCanonicalPath()) ) {
+            ClassReader cr = new ClassReader(inputStream);
+            ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, cl);
+            cr.accept(func.apply(cw), 0);
+            try(DataOutputStream outputStream = new DataOutputStream(new FileOutputStream(file.getCanonicalPath())) ) {
+                outputStream.write(cw.toByteArray());
+                outputStream.flush();
+            }
         }
     }
 
@@ -348,7 +355,8 @@ public class JREInstr extends JCovCMDTool {
             }
             File modDir = new File(to, name);
             modDir.mkdirs();
-            String command = jdk.getAbsolutePath() + File.separator + "bin" + File.separator + "jar xf " + from.getAbsolutePath();
+            String command = jdk.getAbsolutePath() + File.separator + "bin" + File.separator + "jar xf " +
+                    from.getAbsolutePath();
             if (!doCommand(command, modDir, "wrong command for unjar jmod: ")) {
                 return null;
             }
@@ -362,15 +370,16 @@ public class JREInstr extends JCovCMDTool {
     private File runJLink(File jmodDir, File jdk) {
         try {
 
-            String command = jdk.getAbsolutePath() + File.separator + "bin" + File.separator + "jlink --module-path " + jmodDir.getCanonicalPath() + " --add-modules ";
+            String command = jdk.getAbsolutePath() + File.separator + "bin" + File.separator + "jlink --module-path " +
+                    jmodDir.getCanonicalPath() + " --add-modules ";
 
-            StringBuilder sb = new StringBuilder("");
-            for (File subDir : jmodDir.listFiles()) {
+            StringBuilder sb = new StringBuilder();
+            for (File subDir : getListFiles(jmodDir)) {
                 if (subDir.isDirectory()) {
                     sb.append(subDir.getName()).append(",");
                 }
             }
-            String mods = sb.toString().substring(0, sb.toString().length() - 1);
+            String mods = sb.substring(0, sb.toString().length() - 1);
             command += mods + " --output instr_jimage_dir";
             if (!doCommand(command, jmodDir.getParentFile(), "wrong command for jlink mods: ")) {
                 return null;
@@ -387,10 +396,11 @@ public class JREInstr extends JCovCMDTool {
         try {
             File modsDir = jmodDir.getParentFile();
             StringBuilder command = new StringBuilder();
-            command.append(jdk.getAbsolutePath() + File.separator + "bin" + File.separator + "jmod create ");
-            command.append("--module-path " + modsDir.getCanonicalPath() + " ");
+            command.append(jdk.getAbsolutePath()).append(File.separator).append("bin").append(File.separator).
+                    append("jmod create ").
+                    append("--module-path ").append(modsDir.getCanonicalPath()).append(" ");
 
-            for (File subDir : jmodDir.listFiles()) {
+            for (File subDir : getListFiles(jmodDir)) {
                 if (subDir.getName().equals("classes")) {
                     if ("java.base".equals(jmodDir.getName())) {
                         command.append("--class-path " + rt_path + File.pathSeparator + jmodDir.getName() + File.separator + "classes ");
@@ -424,21 +434,21 @@ public class JREInstr extends JCovCMDTool {
         }
     }
 
-    private boolean expandJimage(File jimage, String tempDirName) {
+    private void expandJimage(File jimage, String tempDirName) {
         try {
-            String command = jimage.getParentFile().getParentFile().getParent() + File.separator + "bin" + File.separator + "jimage extract --dir " +
-                    jimage.getParent() + File.separator + tempDirName + " " + jimage.getAbsolutePath();
-            return doCommand(command,null, "wrong command for expand jimage: ");
+            String command = jimage.getParentFile().getParentFile().getParent() + File.separator + "bin" + File.separator +
+                    "jimage extract --dir " + jimage.getParent() + File.separator +
+                    tempDirName + " " + jimage.getAbsolutePath();
+            doCommand(command, null, "wrong command for expand jimage: ");
         } catch (Exception e) {
             logger.log(Level.SEVERE, "exception in process(expanding jimage)", e);
-            return false;
         }
     }
 
     private boolean createJimage(File dir, String new_jimage_path) {
         try {
-            String command = dir.getParentFile().getParentFile().getParent() + File.separator + "bin" + File.separator + "jimage recreate --dir " +
-                    dir + " " + new_jimage_path;
+            String command = dir.getParentFile().getParentFile().getParent() + File.separator + "bin" + File.separator +
+                    "jimage recreate --dir " + dir + " " + new_jimage_path;
             return doCommand(command, null, "wrong command for create jimage: ");
         } catch (Exception e) {
             logger.log(Level.SEVERE, "exception in process(expanding jimage)", e);
@@ -448,7 +458,10 @@ public class JREInstr extends JCovCMDTool {
 
     @Override
     protected EnvHandler defineHandler() {
-        Instr.DSC_INCLUDE_RT.usage = "To run instrumented JRE you should implant JCov runtime library both into rt.jar and into 'lib/endorsed' directory.\nWhen instrumenting whole JRE dir with jreinstr tool - these 2 actions will be done automatically.";
+        Instr.DSC_INCLUDE_RT.usage = "To run instrumented JRE you should implant JCov runtime library both into rt.jar " +
+                "and into 'lib/endorsed' directory.\nWhen instrumenting whole JRE dir with jreinstr tool - " +
+                "these 2 actions will be done automatically.";
+
         return new EnvHandler(new OptionDescr[]{
                 Instr.DSC_INCLUDE_RT,
                 Instr.DSC_VERBOSE,
@@ -500,7 +513,7 @@ public class JREInstr extends JCovCMDTool {
         }
 
         implant = new File(envHandler.getValue(Instr.DSC_INCLUDE_RT));
-        Utils.checkFile(implant, "JCovRT library jarfile", Utils.CheckOptions.FILE_ISFILE, Utils.CheckOptions.FILE_EXISTS, Utils.CheckOptions.FILE_CANREAD);
+        Utils.checkFile(implant, "JCovRT library jarfile", FILE_ISFILE, FILE_EXISTS, FILE_CANREAD);
 
         if (envHandler.isSet(DCS_ADD_JAR)) {
             String[] jars = envHandler.getValues(DCS_ADD_JAR);
@@ -544,7 +557,7 @@ public class JREInstr extends JCovCMDTool {
         }
 
         File f = new File(tail[0]);
-        Utils.checkFile(f, "JRE directory", Utils.CheckOptions.FILE_EXISTS, Utils.CheckOptions.FILE_ISDIR, Utils.CheckOptions.FILE_CANREAD);
+        Utils.checkFile(f, "JRE directory", FILE_EXISTS, FILE_ISDIR, FILE_CANREAD);
 
         if (envHandler.isSet(DSC_HOST)) {
             host = envHandler.getValue(DSC_HOST);
@@ -560,12 +573,11 @@ public class JREInstr extends JCovCMDTool {
 
         if (envHandler.isSet(DSC_JAVAC_HACK)) {
             String javacPath = envHandler.getValue(DSC_JAVAC_HACK);
-            javac = new File(javacPath);
-
-            File newJavac = null;
+            File javac = new File(javacPath);
+            File newJavac;
 
             boolean isWin = false;
-            if (javacPath.endsWith(".exe") && System.getProperty("os.name").toLowerCase().indexOf("win") >= 0) {
+            if (javacPath.endsWith(".exe") && System.getProperty("os.name").toLowerCase().contains("win")) {
                 newJavac = new File(javac.getParent() + File.separator + "javac_real.exe");
                 isWin = true;
             } else {
@@ -580,7 +592,7 @@ public class JREInstr extends JCovCMDTool {
                     try {
                         if (!isWin) {
                             File newFile = new File(javacPath);
-                            OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(newFile), Charset.forName("UTF-8"));
+                            OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(newFile), StandardCharsets.UTF_8);
                             out.write(newJavac.getAbsolutePath() + " -J-Xms30m \"$@\"");
                             out.flush();
                             out.close();
@@ -591,7 +603,7 @@ public class JREInstr extends JCovCMDTool {
                             }
                         } else {
                             File newFile = new File(javacPath.replaceAll(".exe", ".bat"));
-                            OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(newFile), Charset.forName("UTF-8"));
+                            OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(newFile), StandardCharsets.UTF_8);
                             out.write(newJavac.getAbsolutePath() + " -J-Xms30m %*");
                             out.flush();
                             out.close();
@@ -614,12 +626,13 @@ public class JREInstr extends JCovCMDTool {
                 }
 
                 if (!javac.renameTo(newJavac)) {
-                    throw new EnvHandlingException("Can't move specified javac to new location (" + javacPath + " to " + newJavac.getPath() + ")");
+                    throw new EnvHandlingException("Can't move specified javac to new location" +
+                            " (" + javacPath + " to " + newJavac.getPath() + ")");
                 }
                 try {
                     if (!isWin) {
                         File newFile = new File(javacPath);
-                        OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(newFile), Charset.forName("UTF-8"));
+                        OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(newFile), StandardCharsets.UTF_8);
                         out.write(newJavac.getAbsolutePath() + " $@ -J-Xms30m");
                         out.flush();
                         out.close();
@@ -630,7 +643,7 @@ public class JREInstr extends JCovCMDTool {
                         }
                     } else {
                         File newFile = new File(javacPath.replaceAll(".exe", ".bat"));
-                        OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(newFile), Charset.forName("UTF-8"));
+                        OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(newFile), StandardCharsets.UTF_8);
                         out.write(newJavac.getAbsolutePath() + " -J-Xms30m %*");
                         out.flush();
                         out.close();
@@ -644,7 +657,8 @@ public class JREInstr extends JCovCMDTool {
         if (!f.isDirectory()) {
             throw new EnvHandlingException("Specified JRE is not a directory: " + f.getPath());
         } else {
-            // instrumenting JRE dir - check ${JRE}/lib/rt.jar, move ${JRE}/lib/rt.jar to ${JRE}/lib/rt.jar.bak (if not exist), add copy ${JRE}/lib/endorsed/${implant.jar}
+            // instrumenting JRE dir - check ${JRE}/lib/rt.jar, move ${JRE}/lib/rt.jar to ${JRE}/lib/rt.jar.bak (if not exist),
+            // add copy ${JRE}/lib/endorsed/${implant.jar}
             File lib = new File(f, "lib");
             if (!lib.exists()) {
                 throw new EnvHandlingException("lib directory was not found in JRE directory");
@@ -724,9 +738,9 @@ public class JREInstr extends JCovCMDTool {
                         try {
                             Utils.copyFile(toInstrument, bak);
                         } catch (FileNotFoundException ex) {
-                            throw new EnvHandlingException("Error while backuping bootmodules.jimage: file not found", ex);
+                            throw new EnvHandlingException("Error while backing up bootmodules.jimage: file not found", ex);
                         } catch (IOException ex) {
-                            throw new EnvHandlingException("Error while backuping bootmodules.jimage", ex);
+                            throw new EnvHandlingException("Error while backing up bootmodules.jimage", ex);
                         }
                     } else {
                         if (!envHandler.isSet(Instr.DSC_SUBSEQUENT)) {
@@ -747,11 +761,11 @@ public class JREInstr extends JCovCMDTool {
         String[] m_excludes = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleMExclude(envHandler);
         String[] m_includes = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleMInclude(envHandler);
 
-        callerInclude = envHandler.getValues(com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_INCLUDE);
-        callerExclude = envHandler.getValues(com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_EXCLUDE);
+        String[] callerInclude = envHandler.getValues(InstrumentationOptions.DSC_CALLER_INCLUDE);
+        String[] callerExclude = envHandler.getValues(InstrumentationOptions.DSC_CALLER_EXCLUDE);
 
-        innerInclude = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleInnerInclude(envHandler);
-        innerExclude = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleInnerExclude(envHandler);
+        String[] innerInclude = InstrumentationOptions.handleInnerInclude(envHandler);
+        String[] innerExclude = InstrumentationOptions.handleInnerExclude(envHandler);
 
         if (!Utils.accept(pats, null, "/java/lang/Shutdown", null)) {
             // Shutdown was excluded with some filtering mechanism. No need to remove it from excludes as inclusion has more priority

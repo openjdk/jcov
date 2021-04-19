@@ -94,7 +94,7 @@ public class JavapClassReader {
                     }
 
                 } else {
-                    System.err.println("cannot execute javap, perhaps jdk7+/lib/tools.jar is missing from the classpath");
+                    System.err.println("cannot execute javap, perhaps jdk8/lib/tools.jar is missing from the classpath");
                     System.err.println("example: java -cp jcov.jar:tools.jar com.sun.tdk.jcov.RepGen -javap path_to_classes -o path_to_javap_output path_to_result.xml");
                     return;
                 }

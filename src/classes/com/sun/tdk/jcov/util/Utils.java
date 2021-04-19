@@ -51,8 +51,6 @@ import java.util.zip.ZipOutputStream;
 
 /**
  * This class implements miscellaneous utilities, necessary for Jcov
- *
- * @author Konstantin Bobrovsky
  */
 public final class Utils {
 
@@ -1220,6 +1218,21 @@ public final class Utils {
                     break;
             }
         }
+    }
+
+    /**
+     * Returns an array of abstract pathnames denoting the files in the directory denoted by this abstract pathname or
+     * empty list if the abstract pathname does not denote a directory
+     *
+     * @param dir abstract pathname denotes a directory
+     */
+    public static List<File> getListFiles(File dir) {
+        ArrayList<File> listFiles = new ArrayList<>();
+        File[] list = dir.listFiles();
+        if( list != null && list.length > 0) {
+            listFiles.addAll(Arrays.asList(list));
+        }
+        return listFiles;
     }
 
     /**
