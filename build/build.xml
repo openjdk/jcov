@@ -115,7 +115,7 @@
 
     </target>
 
-    <target name="build-date" description="adds bild and date information">
+    <target name="build-date" description="adds build and date information">
         <tstamp>
             <format property="date" pattern="MMMM dd, yyyy" locale="en"/>
         </tstamp>

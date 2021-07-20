@@ -164,7 +164,7 @@ public class Filter extends JCovCMDTool {
             inFile = files[0];
             Utils.checkFileNotNull(inFile, "input JCov datafile", Utils.CheckOptions.FILE_ISFILE, Utils.CheckOptions.FILE_EXISTS, Utils.CheckOptions.FILE_CANREAD);
             outFile = files[1];
-            Utils.checkFileNotNull(outFile, "output JCov datafile", Utils.CheckOptions.FILE_NOTEXISTS, Utils.CheckOptions.FILE_CANWRITE);
+            Utils.checkFileNotNull(outFile, "output JCov datafile", Utils.CheckOptions.FILE_NOTEXISTS);
         } else if (files.length > 2) {
             throw new EnvHandlingException("too many files specified");
         }
