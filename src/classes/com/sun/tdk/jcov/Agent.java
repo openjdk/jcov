@@ -412,7 +412,7 @@ public class Agent extends JCovTool {
         }
 
         try {
-            if (Utils.getJavaVersion() >= Utils.VER16) {
+            if (Utils.getJavaVersion() >= Utils.VER1_6) {
                 tool.premainV50(agentArgs, instArg);
             } else {
                 tool.premainV49(agentArgs, instArg);

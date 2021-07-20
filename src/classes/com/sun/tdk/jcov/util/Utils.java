@@ -116,11 +116,14 @@ public final class Utils {
         return CUSTOM_CLASS_FILE_EXTENSIONS.stream().anyMatch(ext->fileName.endsWith(ext));
     }
 
-    public final static int VER16  = 160;
-    public final static int VER17  = 160;
-    public final static int VER18  = 160;
-    public final static int VER90  = 900;
-    public final static int VER100 = 1000;
+    public final static int VER1_6  = 160;  // 1.6
+    public final static int VER1_7  = 160;  // 1.7
+    public final static int VER1_8  = 160;  // 1.8
+    public final static int VER9    = 900;  // 9
+    public final static int VER10   = 1000;  // 10
+    public final static int VER17   = 1700;  // 17
+    public final static int VER18   = 1800;  // 18
+
     private static int javaVersion = -1;
 
     /**
@@ -134,7 +137,7 @@ public final class Utils {
                     return (i <= 8) ? 100 + i*10 : i * 100;
                 }
             }
-            javaVersion = VER90;
+            javaVersion = VER9;
         }
         return javaVersion;
     }
