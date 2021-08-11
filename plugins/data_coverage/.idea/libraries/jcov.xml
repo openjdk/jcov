@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="jcov">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../JCOV_BUILD/jcov_3.0/jcov.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
