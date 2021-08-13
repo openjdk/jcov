@@ -22,47 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package openjdk.jcov.data.instrument;
-
 /**
- * Contains necessary type information for code generation, etc. Should be extended as needed with the actual code
- * generation logic.
+ * API package for classes used during the instrumentation time.
  */
-public class TypeDescriptor {
-    private final String id;
-    private final Class cls;
-    private final int loadOpcode;
-    private final boolean longOrDouble;
-    private final boolean isPrimitive;
-
-    public TypeDescriptor(String id, Class cls, int loadOpcode, boolean longOrDouble) {
-        this(id, cls, loadOpcode, longOrDouble, true);
-    }
-    public TypeDescriptor(String id, Class cls, int loadOpcode, boolean longOrDouble, boolean isPrimitive) {
-        this.id = id;
-        this.cls = cls;
-        this.loadOpcode = loadOpcode;
-        this.longOrDouble = longOrDouble;
-        this.isPrimitive = isPrimitive;
-    }
-
-    public String id() {
-        return id;
-    }
-
-    public String clsName() { return cls.getName().replace('.','/'); }
-
-    public Class cls() { return cls; }
-
-    public int loadOpcode() {
-        return loadOpcode;
-    }
-
-    public boolean isLongOrDouble() {
-        return longOrDouble;
-    }
-
-    public boolean isPrimitive() {
-        return isPrimitive;
-    }
-}
+package openjdk.jcov.data.arguments.instrument;

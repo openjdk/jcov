@@ -39,6 +39,10 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
+/**
+ * Data container for the values collected in runtime. Same class is used to store template as a file with no
+ * values and just method descriptions.
+ */
 public class Coverage {
 
     public static final String DATA_PREFIX = " -> ";
@@ -58,6 +62,10 @@ public class Coverage {
     public static Coverage read(Path path, Function<String, ? extends Object> deserializer) throws IOException {
         return readImpl(path, deserializer);
     }
+
+    /**
+     * Loads the data from a file in a custom plain text format.
+     */
     private static Coverage readImpl(Path path, Function<String, ? extends Object> deserializer) throws IOException {
         Coverage result = new Coverage();
         List<List<? extends Object>> lastData = null;
@@ -77,6 +85,10 @@ public class Coverage {
     }
 
     //TODO move to an SPI class
+
+    /**
+     * Saves the data into a file in a custom plain text format.
+     */
     public static final void write(Coverage coverage, Path path, Function<Object, String> serializer)
             throws IOException {
         try(BufferedWriter out = Files.newBufferedWriter(path)) {
@@ -110,6 +122,9 @@ public class Coverage {
         data = new HashMap<>();
     }
 
+    /**
+     * Obtains a structure for the data, adding an empty one, if necessary.
+     */
     public List<List<? extends Object>> get(String owner, String method) {
         Map<String, List<List<? extends Object>>> methods = data.get(owner);
         if(methods == null) {

@@ -33,6 +33,9 @@ import java.util.Arrays;
 
 import static openjdk.jcov.data.arguments.instrument.Plugin.TEMPLATE_FILE;
 
+/**
+ * Calls to this class' collect(...) methods are injected in the beginning of every instrumented method.
+ */
 public class Collect {
     static final Coverage data;
 
@@ -45,6 +48,7 @@ public class Collect {
     }
 
     public static synchronized void collect(String owner, String name, String desc, Object... params) {
+//        keep these lines, it is useful for debugging in hard cases
 //        System.out.printf("%s.%s%s: %s\n", owner, name, desc, (params == null) ? "null" :
 //                Arrays.stream(params).map(Object::getClass).map(Class::getName).collect(joining(",")));
         data.get(owner, name + desc).add(Arrays.asList(params));

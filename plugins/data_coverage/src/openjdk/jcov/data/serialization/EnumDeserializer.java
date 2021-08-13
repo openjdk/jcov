@@ -27,6 +27,9 @@ package openjdk.jcov.data.serialization;
 import java.util.Arrays;
 import java.util.function.Function;
 
+/**
+ * Restores enum object from its name.
+ */
 public class EnumDeserializer implements Function<String, Object> {
     private final Class<? extends Enum> enumClass;
 

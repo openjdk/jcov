@@ -38,7 +38,14 @@ import static openjdk.jcov.data.arguments.instrument.Plugin.ARGUMENTS_PREFIX;
 
 public class Saver implements JCovSaver {
 
+    /**
+     * Name of a property defining where to save the results.
+     */
     public static final String RESULT_FILE = JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX + "result";
+    /**
+     * Name of a property containing a class name of a class of type <code>Function<Object, String></code> which will
+     * be used during the serialization. <code>Object::toString</code> is used by default.
+     */
     public static final String SERIALIZER =
             Instrument.JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX + ".serializer";
 

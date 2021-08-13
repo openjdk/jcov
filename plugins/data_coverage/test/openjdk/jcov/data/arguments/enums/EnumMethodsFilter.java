@@ -22,47 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package openjdk.jcov.data.instrument;
+package openjdk.jcov.data.arguments.enums;
 
-/**
- * Contains necessary type information for code generation, etc. Should be extended as needed with the actual code
- * generation logic.
- */
-public class TypeDescriptor {
-    private final String id;
-    private final Class cls;
-    private final int loadOpcode;
-    private final boolean longOrDouble;
-    private final boolean isPrimitive;
+import openjdk.jcov.data.arguments.instrument.MethodFilter;
+import openjdk.jcov.data.arguments.instrument.Plugin;
 
-    public TypeDescriptor(String id, Class cls, int loadOpcode, boolean longOrDouble) {
-        this(id, cls, loadOpcode, longOrDouble, true);
-    }
-    public TypeDescriptor(String id, Class cls, int loadOpcode, boolean longOrDouble, boolean isPrimitive) {
-        this.id = id;
-        this.cls = cls;
-        this.loadOpcode = loadOpcode;
-        this.longOrDouble = longOrDouble;
-        this.isPrimitive = isPrimitive;
-    }
-
-    public String id() {
-        return id;
-    }
-
-    public String clsName() { return cls.getName().replace('.','/'); }
-
-    public Class cls() { return cls; }
-
-    public int loadOpcode() {
-        return loadOpcode;
-    }
-
-    public boolean isLongOrDouble() {
-        return longOrDouble;
-    }
-
-    public boolean isPrimitive() {
-        return isPrimitive;
+public class EnumMethodsFilter implements MethodFilter {
+    @Override
+    public boolean accept(int access, String owner, String method, String desc) throws ClassNotFoundException {
+        return Plugin.parseDesc(desc).stream().anyMatch(td -> {
+            try {
+                return Enum.class.isAssignableFrom(Class.forName(td.clsName().replace('/', '.')));
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }

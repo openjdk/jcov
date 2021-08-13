@@ -32,7 +32,11 @@ import java.util.Objects;
 
 import static java.util.stream.Collectors.toMap;
 
-public abstract class Env<T> {
+/**
+ * Much of the functionality in this plugin is controlled through system properties. This class defines some shortcuts
+ * which makes it a bit easier.
+ */ 
+public class Env{
 
     private static Map<String, String> properties = System.getProperties().entrySet().stream()
             .collect(toMap(Object::toString, Objects::toString));

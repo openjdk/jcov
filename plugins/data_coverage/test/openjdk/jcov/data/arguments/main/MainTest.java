@@ -22,13 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package openjdk.jcov.data.arguments.enums;
+package openjdk.jcov.data.arguments.main;
 
-import openjdk.jcov.data.Instrument;
-import openjdk.jcov.data.arguments.runtime.Coverage;
-import openjdk.jcov.data.arguments.instrument.Plugin;
-import openjdk.jcov.data.arguments.runtime.Saver;
 import openjdk.jcov.data.Env;
+import openjdk.jcov.data.Instrument;
+import openjdk.jcov.data.arguments.instrument.MethodFilter;
+import openjdk.jcov.data.arguments.instrument.Plugin;
+import openjdk.jcov.data.arguments.runtime.Coverage;
+import openjdk.jcov.data.arguments.runtime.Saver;
 import openjdk.jcov.data.lib.Util;
 import openjdk.jcov.data.serialization.EnumDeserializer;
 import openjdk.jcov.data.serialization.EnumSerializer;
@@ -40,21 +41,22 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static openjdk.jcov.data.Instrument.JCOV_TEMPLATE;
 import static openjdk.jcov.data.arguments.analysis.Reader.DESERIALIZER;
 import static openjdk.jcov.data.arguments.instrument.Plugin.*;
 import static openjdk.jcov.data.arguments.runtime.Saver.RESULT_FILE;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
 
-public class EnumTest {
+public class MainTest {
     private Path test_dir;
     private Path template;
     private Path coverage;
-    private EnumDeserializer deserializer = new EnumDeserializer(UserCode.ENum.class);
+    private MethodFilter mainFilter;
 
     @BeforeClass
     public void clean() throws IOException {
@@ -63,24 +65,29 @@ public class EnumTest {
         template = test_dir.resolve("template.lst");
         coverage = test_dir.resolve("coverage.lst");
         Files.deleteIfExists(template);
-        Files.deleteIfExists(coverage);
-    }
-    @Test
-    public void serialization() {
-        assertSame(UserCode.ENum.THREE,
-                new EnumDeserializer(UserCode.ENum.class).apply(new EnumSerializer().apply(UserCode.ENum.THREE)));
-    }
-    @Test
-    public void instrument() throws IOException, InterruptedException {
+        mainFilter = new MainFilter();
         Env.properties(Map.of(
                 TEMPLATE_FILE, template.toString(),
                 JCOV_TEMPLATE, test_dir.resolve("template.xml").toString(),
-                METHOD_FILTER, EnumMethodsFilter.class.getName()));
+                METHOD_FILTER, MainFilter.class.getName()));
+    }
+    private Coverage instrument(Class cls) throws IOException, InterruptedException {
         new Instrument().pluginClass(Plugin.class.getName())
                 .instrument(new Util(test_dir).
-                        copyBytecode(openjdk.jcov.data.arguments.enums.UserCode.class.getName()));
-        Coverage tmplt = Coverage.readTemplate(template);
-        assertEquals(tmplt.coverage().get(UserCode.class.getName().replace('.', '/')).size(), 2);
+                        copyBytecode(cls.getName()));
+        return Coverage.readTemplate(template);
+    }
+    @Test
+    public void instrumentStatic() throws IOException, InterruptedException {
+        Coverage tmplt = instrument(UserCodeStatic.class);
+        Map<String, List<List<?>>> userCode =  tmplt.coverage().get(UserCodeStatic.class.getName().replace('.', '/'));
+        assertEquals(userCode.size(), 1);
+        assertEquals(userCode.keySet().iterator().next(), "main([Ljava/lang/String;)V");
+    }
+    @Test
+    public void instrument() throws IOException, InterruptedException {
+        Coverage tmplt = instrument(UserCode.class);
+        assertEquals(tmplt.coverage().size(), 0);
     }
     @Test(dependsOnMethods = "instrument")
     public void run() throws
@@ -89,21 +96,16 @@ public class EnumTest {
         Env.properties(Map.of(
                 TEMPLATE_FILE, template.toString(),
                 RESULT_FILE, coverage.toString(),
-                SERIALIZER, EnumSerializer.class.getName(),
-                DESERIALIZER, EnumDeserializer.class.getName() + "(" + UserCode.ENum.class.getName()+ ")"));
-        new Util(test_dir).runClass(UserCode.class, new String[0], new Saver());
-        Coverage res = Coverage.read(coverage, deserializer);
+                SERIALIZER, StringArraySerializer.class.getName(),
+                DESERIALIZER, StringArrayDeserializer.class.getName()));
+        new Util(test_dir).runClass(UserCodeStatic.class, new String[] {"one", "two"}, new Saver());
+        Coverage res = Coverage.read(coverage, Objects::toString);
         List<List<?>> method =
-                res.get(UserCode.class.getName().replace('.', '/'),
-                        "method(Lopenjdk/jcov/data/arguments/enums/UserCode$ENum;)V");
+                res.get(UserCodeStatic.class.getName().replace('.', '/'),
+                        "main([Ljava/lang/String;)V");
         assertEquals(method.size(), 1);
-        assertEquals(method.get(0).size(), 1);
-        assertEquals(method.get(0).get(0), UserCode.ENum.ONE);
-        List<List<?>> staticMethod =
-                res.get(UserCode.class.getName().replace('.', '/'),
-                        "staticMethod(Lopenjdk/jcov/data/arguments/enums/UserCode$ENum;)V");
-        assertEquals(staticMethod.size(), 1);
-        assertEquals(staticMethod.get(0).size(), 1);
-        assertEquals(staticMethod.get(0).get(0), UserCode.ENum.TWO);
+        assertEquals(method.get(0).size(), 2);
+        assertEquals(method.get(0).get(0), "one");
+        assertEquals(method.get(0).get(1), "two");
     }
 }

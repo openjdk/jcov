@@ -24,6 +24,9 @@
  */
 package openjdk.jcov.data.arguments.instrument;
 
+/**
+ * When used defines which methods to instrument for argument collection.
+ */
 public interface MethodFilter {
-    boolean accept(int access, String owner, String method);
+    boolean accept(int access, String owner, String name, String desc) throws Exception;
 }

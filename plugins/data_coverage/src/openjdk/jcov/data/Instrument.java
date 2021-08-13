@@ -36,6 +36,12 @@ import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 
+/**
+ * Some API which makes it easier to run JCov instrumentation while setting specific options to use an instrumentation
+ * plugin. Could be used in tests or other java code.<br/>
+ * Also provides a main method so it is easier to run the instrumentation from the command line.<br/>
+ * Current implementaion runs JCov code in the same VM.
+ */
 public class Instrument {
     /**
      * Prefix for all system property names which will be passed to the VM running JCov calls.

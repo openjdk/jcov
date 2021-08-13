@@ -22,47 +22,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package openjdk.jcov.data.instrument;
+package openjdk.jcov.data.arguments.main;
 
-/**
- * Contains necessary type information for code generation, etc. Should be extended as needed with the actual code
- * generation logic.
- */
-public class TypeDescriptor {
-    private final String id;
-    private final Class cls;
-    private final int loadOpcode;
-    private final boolean longOrDouble;
-    private final boolean isPrimitive;
+import java.util.Arrays;
+import java.util.function.Function;
 
-    public TypeDescriptor(String id, Class cls, int loadOpcode, boolean longOrDouble) {
-        this(id, cls, loadOpcode, longOrDouble, true);
-    }
-    public TypeDescriptor(String id, Class cls, int loadOpcode, boolean longOrDouble, boolean isPrimitive) {
-        this.id = id;
-        this.cls = cls;
-        this.loadOpcode = loadOpcode;
-        this.longOrDouble = longOrDouble;
-        this.isPrimitive = isPrimitive;
-    }
+import static java.util.stream.Collectors.joining;
 
-    public String id() {
-        return id;
-    }
-
-    public String clsName() { return cls.getName().replace('.','/'); }
-
-    public Class cls() { return cls; }
-
-    public int loadOpcode() {
-        return loadOpcode;
-    }
-
-    public boolean isLongOrDouble() {
-        return longOrDouble;
-    }
-
-    public boolean isPrimitive() {
-        return isPrimitive;
+//TODO move this to the source after figuring out TypeDescriptor for arrays
+public class StringArraySerializer implements Function<Object, String> {
+    @Override
+    public String apply(Object o) {
+        if(o.getClass().isArray() && o.getClass().getComponentType().equals(String.class)) {
+            return Arrays.stream((String[])o).collect(joining(","));
+        } else return null;
     }
 }

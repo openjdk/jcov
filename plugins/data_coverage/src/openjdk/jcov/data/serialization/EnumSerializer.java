@@ -26,6 +26,9 @@ package openjdk.jcov.data.serialization;
 
 import java.util.function.Function;
 
+/**
+ * Serializes an enum into its name.
+ */
 public class EnumSerializer implements Function<Object, String> {
     @Override
     public String apply(Object anEnum) {

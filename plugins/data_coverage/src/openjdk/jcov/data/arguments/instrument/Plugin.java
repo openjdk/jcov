@@ -43,21 +43,51 @@ import java.util.function.Function;
 import static openjdk.jcov.data.Instrument.JCOV_DATA_ENV_PREFIX;
 import static org.objectweb.asm.Opcodes.*;
 
+/**
+ * An instrumention plugin responsible for adding necessary bytecode instructions to collect and pass argument values to
+ * a specified collector.
+ */
 public class Plugin implements InstrumentationPlugin {
+    /**
+     * Classname of a collector class which will be called from every instrumented method.
+     */
     public static final String COLLECTOR_CLASS = "openjdk.jcov.data.arguments.runtime.Collect"
             .replace('.', '/');
+    /**
+     * Name of the methods which will be called from every instrumented method.
+     */
     public static final String COLLECTOR_METHOD = "collect";
+    /**
+     * Signature of the method which will be called from every instrumented method.
+     */
     public static final String COLLECTOR_DESC =
             "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)V";
+    /**
+     * Property name prefix for all properties used by this plugin. The property names are started with
+     * <code>Instrument.JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX</code>
+     */
     public static final String ARGUMENTS_PREFIX = "args.";
+    /**
+     * Name of a property which specifies classname for a class which will be used to "serialize" the collected
+     * values.
+     */
     public static final String SERIALIZER =
         Instrument.JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX + ".serializer";
+    /**
+     * Name of a property which contains path of the template file.
+     */
     public static final String TEMPLATE_FILE =
             JCOV_DATA_ENV_PREFIX + "arguments.template";
+    /**
+     * Name of a property which contains class name for the method filter.
+     */
     public static final String METHOD_FILTER =
         JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX + "method.filter";
 
-    private static class TypeDescriptor extends openjdk.jcov.data.instrument.TypeDescriptor {
+    /**
+     * Aux class responsible for code generation for different types.
+     */
+    public static class TypeDescriptor extends openjdk.jcov.data.instrument.TypeDescriptor {
 
         public TypeDescriptor(String id, Class cls, int loadOpcode, boolean longOrDouble) {
             super(id, cls, loadOpcode, longOrDouble);
@@ -73,8 +103,8 @@ public class Plugin implements InstrumentationPlugin {
             visitor.visitIntInsn(BIPUSH, paramIndex);
             visitor.visitIntInsn(loadOpcode(), stackIndex);
             if(isPrimitive())
-                visitor.visitMethodInsn(INVOKESTATIC, cls(), "valueOf",
-                        "(" + id() + ")L" + cls() + ";", false);
+                visitor.visitMethodInsn(INVOKESTATIC, clsName(), "valueOf",
+                        "(" + id() + ")L" + clsName() + ";", false);
             visitor.visitInsn(AASTORE);
             return stackIndex + (isLongOrDouble() ? 2 : 1);
         }
@@ -103,51 +133,67 @@ public class Plugin implements InstrumentationPlugin {
             ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException,
             IllegalAccessException {
         template = new Coverage();
-        methodFilter = (a, o, m) -> true;
+        methodFilter = Env.getSPIEnv(METHOD_FILTER, (a, o, m, d) -> true);
         templateFile = Env.getPathEnv(TEMPLATE_FILE, Paths.get("template.lst"));
         serializer = Env.getSPIEnv(SERIALIZER, Object::toString);
     }
 
+    /**
+     * Injects necessary instructions to place all the arguments into an array which is then passed tp the collector's
+     * method.
+     */
     @Override
     public MethodVisitor methodVisitor(int access, String owner, String name, String desc, MethodVisitor visitor) {
         String method = name + desc;
-        if(methodFilter.accept(access, owner, method)) {
-            template.get(owner, method);
-            return new MethodVisitor(ASM6, visitor) {
-                @Override
-                public void visitCode() {
-                    try {
-                        List<TypeDescriptor> params = parseDesc(desc);
-                        if (params.size() > 0) {
-                            super.visitLdcInsn(owner);
-                            super.visitLdcInsn(name);
-                            super.visitLdcInsn(desc);
-                            super.visitIntInsn(BIPUSH, params.size());
-                            super.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-                            int stackIndex = ((access & ACC_STATIC) > 0) ? 0 : 1;
-                            for (int i = 0; i < params.size(); i++) {
-                                stackIndex = params.get(i).visit(i, stackIndex, this);
+        try {
+            if(methodFilter.accept(access, owner, name, desc)) {
+                template.get(owner, method);
+                return new MethodVisitor(ASM6, visitor) {
+                    @Override
+                    public void visitCode() {
+                        try {
+                            List<TypeDescriptor> params = parseDesc(desc);
+                            if (params.size() > 0) {
+                                super.visitLdcInsn(owner);
+                                super.visitLdcInsn(name);
+                                super.visitLdcInsn(desc);
+                                super.visitIntInsn(BIPUSH, params.size());
+                                super.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+                                int stackIndex = ((access & ACC_STATIC) > 0) ? 0 : 1;
+                                for (int i = 0; i < params.size(); i++) {
+                                    stackIndex = params.get(i).visit(i, stackIndex, this);
+                                }
+                                visitor.visitMethodInsn(INVOKESTATIC, COLLECTOR_CLASS, COLLECTOR_METHOD,
+                                        COLLECTOR_DESC, false);
                             }
-                            visitor.visitMethodInsn(INVOKESTATIC, COLLECTOR_CLASS, COLLECTOR_METHOD,
-                                    COLLECTOR_DESC, false);
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                        super.visitCode();
                     }
-                    super.visitCode();
-                }
-            };
-        } else return visitor;
+                };
+            } else return visitor;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private static List<TypeDescriptor> parseDesc(String desc) {
+    public static List<TypeDescriptor> parseDesc(String desc) throws ClassNotFoundException {
         if(!desc.startsWith("(")) throw new IllegalArgumentException("Not a method descriptor: " + desc);
         int pos = 1;
         List<TypeDescriptor> res = new ArrayList<>();
         while(desc.charAt(pos) != ')') {
             String next = desc.substring(pos, pos + 1);
-            if(next.equals("L") || next.equals("[")) {
-                res.add(objectType);
+            if(next.equals("L")) {
+                int l = pos;
+                pos = desc.indexOf(";", pos) + 1;
+                res.add(new TypeDescriptor("L", Class.forName(desc.substring(l + 1, pos - 1)
+                        .replace('/', '.')),
+                        ALOAD, false, false));
+            } else if(next.equals("[")) {
+                //TODO can we do better?
+                res.add(new TypeDescriptor("L", new Object[0].getClass(),
+                        ALOAD, false, false));
                 pos = desc.indexOf(";", pos) + 1;
             } else {
                 res.add(primitiveTypes.get(next));
