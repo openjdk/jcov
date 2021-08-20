@@ -27,7 +27,6 @@ package com.sun.tdk.jcov.instrument;
 import org.objectweb.asm.MethodVisitor;
 
 import java.nio.file.Path;
-import java.util.Set;
 
 /**
  * SPI class which allows to do additional instrumentation, in addition to instrumentation performed by JCov by default.
