@@ -137,7 +137,9 @@ public class JREInstr extends JCovCMDTool {
                             updateHashes(mInfo, cl);
                         }
                         instr.instrumentFile(modClasses.getAbsolutePath(), null, null, mod.getName());
-                        createJMod(mod, jdk, implant.getAbsolutePath());
+                        createJMod(mod, jdk, implant.getAbsolutePath(),
+                                (instr.getPlugin() != null && instr.getPlugin().runtime() != null) ?
+                                    instr.getPlugin().runtime().toString() : null);
                     }
                 }
 
@@ -278,6 +280,14 @@ public class JREInstr extends JCovCMDTool {
                             ModuleVisitor mv = super.visitModule(name, access, version);
                             mv.visitPackage("com/sun/tdk/jcov/runtime");
                             mv.visitExport("com/sun/tdk/jcov/runtime", 0);
+                            if(instr.getPlugin() != null) {
+                                String pluginRuntimePackage = instr.getPlugin().collectorPackage();
+                                if(pluginRuntimePackage != null) {
+                                    pluginRuntimePackage = pluginRuntimePackage.replace('.', '/');
+                                    mv.visitPackage(pluginRuntimePackage);
+                                    mv.visitExport(pluginRuntimePackage, 0);
+                                }
+                            }
                             return mv;
                         }
                     });
@@ -392,7 +402,7 @@ public class JREInstr extends JCovCMDTool {
         return new File(jmodDir.getParentFile(), "instr_jimage_dir");
     }
 
-        private void createJMod(File jmodDir, File jdk, String rt_path) {
+    private void createJMod(File jmodDir, File jdk, String rt_path, String pluginPath) {
         try {
             File modsDir = jmodDir.getParentFile();
             StringBuilder command = new StringBuilder();
@@ -403,7 +413,11 @@ public class JREInstr extends JCovCMDTool {
             for (File subDir : getListFiles(jmodDir)) {
                 if (subDir.getName().equals("classes")) {
                     if ("java.base".equals(jmodDir.getName())) {
-                        command.append("--class-path " + rt_path + File.pathSeparator + jmodDir.getName() + File.separator + "classes ");
+                        command.append("--class-path " + rt_path);
+                        if(pluginPath != null) {
+                            command.append(File.pathSeparator + pluginPath);
+                        }
+                        command.append(File.pathSeparator + jmodDir.getName() + File.separator + "classes ");
                     } else {
                         command.append("--class-path " + jmodDir.getName() + File.separator + "classes ");
                     }

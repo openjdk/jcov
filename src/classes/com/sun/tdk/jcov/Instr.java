@@ -475,6 +475,10 @@ public class Instr extends JCovCMDTool {
         this.plugin = plugin;
     }
 
+    public InstrumentationPlugin getPlugin() {
+        return plugin;
+    }
+
     public String[] getSave_beg() {
         return save_beg;
     }

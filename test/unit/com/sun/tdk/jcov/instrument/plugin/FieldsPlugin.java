@@ -28,6 +28,7 @@ import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.runtime.JCovSaver;
 import org.objectweb.asm.MethodVisitor;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -91,6 +92,16 @@ public class FieldsPlugin implements InstrumentationPlugin, JCovSaver {
     public void instrumentationComplete() throws Exception {
         completeCount.incrementAndGet();
         System.out.println(INSTRUMENTATION_COMPLETE + completeCount);
+    }
+
+    @Override
+    public Path runtime() {
+        return null;
+    }
+
+    @Override
+    public String collectorPackage() {
+        return null;
     }
 
     @Override
