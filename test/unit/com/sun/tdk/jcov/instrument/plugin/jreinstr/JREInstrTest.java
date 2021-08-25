@@ -73,14 +73,13 @@ public class JREInstrTest {
         //TODO make this to work, as it would be a whole lot faster
         //a JDK created by jimage can not be used, it fails with
         //Command line error: bootmodules.jimage was not found in modules directory
+        //see CODETOOLS-7903016
 //        Path dest = Files.createTempDirectory("test_data");
 //        Path res = dest.resolve("jdk");
 //        List<String> command = List.of(
 //                src.toString() + File.separator + "bin" + File.separator + "jlink",
-//                "--add-modules",
-//                "java.base,java.compiler",
-//                "--output",
-//                res.toString()
+//                "--add-modules", "java.base,java.compiler",
+//                "--output", res.toString()
 //        );
 //        System.out.println(command.stream().collect(Collectors.joining(" ")));
 //        assertEquals(new ProcessBuilder(command)
@@ -150,9 +149,13 @@ public class JREInstrTest {
         String[] params = new String[] {
                 "-implantrt", runtime,
                 "-instr_plugin", TestPlugin.class.getName(),
+                "-im", "java.base",
                 jre.toString()};
         System.out.println("Running JREInstr with " + Arrays.stream(params).collect(Collectors.joining(" ")));
+        long start = System.currentTimeMillis();
         assertEquals(new JREInstr().run(params), 0);
+        //track instrumentation time for the TODO in copyJRE
+        System.out.println("Took " + (System.currentTimeMillis() - start) + " to instrument.");
         assertEquals(TestPlugin.savedTimes.intValue(), 1);
         assertTrue(TestPlugin.calledTimes.get() > 0);
     }

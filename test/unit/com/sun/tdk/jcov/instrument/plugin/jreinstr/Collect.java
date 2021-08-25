@@ -27,10 +27,6 @@ package com.sun.tdk.jcov.instrument.plugin.jreinstr;
 import java.lang.module.ModuleDescriptor;
 
 public class Collect {
-    public static void collect(Object param) {
-
-    }
-
     //this is called from the test to test that the necessary changes has been done by the instarumentation
     public static void main(String[] args) {
         Object.class.getModule().getDescriptor().exports().stream().filter(e -> !e.isQualified())
