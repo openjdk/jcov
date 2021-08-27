@@ -38,6 +38,7 @@ import java.net.URLClassLoader;
 import java.net.UnknownHostException;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Formatter;
@@ -1189,8 +1190,17 @@ public final class Utils {
                     }
                     break;
                 case FILE_CANWRITE:
-                    if (!file.canWrite()) {
+                    if ( file.isFile() ) {
+                        // file exists
+                        if( !file.canWrite() ) {
                         throw new EnvHandlingException("Incorrect " + description + " (" + file.getPath() + ") - can't write");
+                        }
+                    } else {
+                        // a new file
+                        File parentDir = file.getAbsoluteFile().getParentFile();
+                        if ( parentDir == null || !parentDir.isDirectory() || ! Files.isWritable(parentDir.toPath()) ) {
+                            throw new EnvHandlingException("Incorrect " + description + " (" + file.getPath() + ") - can't write");
+                        }
                     }
                     break;
                 case FILE_ISFILE:
@@ -1214,8 +1224,8 @@ public final class Utils {
                     }
                     break;
                 case FILE_PARENTEXISTS:
-                    File p = file.getParentFile();
-                    if (p != null && !p.exists()) {
+                    File parent = file.getAbsoluteFile().getParentFile();
+                    if (parent != null && !parent.exists()) {
                         throw new EnvHandlingException("Incorrect " + description + " (" + file.getPath() + ") - parent directory doesn't exist");
                     }
                     break;
