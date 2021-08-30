@@ -961,7 +961,8 @@ public class Merger extends JCovCMDTool {
                     end = Integer.parseInt(rest.substring(second_ind + 1, rest.length()));
                 }
             }
-            Utils.checkFileNotNull(file, "filelist filename", Utils.CheckOptions.FILE_EXISTS, Utils.CheckOptions.FILE_CANREAD, Utils.CheckOptions.FILE_ISFILE);
+            Utils.checkFileNotNull(file, "filelist filename",
+                    Utils.CheckOptions.FILE_EXISTS, Utils.CheckOptions.FILE_CANREAD, Utils.CheckOptions.FILE_ISFILE);
             try {
                 srcs = Utils.readLines(file, start, end);
             } catch (IOException ex) {
@@ -992,7 +993,8 @@ public class Merger extends JCovCMDTool {
         outTestList = null;
         if (opts.isSet(DSC_OUTPUT_TEST_LIST)) {
             outTestList = opts.getValue(DSC_OUTPUT_TEST_LIST);
-            Utils.checkFileNotNull(outTestList, "output testlist filename", Utils.CheckOptions.FILE_CANWRITE, Utils.CheckOptions.FILE_NOTISDIR, Utils.CheckOptions.FILE_PARENTEXISTS);
+            Utils.checkFileNotNull(outTestList, "output testlist filename",
+                    Utils.CheckOptions.FILE_CANWRITE, Utils.CheckOptions.FILE_NOTISDIR, Utils.CheckOptions.FILE_PARENTEXISTS);
             read_scales = true;
         }
         skippedPath = opts.getValue(DSC_SKIPPED);
@@ -1011,12 +1013,14 @@ public class Merger extends JCovCMDTool {
         }
 
         template = opts.getValue(DSC_TEMPLATE);
-        Utils.checkFileCanBeNull(template, "template filename", Utils.CheckOptions.FILE_EXISTS, Utils.CheckOptions.FILE_ISFILE, Utils.CheckOptions.FILE_CANREAD);
+        Utils.checkFileCanBeNull(template, "template filename",
+                Utils.CheckOptions.FILE_EXISTS, Utils.CheckOptions.FILE_ISFILE, Utils.CheckOptions.FILE_CANREAD);
 
         addMissing = template == null;
 
         output = opts.getValue(DSC_OUTPUT);
-        Utils.checkFileNotNull(output, "output filename", Utils.CheckOptions.FILE_NOTISDIR, Utils.CheckOptions.FILE_CANWRITE, Utils.CheckOptions.FILE_PARENTEXISTS);
+        Utils.checkFileNotNull(output, "output filename",
+                Utils.CheckOptions.FILE_NOTISDIR, Utils.CheckOptions.FILE_PARENTEXISTS, Utils.CheckOptions.FILE_CANWRITE);
 
         compress = opts.isSet(DSC_COMPRESS);
         if (opts.isSet(DSC_VERBOSE)) {
