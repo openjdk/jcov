@@ -25,14 +25,13 @@
 package openjdk.jcov.data.arguments.enums;
 
 import openjdk.jcov.data.arguments.instrument.MethodFilter;
-import openjdk.jcov.data.arguments.instrument.Plugin;
 
 public class EnumMethodsFilter implements MethodFilter {
     @Override
     public boolean accept(int access, String owner, String method, String desc) throws ClassNotFoundException {
-        return Plugin.parseDesc(desc).stream().anyMatch(td -> {
+        return MethodFilter.parseDesc(desc).stream().anyMatch(td -> {
             try {
-                return Enum.class.isAssignableFrom(Class.forName(td.clsName().replace('/', '.')));
+                return Enum.class.isAssignableFrom(Class.forName(td.cls().replace('/', '.')));
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }

@@ -30,15 +30,27 @@ package openjdk.jcov.data.instrument;
  */
 public class TypeDescriptor {
     private final String id;
-    private final Class cls;
+    private final String cls;
     private final int loadOpcode;
     private final boolean longOrDouble;
     private final boolean isPrimitive;
 
-    public TypeDescriptor(String id, Class cls, int loadOpcode, boolean longOrDouble) {
-        this(id, cls, loadOpcode, longOrDouble, true);
+    public static String toVMClassName(Class cls) {
+        return toVMClassName(cls.getName());
+    }
+    public static String toVMClassName(String className) {
+        return className.replace('.','/');
+    }
+    public TypeDescriptor(String id, Class cls, int loadOpcode) {
+        this(id, toVMClassName(cls), loadOpcode);
+    }
+    public TypeDescriptor(String id, String cls, int loadOpcode) {
+        this(id, cls, loadOpcode, false, false);
     }
     public TypeDescriptor(String id, Class cls, int loadOpcode, boolean longOrDouble, boolean isPrimitive) {
+        this(id, toVMClassName(cls), loadOpcode, longOrDouble, isPrimitive);
+    }
+    public TypeDescriptor(String id, String cls, int loadOpcode, boolean longOrDouble, boolean isPrimitive) {
         this.id = id;
         this.cls = cls;
         this.loadOpcode = loadOpcode;
@@ -50,9 +62,7 @@ public class TypeDescriptor {
         return id;
     }
 
-    public String clsName() { return cls.getName().replace('.','/'); }
-
-    public Class cls() { return cls; }
+    public String cls() { return cls; }
 
     public int loadOpcode() {
         return loadOpcode;

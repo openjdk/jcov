@@ -27,10 +27,10 @@ package openjdk.jcov.data.arguments.enums;
 public class UserCode {
     public enum ENum {ONE, TWO, THREE};
     public void method(ENum e) {
-
+        System.out.println(e);
     }
     public static void staticMethod(ENum e) {
-
+        System.out.println(e);
     }
 
     public static void main(String[] args) {

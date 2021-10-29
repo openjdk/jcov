@@ -26,7 +26,7 @@ package openjdk.jcov.data.arguments.analysis;
 
 import openjdk.jcov.data.Instrument;
 
-import static openjdk.jcov.data.arguments.instrument.Plugin.ARGUMENTS_PREFIX;
+import static openjdk.jcov.data.arguments.runtime.Collect.ARGUMENTS_PREFIX;
 
 public class Reader {
     public static final String DESERIALIZER =

@@ -25,12 +25,16 @@
 package openjdk.jcov.data.arguments.test;
 
 import openjdk.jcov.data.Instrument;
+import openjdk.jcov.data.arguments.runtime.Collect;
 import openjdk.jcov.data.arguments.runtime.Coverage;
 import openjdk.jcov.data.arguments.instrument.Plugin;
 import openjdk.jcov.data.arguments.runtime.Saver;
 import openjdk.jcov.data.Env;
+import openjdk.jcov.data.lib.TestStatusListener;
 import openjdk.jcov.data.lib.Util;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -41,41 +45,56 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.stream.Collectors.joining;
+import static openjdk.jcov.data.Instrument.JCOV_DATA_ENV_PREFIX;
 import static openjdk.jcov.data.Instrument.JCOV_TEMPLATE;
-import static openjdk.jcov.data.arguments.instrument.Plugin.*;
 import static openjdk.jcov.data.arguments.runtime.Saver.RESULT_FILE;
+import static openjdk.jcov.data.arguments.runtime.Saver.SERIALIZER;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
+@Listeners({openjdk.jcov.data.lib.TestStatusListener.class})
 public class ArgumentsTest {
     Path test_dir;
     Path template;
     Path result;
     @BeforeClass
     public void clean() throws IOException {
-        Files.deleteIfExists(Paths.get("template.lst"));
-        Files.deleteIfExists(Paths.get("coverage.lst"));
         Path data_dir = Paths.get(System.getProperty("user.dir"));
-        test_dir = data_dir.resolve("parameter_test");
+        test_dir = data_dir.resolve("arguments_test");
+        Util.rfrm(test_dir);
         template = test_dir.resolve("template.lst");
         result = test_dir.resolve("coverage.lst");
     }
     @Test
     public void instrument() throws IOException, InterruptedException {
+        Env.clear(JCOV_DATA_ENV_PREFIX);
         Env.properties(Map.of(
-                TEMPLATE_FILE, template.toString(),
+                Collect.TEMPLATE_FILE, template.toString(),
                 JCOV_TEMPLATE, test_dir.resolve("template.xml").toString()));
         new Instrument().pluginClass(Plugin.class.getName()).
                 instrument(new Util(test_dir).copyBytecode(UserCode.class.getName()));
         Coverage tmpl = Coverage.readTemplate(template);
+        System.out.println("Data:");
+        tmpl.coverage().entrySet().forEach(e -> {
+            System.out.println(e.getKey() + "->");
+            e.getValue().entrySet().forEach(ee -> {
+                System.out.println("  " + ee.getKey());
+                ee.getValue().forEach(l -> {
+                    System.out.println(l.stream().map(Object::toString).collect(joining(",")));
+                });
+            });
+        });
         assertNotNull(tmpl.coverage().get(UserCode.class.getName().replace('.', '/')).
                 get("method(IJFDZBLjava/lang/String;)V"));
     }
+
     @Test(dependsOnMethods = "instrument")
     public void run() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
             IllegalAccessException, IOException, InstantiationException {
+        Env.clear(JCOV_DATA_ENV_PREFIX);
         Env.properties(Map.of(
-                TEMPLATE_FILE, template.toString(),
+                Collect.TEMPLATE_FILE, template.toString(),
                 RESULT_FILE, result.toString()));
         new Util(test_dir).runClass(UserCode.class, new String[0], new Saver());
         Coverage coverage = Coverage.read(result, a -> a);
@@ -84,5 +103,11 @@ public class ArgumentsTest {
         assertEquals(calls.size(), 2);
         assertEquals(calls.get(0).get(6), "6");
         assertEquals(calls.get(1).get(0), "7");
+    }
+
+    @AfterClass
+    public void tearDown() throws IOException {
+        if(TestStatusListener.status)
+            Util.rfrm(test_dir);
     }
 }

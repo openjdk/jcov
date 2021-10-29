@@ -28,9 +28,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Objects;
-
-import static java.util.stream.Collectors.toMap;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Much of the functionality in this plugin is controlled through system properties. This class defines some shortcuts
@@ -38,30 +37,26 @@ import static java.util.stream.Collectors.toMap;
  */
 public class Env {
 
-    private static Map<String, String> properties = System.getProperties().entrySet().stream()
-            .collect(toMap(Object::toString, Objects::toString));
-
-    public static Map<String, String> properties() {
-        return properties;
-    }
-
     public static void properties(Map<String, String> properties) {
-        Env.properties = properties;
+        properties.forEach((k, v) -> System.setProperty(k, v));
+    }
+    public static void clear(String prefix) {
+        Set<String> keys = System.getProperties().stringPropertyNames();
+        keys.stream().filter(k -> k.toString().startsWith(prefix))
+                .forEach(k -> System.clearProperty(k));
     }
 
     public static String getStringEnv(String property, String defaultValue) {
-        String propValue = properties.get(property);
-        if(propValue != null) return defaultValue;
-        else return defaultValue;
+        return System.getProperty(property, defaultValue);
     }
     public static Path getPathEnv(String property, Path defaultValue) {
-        String propValue = properties.get(property);
+        String propValue = System.getProperty(property);
         if(propValue != null) return Path.of(propValue);
         else return defaultValue;
     }
     public static <SPI> SPI getSPIEnv(String property, SPI defaultValue) throws ClassNotFoundException,
             NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        String propValue = properties.get(property);
+        String propValue = System.getProperty(property);
         if(propValue != null) {
             if (!propValue.contains("("))
                 return (SPI) Class.forName(propValue).getConstructor().newInstance();

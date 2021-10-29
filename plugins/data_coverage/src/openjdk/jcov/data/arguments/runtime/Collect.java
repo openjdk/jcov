@@ -31,12 +31,25 @@ import java.io.UncheckedIOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
-import static openjdk.jcov.data.arguments.instrument.Plugin.TEMPLATE_FILE;
-
 /**
  * Calls to this class' collect(...) methods are injected in the beginning of every instrumented method.
  */
 public class Collect {
+    /**
+     * This repeats openjdk.jcov.data.Instrument.JCOV_DATA_ENV_PREFIX to remove the dependency.
+     */
+    public static final String JCOV_DATA_ENV_PREFIX = "jcov.data.";
+    /**
+     * Property name prefix for all properties used by this plugin. The property names are started with
+     * <code>Instrument.JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX</code>
+     */
+    public static final String ARGUMENTS_PREFIX = "args.";
+    /**
+     * Name of a property which contains path of the template file.
+     */
+    public static final String TEMPLATE_FILE = JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX +
+            "template";
+
     static final Coverage data;
 
     static{
@@ -52,5 +65,9 @@ public class Collect {
 //        System.out.printf("%s.%s%s: %s\n", owner, name, desc, (params == null) ? "null" :
 //                Arrays.stream(params).map(Object::getClass).map(Class::getName).collect(joining(",")));
         data.get(owner, name + desc).add(Arrays.asList(params));
+    }
+
+    public static void clearData() {
+        data.coverage().clear();
     }
 }

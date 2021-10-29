@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2018, 2021 Oracle and/or its affiliates. All rights reserved.
   DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
   This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,10 @@
     <delete dir="${build}"/>
   </target>
 
-  <target name="compile-test">
+  <target name="compile-test" depends="compile">
     <fail unless="testng.classpath" message="Please specify testng.classpath"/>
     <mkdir dir="${test.classes}"/>
-    <javac srcdir="${test}" classpath="${classes}:${jcov.jar}:${testng.classpath}" destdir="${test.classes}"/>
+    <javac srcdir="${test}" classpath="${classes}:${jcov.jar}:${testng.classpath}" destdir="${test.classes}" debug="true"/>
   </target>
 
   <target name="fast-test">
@@ -78,7 +78,6 @@
       <propertyref name="jcov.file.saver.jar"/>
     </propertyset>
     <testng classpath="${classes}:${jcov.jar}:${test.classes}:${testng.classpath}" outputDir="${test.results}" verbose="3">
-      <jvmarg value="-da"/>
       <propertyset refid="test.bytecode"/>
       <classfileset dir="${test.classes}" includes="${test.includes}" excludes="${test.excludes}"/>
     </testng>

@@ -666,7 +666,7 @@ public class Instr extends JCovCMDTool {
         try {
             String pluginClass = opts.getValue(DSC_INSTR_PLUGIN);
             if(pluginClass != null && !pluginClass.isEmpty())
-                plugin = (InstrumentationPlugin) Class.forName(opts.getValue(DSC_INSTR_PLUGIN))
+                plugin = (InstrumentationPlugin) Class.forName(pluginClass)
                         .getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
                 NoSuchMethodException | InvocationTargetException e) {

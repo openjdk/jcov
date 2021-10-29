@@ -4,6 +4,7 @@ import openjdk.jcov.data.Env;
 import openjdk.jcov.data.JREInstr;
 import openjdk.jcov.data.arguments.runtime.Coverage;
 import openjdk.jcov.data.arguments.runtime.Saver;
+import openjdk.jcov.data.lib.TestStatusListener;
 import openjdk.jcov.data.lib.Util;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static openjdk.jcov.data.Instrument.JCOV_DATA_ENV_PREFIX;
 import static openjdk.jcov.data.Instrument.JCOV_TEMPLATE;
 import static openjdk.jcov.data.arguments.instrument.Plugin.METHOD_FILTER;
 import static openjdk.jcov.data.arguments.runtime.Collect.TEMPLATE_FILE;
@@ -31,7 +33,7 @@ import static openjdk.jcov.data.lib.Util.copyJRE;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-@Listeners({Test.StatusListener.class})
+@Listeners({TestStatusListener.class})
 public class Test {
     private Path data_dir;
     private Path template;
@@ -40,7 +42,6 @@ public class Test {
     private Path jcov_result;
     private Path jre;
     private Path main;
-    private static boolean status = true;
 
     @BeforeClass
     public void setup() throws IOException {
@@ -54,6 +55,7 @@ public class Test {
     }
     @org.testng.annotations.Test
     public void instrument() throws IOException, InterruptedException {
+        Env.clear(JCOV_DATA_ENV_PREFIX);
         Env.properties(Map.of(
                 TEMPLATE_FILE, template.toString(),
                 METHOD_FILTER, PermissionMethodFilter.class.getName(),
@@ -121,37 +123,11 @@ public class Test {
     @AfterClass
     public void tearDown() throws IOException {
         List<Path> artifacts = List.of(template, jcov_template, result, jcov_result, jre, main);
-        if(status)
+        if(TestStatusListener.status)
             for(Path file : artifacts) Util.rfrm(file);
         else {
             System.out.println("Test failed, keeping the artifacts:");
             artifacts.forEach(System.out::println);
         }
-    }
-
-    public static class StatusListener implements ITestListener {
-
-        @Override
-        public void onTestStart(ITestResult result) { }
-
-        @Override
-        public void onTestSuccess(ITestResult result) { }
-
-        @Override
-        public void onTestFailure(ITestResult result) {
-            status = false;
-        }
-
-        @Override
-        public void onTestSkipped(ITestResult result) { }
-
-        @Override
-        public void onTestFailedButWithinSuccessPercentage(ITestResult result) { }
-
-        @Override
-        public void onStart(ITestContext context) { }
-
-        @Override
-        public void onFinish(ITestContext context) { }
     }
 }

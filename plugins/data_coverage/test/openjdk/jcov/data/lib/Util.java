@@ -25,17 +25,26 @@
 package openjdk.jcov.data.lib;
 
 import com.sun.tdk.jcov.runtime.JCovSaver;
+import openjdk.jcov.data.arguments.runtime.Collect;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 public class Util {
     private final Path outputDir;
@@ -63,6 +72,36 @@ public class Util {
         return result;
     }
 
+    public static Path copyJRE(Path src) throws IOException {
+        Path dest = Files.createTempDirectory("JDK");
+        System.out.println("Copying a JDK from " + src + " to " + dest);
+        Files.walk(src).forEach(s -> {
+            try {
+                Files.copy(s, dest.resolve(src.relativize(s)), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+        return dest;
+    }
+
+    public static Path createRtJar(String prefix, Class collect) throws IOException {
+        Path dest = Files.createTempFile(prefix, ".jar");
+        System.out.println(prefix + " jar: " + dest);
+        try(JarOutputStream jar = new JarOutputStream(Files.newOutputStream(dest))) {
+            jar.putNextEntry(new JarEntry(collect.getName().replace(".", File.separator) + ".class"));
+            try (InputStream ci = collect.getClassLoader()
+                    .getResourceAsStream(collect.getName().replace('.', '/') + ".class")) {
+                byte[] buffer = new byte[1024];
+                int read;
+                while((read = ci.read(buffer)) > 0) {
+                    jar.write(buffer, 0, read);
+                }
+            }
+        }
+        return dest;
+    }
+
     public static String classFile(String className) {
         return className.replace('.', '/') + ".class";
     }
@@ -73,6 +112,7 @@ public class Util {
     public Class runClass(String className, String[] argv, JCovSaver saver)
             throws ClassNotFoundException, NoSuchMethodException,
             InvocationTargetException, IllegalAccessException {
+        Collect.clearData();
         ClassLoader offOutputDir = new InstrumentedClassLoader();
         Class cls = offOutputDir.loadClass(className);
         Method m = cls.getMethod("main", new String[0].getClass());
@@ -105,5 +145,31 @@ public class Util {
             }
             return super.loadClass(name);
         }
+    }
+    public static void rfrm(Path jre) throws IOException {
+        System.out.println("Removing " + jre);
+        if(Files.isRegularFile(jre))
+            Files.deleteIfExists(jre);
+        else
+            Files.walkFileTree(jre, new FileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
     }
 }

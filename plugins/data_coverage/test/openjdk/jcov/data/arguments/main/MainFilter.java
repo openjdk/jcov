@@ -27,19 +27,18 @@ package openjdk.jcov.data.arguments.main;
 import openjdk.jcov.data.arguments.instrument.MethodFilter;
 import openjdk.jcov.data.arguments.instrument.Plugin;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 
 public class MainFilter implements MethodFilter {
     @Override
     public boolean accept(int access, String owner, String method, String desc) throws ClassNotFoundException {
-        List<Plugin.TypeDescriptor> params = Plugin.parseDesc(desc);
+        List<Plugin.TypeDescriptor> params = MethodFilter.parseDesc(desc);
         return method.equals("main") &&
                 params.size() == 1 &&
                 (access & Modifier.STATIC) > 0 &&
                 (access & Modifier.PUBLIC) > 0 &&
                 desc.endsWith(")V") &&
-                params.stream().anyMatch(td -> td.cls().isArray());
+                params.stream().anyMatch(td -> td.id().equals("["));
     }
 }

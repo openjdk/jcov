@@ -28,12 +28,14 @@ import openjdk.jcov.data.Env;
 import openjdk.jcov.data.Instrument;
 import openjdk.jcov.data.arguments.instrument.MethodFilter;
 import openjdk.jcov.data.arguments.instrument.Plugin;
+import openjdk.jcov.data.arguments.runtime.Collect;
 import openjdk.jcov.data.arguments.runtime.Coverage;
 import openjdk.jcov.data.arguments.runtime.Saver;
+import openjdk.jcov.data.lib.TestStatusListener;
 import openjdk.jcov.data.lib.Util;
-import openjdk.jcov.data.serialization.EnumDeserializer;
-import openjdk.jcov.data.serialization.EnumSerializer;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -41,17 +43,19 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static openjdk.jcov.data.Instrument.JCOV_DATA_ENV_PREFIX;
 import static openjdk.jcov.data.Instrument.JCOV_TEMPLATE;
 import static openjdk.jcov.data.arguments.analysis.Reader.DESERIALIZER;
 import static openjdk.jcov.data.arguments.instrument.Plugin.*;
 import static openjdk.jcov.data.arguments.runtime.Saver.RESULT_FILE;
+import static openjdk.jcov.data.arguments.runtime.Saver.SERIALIZER;
 import static org.testng.Assert.assertEquals;
 
+@Listeners({TestStatusListener.class})
 public class MainTest {
     private Path test_dir;
     private Path template;
@@ -61,13 +65,15 @@ public class MainTest {
     @BeforeClass
     public void clean() throws IOException {
         Path data_dir = Paths.get(System.getProperty("user.dir"));
-        test_dir = data_dir.resolve("parameter_test");
+        test_dir = data_dir.resolve("main_test");
+        Util.rfrm(test_dir);
+        Files.createDirectories(test_dir);
         template = test_dir.resolve("template.lst");
         coverage = test_dir.resolve("coverage.lst");
-        Files.deleteIfExists(template);
         mainFilter = new MainFilter();
+        Env.clear(JCOV_DATA_ENV_PREFIX);
         Env.properties(Map.of(
-                TEMPLATE_FILE, template.toString(),
+                Collect.TEMPLATE_FILE, template.toString(),
                 JCOV_TEMPLATE, test_dir.resolve("template.xml").toString(),
                 METHOD_FILTER, MainFilter.class.getName()));
     }
@@ -93,8 +99,9 @@ public class MainTest {
     public void run() throws
             ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException,
             IOException, InstantiationException {
+        Env.clear(JCOV_DATA_ENV_PREFIX);
         Env.properties(Map.of(
-                TEMPLATE_FILE, template.toString(),
+                Collect.TEMPLATE_FILE, template.toString(),
                 RESULT_FILE, coverage.toString(),
                 SERIALIZER, StringArraySerializer.class.getName(),
                 DESERIALIZER, StringArrayDeserializer.class.getName()));
@@ -107,5 +114,9 @@ public class MainTest {
         assertEquals(method.get(0).size(), 2);
         assertEquals(method.get(0).get(0), "one");
         assertEquals(method.get(0).get(1), "two");
+    }
+    @AfterClass
+    public void tearDown() throws IOException {
+        if(TestStatusListener.status) Util.rfrm(test_dir);
     }
 }
