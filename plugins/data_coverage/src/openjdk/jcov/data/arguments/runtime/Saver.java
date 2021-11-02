@@ -43,7 +43,8 @@ public class Saver implements JCovSaver {
      * Name of a property containing a class name of a class of type <code>Function<Object, String></code> which will
      * be used during the serialization. <code>Object::toString</code> is used by default.
      */
-    public static final String SERIALIZER = "jcov.data.arguments.serializer";
+    public static final String SERIALIZER = Collect.JCOV_DATA_ENV_PREFIX +
+            Collect.ARGUMENTS_PREFIX + "serializer";
 
     private Path resultFile;
     private Serializer serializer;

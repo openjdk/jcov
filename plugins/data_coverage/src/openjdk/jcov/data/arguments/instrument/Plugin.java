@@ -30,6 +30,7 @@ import openjdk.jcov.data.arguments.runtime.Coverage;
 import openjdk.jcov.data.Env;
 import openjdk.jcov.data.arguments.runtime.Implantable;
 import openjdk.jcov.data.arguments.runtime.Saver;
+import openjdk.jcov.data.arguments.runtime.Serializer;
 import org.objectweb.asm.MethodVisitor;
 
 import java.io.IOException;
@@ -189,7 +190,8 @@ public class Plugin implements InstrumentationPlugin {
     }
 
     private static final List<Class> runtimeClasses = List.of(
-            Collect.class, Coverage.class, Saver.class, Saver.NoRuntimeSerializer.class, Env.class
+            Collect.class, Coverage.class, Saver.class, Saver.NoRuntimeSerializer.class, Env.class,
+            Implantable.class, Serializer.class
     );
 
     protected List<Class> runtimeClasses() {
@@ -198,6 +200,8 @@ public class Plugin implements InstrumentationPlugin {
 
     @Override
     public Path runtime() throws Exception {
+        //TODO add all env that I can to a property file and attach it
+        //modify env to load from file unless defined explicitely
         try {
             Path dest = Files.createTempFile("jcov-data", ".jar");
             List<Class> allRuntime = runtimeClasses;

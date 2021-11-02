@@ -32,7 +32,7 @@
   <property name="classes" location="${build}/classes"/>
   <property name="test.classes" location="${build}/tests"/>
   <property name="test.jar" location="${build}/tests.jar"/>
-  <property name="jar" location="${build}/SimpleMethods.jar"/>
+  <property name="jar" location="${build}/DataCoverage.jar"/>
   <property name="test.results" location="${build}/test_results"/>
   <property name="jcov.jar" location="../../JCOV_BUILD/jcov_3.0/jcov.jar"/>
   <property name="jcov.file.saver.jar" location="../../JCOV_BUILD/jcov_3.0/jcov_file_saver.jar"/>

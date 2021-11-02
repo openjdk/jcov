@@ -64,7 +64,7 @@ public class Env {
                 int ob = propValue.indexOf('(');
                 int cb = propValue.indexOf(')');
                 Class cls = Class.forName(propValue.substring(0, ob));
-                String[] params = propValue.substring(ob, cb - 1).split(",");
+                String[] params = propValue.substring(ob + 1, cb).split(",");
                 Class[] paramTypes = new Class[params.length];
                 Arrays.fill(paramTypes, String.class);
                 return (SPI) cls.getConstructor(paramTypes).newInstance(params);

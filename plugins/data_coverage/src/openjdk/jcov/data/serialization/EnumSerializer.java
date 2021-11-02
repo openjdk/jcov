@@ -24,17 +24,36 @@
  */
 package openjdk.jcov.data.serialization;
 
+import openjdk.jcov.data.arguments.runtime.Implantable;
+
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
 
 /**
  * Serializes an enum into its name.
  */
-public class EnumSerializer implements Function<Object, String> {
+public class EnumSerializer implements Function<Object, String>, Implantable {
+
+    private final String defaultValue;
+
+    public EnumSerializer(String value) {
+        defaultValue = value;
+    }
+
+    public EnumSerializer() {
+        this("NOT_AN_ENUM");
+    }
+
     @Override
     public String apply(Object anEnum) {
         if (anEnum instanceof Enum)
             return ((Enum) anEnum).name();
         else
             return "";
+    }
+
+    public Collection<Class> runtime() {
+        return List.of(EnumSerializer.class);
     }
 }
