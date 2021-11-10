@@ -58,6 +58,7 @@
     <fail unless="testng.classpath" message="Please specify testng.classpath"/>
     <mkdir dir="${test.classes}"/>
     <javac srcdir="${test}" classpath="${classes}:${jcov.jar}:${testng.classpath}" destdir="${test.classes}" debug="true"/>
+    <copy file="${test}/openjdk/jcov/data/instrumentation.properties" tofile="${test.classes}/openjdk/jcov/data/instrumentation.properties"/>
   </target>
 
   <target name="fast-test">

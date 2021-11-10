@@ -77,7 +77,7 @@ public class EnumTest {
     public void instrument() throws IOException, InterruptedException {
         Env.clear(JCOV_DATA_ENV_PREFIX);
         Env.setSystemProperties(Map.of(
-                Collect.COVERAGE_FILE, template.toString(),
+                Collect.COVERAGE_OUT, template.toString(),
                 JCOV_TEMPLATE, test_dir.resolve("template.xml").toString(),
                 METHOD_FILTER, EnumMethodsFilter.class.getName()));
         new Instrument().pluginClass(Plugin.class.getName())
@@ -93,8 +93,9 @@ public class EnumTest {
             IOException, InstantiationException {
         Env.clear(JCOV_DATA_ENV_PREFIX);
         Env.setSystemProperties(Map.of(
-                Collect.COVERAGE_FILE, template.toString(),
-                SERIALIZER, EnumSerializer.class.getName()//,
+                Collect.COVERAGE_IN, template.toString(),
+                Collect.COVERAGE_OUT, template.toString(),
+                SERIALIZER, EnumSerializer.class.getName()));
         new Util(test_dir).runClass(UserCode.class, new String[0], new Saver());
         Coverage res = Coverage.read(template, deserializer);
         List<List<?>> method =

@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static openjdk.jcov.data.arguments.instrument.Plugin.METHOD_FILTER;
-import static openjdk.jcov.data.arguments.runtime.Collect.COVERAGE_FILE;
+import static openjdk.jcov.data.arguments.runtime.Collect.COVERAGE_OUT;
 import static openjdk.jcov.data.arguments.runtime.Collect.SERIALIZER;
 import static openjdk.jcov.data.lib.Util.copyJRE;
 import static org.testng.Assert.assertEquals;
@@ -54,7 +54,7 @@ public class Test {
         int status = new JREInstr()
                 .clearEnv()
                 .setEnv(Map.of(
-                        COVERAGE_FILE, template.toString(),
+                        COVERAGE_OUT, template.toString(),
                         METHOD_FILTER, PermissionMethodFilter.class.getName(),
                         SERIALIZER, Serializer.class.getName()))
                 .pluginClass(Plugin.class.getName())

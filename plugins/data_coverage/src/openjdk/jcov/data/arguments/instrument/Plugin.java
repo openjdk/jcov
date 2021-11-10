@@ -130,7 +130,7 @@ public class Plugin implements InstrumentationPlugin {
             IllegalAccessException {
         template = new Coverage();
         methodFilter = Env.getSPIEnv(METHOD_FILTER, (a, o, m, d) -> true);
-        templateFile = Env.getPathEnv(Collect.COVERAGE_FILE, Paths.get("template.lst"));
+        templateFile = Env.getPathEnv(Collect.COVERAGE_OUT, Paths.get("template.lst"));
         serializer = Env.getSPIEnv(SERIALIZER, Object::toString);
     }
 

@@ -25,7 +25,9 @@
 package openjdk.jcov.data.lib;
 
 import com.sun.tdk.jcov.runtime.JCovSaver;
+import openjdk.jcov.data.Env;
 import openjdk.jcov.data.arguments.runtime.Collect;
+import openjdk.jcov.data.arguments.runtime.Saver;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -43,8 +45,11 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+
+import static openjdk.jcov.data.arguments.runtime.Collect.SERIALIZER;
 
 public class Util {
     private final Path outputDir;
@@ -106,13 +111,15 @@ public class Util {
         return className.replace('.', '/') + ".class";
     }
     public Class runClass(Class className, String[] argv, JCovSaver saver)
-            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
         return runClass(className.getName(), argv, saver);
     }
     public Class runClass(String className, String[] argv, JCovSaver saver)
             throws ClassNotFoundException, NoSuchMethodException,
-            InvocationTargetException, IllegalAccessException {
+            InvocationTargetException, IllegalAccessException, InstantiationException {
         Collect.clearData();
+        //TODO an API is really needed for this kind of usage
+        Collect.serializer(new Saver.NoRuntimeSerializer(Env.getSPIEnv(SERIALIZER, Objects::toString)));
         ClassLoader offOutputDir = new InstrumentedClassLoader();
         Class cls = offOutputDir.loadClass(className);
         Method m = cls.getMethod("main", new String[0].getClass());

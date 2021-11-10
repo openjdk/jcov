@@ -25,21 +25,15 @@
 package openjdk.jcov.data.arguments.runtime;
 
 import openjdk.jcov.data.Env;
-import openjdk.jcov.data.arguments.instrument.Plugin;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static org.objectweb.asm.Opcodes.ALOAD;
 
 /**
  * Calls to this class' collect(...) methods are injected in the beginning of every instrumented method.
@@ -51,10 +45,16 @@ public class Collect {
      */
     public static final String ARGUMENTS_PREFIX = "args.";
     /**
-     * Name of a property which contains path of the template file.
+     * Specifies where to save collected data or instrumentation information.
      */
-    public static final String COVERAGE_FILE = Env.JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX +
+    public static final String COVERAGE_OUT = Env.JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX +
             "coverage";
+    /**
+     * Specifies where to load previously collected data from. A non-empty value of this property will
+     * make Collect class to load the data on class loading.
+     */
+    public static final String COVERAGE_IN = Env.JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX +
+            "coverage.in";
 
     /**
      * Name of a property containing a class name of a class of type <code>Function<Object, String></code> which will
@@ -63,16 +63,19 @@ public class Collect {
     public static final String SERIALIZER = Env.JCOV_DATA_ENV_PREFIX +
             Collect.ARGUMENTS_PREFIX + "serializer";
 
-    static final Coverage data;
-    private final static Serializer serializer;
+    static volatile Coverage data;
+    private volatile static Serializer serializer;
 
-    static{
-        try {
-            Path coverageFile = Env.getPathEnv(COVERAGE_FILE, Paths.get("template.lst"));
-            data = Coverage.read(coverageFile);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    static {
+        if (!Env.getStringEnv(COVERAGE_IN, "").isEmpty()) {
+            try {
+                Path coverageFile = Env.getPathEnv(COVERAGE_IN, null);
+                System.out.println("Loading data coverage from " + coverageFile);
+                data = Coverage.read(coverageFile);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        } else data = new Coverage();
         try {
             serializer = wrap(Env.getSPIEnv(SERIALIZER, Object::toString));
         } catch (ClassNotFoundException|NoSuchMethodException|IllegalAccessException|InvocationTargetException|InstantiationException e) {
@@ -123,5 +126,9 @@ public class Collect {
 
     public static void clearData() {
         data.coverage().clear();
+    }
+
+    public static void serializer(Serializer serializer) {
+        Collect.serializer = serializer;
     }
 }

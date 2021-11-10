@@ -48,7 +48,7 @@ public class Saver implements JCovSaver {
     public Saver() throws
             ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException,
             IllegalAccessException {
-        resultFile = Env.getPathEnv(Collect.COVERAGE_FILE, Paths.get("result.lst"));
+        resultFile = Env.getPathEnv(Collect.COVERAGE_OUT, Paths.get("result.lst"));
 //        serializer = wrap(Env.getSPIEnv(SERIALIZER, Object::toString));
     }
 

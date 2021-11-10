@@ -65,7 +65,7 @@ public class ArgumentsTest {
     public void instrument() throws IOException, InterruptedException {
         Env.clear(JCOV_DATA_ENV_PREFIX);
         Env.setSystemProperties(Map.of(
-                Collect.COVERAGE_FILE, template.toString(),
+                Collect.COVERAGE_OUT, template.toString(),
                 JCOV_TEMPLATE, test_dir.resolve("template.xml").toString()));
         new Instrument().pluginClass(Plugin.class.getName()).
                 instrument(new Util(test_dir).copyBytecode(UserCode.class.getName()));
@@ -89,7 +89,7 @@ public class ArgumentsTest {
             IllegalAccessException, IOException, InstantiationException {
         Env.clear(JCOV_DATA_ENV_PREFIX);
         Env.setSystemProperties(Map.of(
-                Collect.COVERAGE_FILE, template.toString()));
+                Collect.COVERAGE_OUT, template.toString()));
         new Util(test_dir).runClass(UserCode.class, new String[0], new Saver());
         Coverage coverage = Coverage.read(template);
         List<List<?>> calls = coverage.get(UserCode.class.getName().replace('.', '/'),

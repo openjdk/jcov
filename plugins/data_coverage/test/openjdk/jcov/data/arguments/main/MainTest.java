@@ -26,7 +26,9 @@ package openjdk.jcov.data.arguments.main;
 
 import openjdk.jcov.data.Env;
 import openjdk.jcov.data.Instrument;
+import openjdk.jcov.data.arguments.enums.EnumTest;
 import openjdk.jcov.data.arguments.instrument.Plugin;
+import openjdk.jcov.data.arguments.runtime.Collect;
 import openjdk.jcov.data.arguments.runtime.Coverage;
 import openjdk.jcov.data.arguments.runtime.Saver;
 import openjdk.jcov.data.lib.TestStatusListener;
@@ -48,14 +50,13 @@ import java.util.Objects;
 import static openjdk.jcov.data.Env.JCOV_DATA_ENV_PREFIX;
 import static openjdk.jcov.data.Instrument.JCOV_TEMPLATE;
 import static openjdk.jcov.data.arguments.instrument.Plugin.*;
-import static openjdk.jcov.data.arguments.runtime.Collect.COVERAGE_FILE;
-import static openjdk.jcov.data.arguments.runtime.Collect.SERIALIZER;
+import static openjdk.jcov.data.arguments.runtime.Collect.*;
 import static org.testng.Assert.assertEquals;
 
 @Listeners({TestStatusListener.class})
 public class MainTest {
     private Path test_dir;
-    private Path template;
+    private Path coverage;
 
     @BeforeClass
     public void clean() throws IOException {
@@ -63,25 +64,18 @@ public class MainTest {
         test_dir = data_dir.resolve("main_test");
         Util.rfrm(test_dir);
         Files.createDirectories(test_dir);
-        template = test_dir.resolve("template.lst");
-        Env.clear(JCOV_DATA_ENV_PREFIX);
-        Env.setSystemProperties(Map.of(
-                COVERAGE_FILE, template.toString(),
-                JCOV_TEMPLATE, test_dir.resolve("template.xml").toString(),
-                METHOD_FILTER, MainFilter.class.getName()));
+        coverage = test_dir.resolve("coverage.lst");
     }
     private Coverage instrument(Class cls) throws IOException, InterruptedException {
+        Env.clear(JCOV_DATA_ENV_PREFIX);
+        Env.setSystemProperties(Map.of(
+                COVERAGE_OUT, coverage.toString(),
+                JCOV_TEMPLATE, test_dir.resolve("template.xml").toString(),
+                METHOD_FILTER, MainFilter.class.getName()));
         new Instrument().pluginClass(Plugin.class.getName())
                 .instrument(new Util(test_dir).
                         copyBytecode(cls.getName()));
-        return Coverage.read(template);
-    }
-    @Test
-    public void instrumentStatic() throws IOException, InterruptedException {
-        Coverage tmplt = instrument(UserCodeStatic.class);
-        Map<String, List<List<?>>> userCode =  tmplt.coverage().get(UserCodeStatic.class.getName().replace('.', '/'));
-        assertEquals(userCode.size(), 1);
-        assertEquals(userCode.keySet().iterator().next(), "main([Ljava/lang/String;)V");
+        return Coverage.read(coverage);
     }
     @Test
     public void instrument() throws IOException, InterruptedException {
@@ -89,16 +83,23 @@ public class MainTest {
         assertEquals(tmplt.coverage().size(), 0);
     }
     @Test(dependsOnMethods = "instrument")
+    public void instrumentStatic() throws IOException, InterruptedException {
+        Coverage tmplt = instrument(UserCodeStatic.class);
+        Map<String, List<List<?>>> userCode =  tmplt.coverage().get(UserCodeStatic.class.getName().replace('.', '/'));
+        assertEquals(userCode.size(), 1);
+        assertEquals(userCode.keySet().iterator().next(), "main([Ljava/lang/String;)V");
+    }
+    @Test(dependsOnMethods = "instrumentStatic")
     public void run() throws
             ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException,
             IOException, InstantiationException {
         Env.clear(JCOV_DATA_ENV_PREFIX);
         Env.setSystemProperties(Map.of(
-                COVERAGE_FILE, template.toString(),
-                SERIALIZER, StringArraySerializer.class.getName()/*,
-                DESERIALIZER, StringArrayDeserializer.class.getName()*/));
+                COVERAGE_IN, coverage.toString(),
+                COVERAGE_OUT, coverage.toString(),
+                SERIALIZER, StringArraySerializer.class.getName()));
         new Util(test_dir).runClass(UserCodeStatic.class, new String[] {"one", "two"}, new Saver());
-        Coverage res = Coverage.read(template, Objects::toString);
+        Coverage res = Coverage.read(coverage, Objects::toString);
         List<List<?>> method =
                 res.get(UserCodeStatic.class.getName().replace('.', '/'),
                         "main([Ljava/lang/String;)V");

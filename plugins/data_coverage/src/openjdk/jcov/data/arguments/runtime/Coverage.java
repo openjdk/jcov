@@ -30,7 +30,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,10 +93,11 @@ public class Coverage {
                 lastData = result.get(owner, name + desc);
             } else {
                 List<? extends Object> values = parse(l.substring(DATA_PREFIX.length()), deserializer);
-                if(Collect.countParams(desc) != values.size()) {
-                    throw new IllegalStateException("Incorrect number of parameters for " +
-                            owner + "#" + name + desc + ": " + values.size());
-                }
+                //TODO this needs to be fixed for arrays
+//                if(Collect.countParams(desc) != values.size()) {
+//                    throw new IllegalStateException("Incorrect number of parameters for " +
+//                            owner + "#" + name + desc + ": " + values.size());
+//                }
                 lastData.add(values);
             }
         }
