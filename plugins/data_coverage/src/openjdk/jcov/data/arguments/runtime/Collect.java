@@ -25,20 +25,26 @@
 package openjdk.jcov.data.arguments.runtime;
 
 import openjdk.jcov.data.Env;
+import openjdk.jcov.data.arguments.instrument.Plugin;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static org.objectweb.asm.Opcodes.ALOAD;
 
 /**
  * Calls to this class' collect(...) methods are injected in the beginning of every instrumented method.
  */
 public class Collect {
-    /**
-     * This repeats openjdk.jcov.data.Instrument.JCOV_DATA_ENV_PREFIX to remove the dependency.
-     */
-    public static final String JCOV_DATA_ENV_PREFIX = "jcov.data.";
     /**
      * Property name prefix for all properties used by this plugin. The property names are started with
      * <code>Instrument.JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX</code>
@@ -47,24 +53,72 @@ public class Collect {
     /**
      * Name of a property which contains path of the template file.
      */
-    public static final String TEMPLATE_FILE = JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX +
-            "template";
+    public static final String COVERAGE_FILE = Env.JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX +
+            "coverage";
+
+    /**
+     * Name of a property containing a class name of a class of type <code>Function<Object, String></code> which will
+     * be used during the serialization. <code>Object::toString</code> is used by default.
+     */
+    public static final String SERIALIZER = Env.JCOV_DATA_ENV_PREFIX +
+            Collect.ARGUMENTS_PREFIX + "serializer";
 
     static final Coverage data;
+    private final static Serializer serializer;
 
     static{
         try {
-            data = Coverage.readTemplate(Env.getPathEnv(TEMPLATE_FILE, Paths.get("template.lst")));
+            Path coverageFile = Env.getPathEnv(COVERAGE_FILE, Paths.get("template.lst"));
+            data = Coverage.read(coverageFile);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+        try {
+            serializer = wrap(Env.getSPIEnv(SERIALIZER, Object::toString));
+        } catch (ClassNotFoundException|NoSuchMethodException|IllegalAccessException|InvocationTargetException|InstantiationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Serializer wrap(Function<Object, String> function) {
+        if(function instanceof Serializer)
+            return (Serializer) function;
+        else
+            return new Saver.NoRuntimeSerializer(function);
     }
 
     public static synchronized void collect(String owner, String name, String desc, Object... params) {
 //        keep these lines, it is useful for debugging in hard cases
 //        System.out.printf("%s.%s%s: %s\n", owner, name, desc, (params == null) ? "null" :
-//                Arrays.stream(params).map(Object::getClass).map(Class::getName).collect(joining(",")));
-        data.get(owner, name + desc).add(Arrays.asList(params));
+//                Arrays.stream(params).map(Object::getClass).map(Class::getName)
+//                        .collect(java.util.stream.Collectors.joining(",")));
+//        System.out.println(Arrays.stream(params).map(Objects::toString)
+//                .collect(Collectors.joining(",")));
+        data.add(owner, name + desc, Arrays.stream(params).map(serializer::apply)
+                .collect(Collectors.toList()));
+    }
+
+    static int countParams(String desc) {
+        if(!desc.startsWith("(")) throw new IllegalArgumentException("Not a method descriptor: " + desc);
+        int pos = 1;
+        int count = 0;
+        while(desc.charAt(pos) != ')') {
+            char next = desc.charAt(pos);
+            if(next == 'L') {
+                int l = pos;
+                pos = desc.indexOf(";", pos) + 1;
+                count++;
+            } else if(next == '[') {
+                //TODO can we do better?
+                count++;
+                if(desc.charAt(pos + 1) == 'L') pos = desc.indexOf(";", pos) + 1;
+                else pos = pos + 2;
+            } else {
+                count++;
+                pos++;
+            }
+        }
+        return count;
     }
 
     public static void clearData() {

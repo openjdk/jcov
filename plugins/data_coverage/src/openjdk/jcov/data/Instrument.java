@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
+import static openjdk.jcov.data.Env.JCOV_DATA_ENV_PREFIX;
 
 /**
  * Some API which makes it easier to run JCov instrumentation while setting specific options to use an instrumentation
@@ -43,10 +44,6 @@ import static java.util.stream.Collectors.toList;
  * Current implementaion runs JCov code in the same VM.
  */
 public class Instrument {
-    /**
-     * Prefix for all system property names which will be passed to the VM running JCov calls.
-     */
-    public static final String JCOV_DATA_ENV_PREFIX = "jcov.data.";
     /**
      * Name of a system property which contains class name of an instrumentation plugin.
      */

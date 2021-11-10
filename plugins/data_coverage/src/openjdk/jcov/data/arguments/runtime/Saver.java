@@ -36,24 +36,20 @@ import java.util.function.Function;
 public class Saver implements JCovSaver {
 
     /**
-     * Name of a property defining where to save the results.
-     */
-    public static final String RESULT_FILE = Collect.JCOV_DATA_ENV_PREFIX + Collect.ARGUMENTS_PREFIX + "result";
-    /**
      * Name of a property containing a class name of a class of type <code>Function<Object, String></code> which will
      * be used during the serialization. <code>Object::toString</code> is used by default.
      */
-    public static final String SERIALIZER = Collect.JCOV_DATA_ENV_PREFIX +
-            Collect.ARGUMENTS_PREFIX + "serializer";
+//    public static final String SERIALIZER = Env.JCOV_DATA_ENV_PREFIX +
+//            Collect.ARGUMENTS_PREFIX + "serializer";
 
     private Path resultFile;
-    private Serializer serializer;
+//    private Serializer serializer;
 
     public Saver() throws
             ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException,
             IllegalAccessException {
-        resultFile = Env.getPathEnv(RESULT_FILE, Paths.get("result.lst"));
-        serializer = wrap(Env.getSPIEnv(SERIALIZER, Object::toString));
+        resultFile = Env.getPathEnv(Collect.COVERAGE_FILE, Paths.get("result.lst"));
+//        serializer = wrap(Env.getSPIEnv(SERIALIZER, Object::toString));
     }
 
     public Saver resultFile(Path resultFile) {
@@ -61,26 +57,27 @@ public class Saver implements JCovSaver {
         return this;
     }
 
-    public Saver serializer(Function<Object, String> function) {
-        this.serializer = wrap(function);
-        return this;
-    }
-
-    public Saver serializer(Serializer serializer) {
-        this.serializer = serializer;
-        return this;
-    }
-
-    private static Serializer wrap(Function<Object, String> function) {
-        if(function instanceof Serializer)
-            return (Serializer) function;
-        else
-            return new NoRuntimeSerializer(function);
-    }
+//    public Saver serializer(Function<Object, String> function) {
+//        this.serializer = wrap(function);
+//        return this;
+//    }
+//
+//    public Saver serializer(Serializer serializer) {
+//        this.serializer = serializer;
+//        return this;
+//    }
+//
+//    private static Serializer wrap(Function<Object, String> function) {
+//        if(function instanceof Serializer)
+//            return (Serializer) function;
+//        else
+//            return new NoRuntimeSerializer(function);
+//    }
 
     public void saveResults() {
         try {
-            Coverage.write(Collect.data, resultFile, serializer);
+            System.out.println("Saving the data info " + resultFile);
+            Coverage.write(Collect.data, resultFile/*, serializer*/);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

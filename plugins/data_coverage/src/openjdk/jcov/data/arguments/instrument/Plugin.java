@@ -39,16 +39,18 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
-import static openjdk.jcov.data.Instrument.JCOV_DATA_ENV_PREFIX;
-import static openjdk.jcov.data.arguments.runtime.Saver.SERIALIZER;
+import static openjdk.jcov.data.Env.JCOV_DATA_ENV_PREFIX;
+import static openjdk.jcov.data.arguments.runtime.Collect.SERIALIZER;
 import static org.objectweb.asm.Opcodes.*;
 
 /**
@@ -59,7 +61,7 @@ public class Plugin implements InstrumentationPlugin {
     /**
      * Classname of a collector class which will be called from every instrumented method.
      */
-    public static final String COLLECTOR_CLASS = "openjdk.jcov.data.arguments.runtime.Collect"
+    public static final String COLLECTOR_CLASS = Collect.class.getName()
             .replace('.', '/');
     /**
      * Name of the methods which will be called from every instrumented method.
@@ -128,7 +130,7 @@ public class Plugin implements InstrumentationPlugin {
             IllegalAccessException {
         template = new Coverage();
         methodFilter = Env.getSPIEnv(METHOD_FILTER, (a, o, m, d) -> true);
-        templateFile = Env.getPathEnv(Collect.TEMPLATE_FILE, Paths.get("template.lst"));
+        templateFile = Env.getPathEnv(Collect.COVERAGE_FILE, Paths.get("template.lst"));
         serializer = Env.getSPIEnv(SERIALIZER, Object::toString);
     }
 
@@ -181,7 +183,7 @@ public class Plugin implements InstrumentationPlugin {
     @Override
     public void instrumentationComplete() throws IOException {
         try {
-            Coverage.write(template, templateFile, serializer);
+            Coverage.write(template, templateFile);
         } catch(Throwable e) {
             //JCov is known for swallowing exceptions
             e.printStackTrace();
@@ -189,7 +191,7 @@ public class Plugin implements InstrumentationPlugin {
         }
     }
 
-    private static final List<Class> runtimeClasses = List.of(
+    private static final Set<Class> runtimeClasses = Set.of(
             Collect.class, Coverage.class, Saver.class, Saver.NoRuntimeSerializer.class, Env.class,
             Implantable.class, Serializer.class
     );
@@ -200,17 +202,23 @@ public class Plugin implements InstrumentationPlugin {
 
     @Override
     public Path runtime() throws Exception {
-        //TODO add all env that I can to a property file and attach it
-        //modify env to load from file unless defined explicitely
         try {
             Path dest = Files.createTempFile("jcov-data", ".jar");
-            List<Class> allRuntime = runtimeClasses;
+            Properties toSave = new Properties();
+            System.getProperties().forEach((k, v) -> {
+                if(k.toString().startsWith(JCOV_DATA_ENV_PREFIX))
+                    toSave.setProperty(k.toString(), v.toString());
+            });
+            Set<Class> allRuntime = runtimeClasses;
             Function<Object, String> serializer = Env.getSPIEnv(SERIALIZER, null);
             if(serializer != null && serializer instanceof Implantable) {
-                allRuntime = new ArrayList<>(runtimeClasses);
+                allRuntime = new HashSet<>(runtimeClasses);
                 allRuntime.addAll(((Implantable)serializer).runtime());
             }
             try(JarOutputStream jar = new JarOutputStream(Files.newOutputStream(dest))) {
+                jar.putNextEntry(new JarEntry(Env.PROP_FILE));
+                toSave.store(jar, "");
+                jar.closeEntry();
                 for(Class rc : allRuntime) {
                     String fileName = rc.getName().replace(".", "/") + ".class";
                     jar.putNextEntry(new JarEntry(fileName));

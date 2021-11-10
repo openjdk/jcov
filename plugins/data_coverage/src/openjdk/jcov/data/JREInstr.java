@@ -26,7 +26,10 @@ package openjdk.jcov.data;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+import static openjdk.jcov.data.Env.JCOV_DATA_ENV_PREFIX;
 
 public class JREInstr {
     private String pluginClass;
@@ -34,6 +37,16 @@ public class JREInstr {
     private String jcovRuntime;
 
     public JREInstr() {
+    }
+
+    public JREInstr clearEnv() {
+        Env.clear(JCOV_DATA_ENV_PREFIX);
+        return this;
+    }
+
+    public JREInstr setEnv(Map<String, String> env) {
+        Env.setSystemProperties(env);
+        return this;
     }
 
     public JREInstr pluginClass(String pluginClass) {

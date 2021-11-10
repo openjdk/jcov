@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -48,13 +49,26 @@ public class Coverage {
     public static final String DATA_PREFIX = " -> ";
     private final Map<String, Map<String, List<List<? extends Object>>>> data;
 
-    public static Coverage readTemplate(Path path) throws IOException {
-        return readImpl(path, s -> null);
+    public static Coverage read(Path path) throws IOException {
+        return readImpl(path, s -> s);
+    }
+
+    private static List<String> split(String s) {
+        List<String> result = new ArrayList<>();
+        int lci = -1;
+        for (int ci = 0; ci < s.length(); ci++) {
+            if(s.charAt(ci) == ',') {
+                result.add(s.substring(lci + 1, ci));
+                lci = ci;
+            }
+        }
+        result.add(s.substring(lci + 1));
+        return result;
     }
 
     private static List<? extends Object> parse(String s, Function<String, ? extends Object> deserialize) {
-        return Arrays.stream(s.split(","))
-                .map(v -> v.isEmpty() ? null : deserialize.apply(v))
+        return split(s).stream()
+                .map(v -> v.isEmpty() ? "" : deserialize.apply(v))
                 .collect(toList());
     }
 
@@ -69,16 +83,22 @@ public class Coverage {
     private static Coverage readImpl(Path path, Function<String, ? extends Object> deserializer) throws IOException {
         Coverage result = new Coverage();
         List<List<? extends Object>> lastData = null;
+        String desc = null, name = null, owner = null;
         for (String l : Files.readAllLines(path)) {
             if (!l.startsWith(DATA_PREFIX)) {
                 int descStart = l.indexOf('(');
                 int classEnd = l.lastIndexOf('#', descStart);
-                String owner = l.substring(0, classEnd);
-                String name = l.substring(classEnd + 1, descStart);
-                String desc = l.substring(descStart);
+                owner = l.substring(0, classEnd);
+                name = l.substring(classEnd + 1, descStart);
+                desc = l.substring(descStart);
                 lastData = result.get(owner, name + desc);
             } else {
-                lastData.add(parse(l.substring(DATA_PREFIX.length()), deserializer));
+                List<? extends Object> values = parse(l.substring(DATA_PREFIX.length()), deserializer);
+                if(Collect.countParams(desc) != values.size()) {
+                    throw new IllegalStateException("Incorrect number of parameters for " +
+                            owner + "#" + name + desc + ": " + values.size());
+                }
+                lastData.add(values);
             }
         }
         return result;
@@ -89,7 +109,7 @@ public class Coverage {
     /**
      * Saves the data into a file in a custom plain text format.
      */
-    public static final void write(Coverage coverage, Path path, Function<Object, String> serializer)
+    public static final void write(Coverage coverage, Path path/*, Function<Object, String> serializer*/)
             throws IOException {
         try(BufferedWriter out = Files.newBufferedWriter(path)) {
             coverage.data.entrySet().forEach(ce -> {
@@ -99,8 +119,18 @@ public class Coverage {
                             out.newLine();
                             me.getValue().forEach(dl -> {
                                 try {
+                                    String desc = me.getKey().substring(me.getKey().indexOf("("));
+                                    List<String> values = dl.stream().map(o -> (String)o)
+                                            .collect(toList());
+                                    if(Collect.countParams(desc) != values.size()) {
+                                        System.err.println("Incorect number of params for " + me.getKey());
+                                        System.out.println(values.stream().map(Objects::toString)
+                                                .collect(Collectors.joining(",")));
+                                        throw new IllegalStateException("Incorrect number of parameters for " +
+                                                me.getKey() + ": " + values.size());
+                                    }
                                     out.write(DATA_PREFIX +
-                                            dl.stream().map(d -> serializer.apply(d))
+                                            values.stream()//.map(d -> serializer.apply(d))
                                             .collect(Collectors.joining(",")));
                                     out.newLine();
                                 } catch (IOException e) {
@@ -117,6 +147,8 @@ public class Coverage {
             throw e.getCause();
         }
     }
+
+    private final boolean selfCompacting = true;
 
     public Coverage() {
         data = new HashMap<>();
@@ -137,6 +169,16 @@ public class Coverage {
             methods.put(method, result);
         }
         return result;
+    }
+
+    public void add(String owner, String method, List<? extends Object> params) {
+        List<List<? extends Object>> methodCov = get(owner, method);
+        if(methodCov.stream().noneMatch(call -> {
+            if(call.size() != params.size()) return false;
+            for (int i = 0; i < call.size(); i++)
+                if(!Objects.equals(call.get(i), params.get(i))) return false;
+            return true;
+        })) methodCov.add(params);
     }
 
     public Map<String, Map<String, List<List<? extends Object>>>> coverage() {

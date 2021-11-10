@@ -50,7 +50,7 @@ public class EnumSerializer implements Function<Object, String>, Implantable {
         if (anEnum instanceof Enum)
             return ((Enum) anEnum).name();
         else
-            return "";
+            return defaultValue;
     }
 
     public Collection<Class> runtime() {

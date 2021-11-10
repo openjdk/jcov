@@ -39,17 +39,14 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
 import static java.util.stream.Collectors.joining;
-import static openjdk.jcov.data.Instrument.JCOV_DATA_ENV_PREFIX;
+import static openjdk.jcov.data.Env.JCOV_DATA_ENV_PREFIX;
 import static openjdk.jcov.data.Instrument.JCOV_TEMPLATE;
-import static openjdk.jcov.data.arguments.runtime.Saver.RESULT_FILE;
-import static openjdk.jcov.data.arguments.runtime.Saver.SERIALIZER;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
@@ -57,24 +54,22 @@ import static org.testng.Assert.assertNotNull;
 public class ArgumentsTest {
     Path test_dir;
     Path template;
-    Path result;
     @BeforeClass
     public void clean() throws IOException {
         Path data_dir = Paths.get(System.getProperty("user.dir"));
         test_dir = data_dir.resolve("arguments_test");
         Util.rfrm(test_dir);
         template = test_dir.resolve("template.lst");
-        result = test_dir.resolve("coverage.lst");
     }
     @Test
     public void instrument() throws IOException, InterruptedException {
         Env.clear(JCOV_DATA_ENV_PREFIX);
-        Env.properties(Map.of(
-                Collect.TEMPLATE_FILE, template.toString(),
+        Env.setSystemProperties(Map.of(
+                Collect.COVERAGE_FILE, template.toString(),
                 JCOV_TEMPLATE, test_dir.resolve("template.xml").toString()));
         new Instrument().pluginClass(Plugin.class.getName()).
                 instrument(new Util(test_dir).copyBytecode(UserCode.class.getName()));
-        Coverage tmpl = Coverage.readTemplate(template);
+        Coverage tmpl = Coverage.read(template);
         System.out.println("Data:");
         tmpl.coverage().entrySet().forEach(e -> {
             System.out.println(e.getKey() + "->");
@@ -93,11 +88,10 @@ public class ArgumentsTest {
     public void run() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
             IllegalAccessException, IOException, InstantiationException {
         Env.clear(JCOV_DATA_ENV_PREFIX);
-        Env.properties(Map.of(
-                Collect.TEMPLATE_FILE, template.toString(),
-                RESULT_FILE, result.toString()));
+        Env.setSystemProperties(Map.of(
+                Collect.COVERAGE_FILE, template.toString()));
         new Util(test_dir).runClass(UserCode.class, new String[0], new Saver());
-        Coverage coverage = Coverage.read(result, a -> a);
+        Coverage coverage = Coverage.read(template);
         List<List<?>> calls = coverage.get(UserCode.class.getName().replace('.', '/'),
                 "method(IJFDZBLjava/lang/String;)V");
         assertEquals(calls.size(), 2);

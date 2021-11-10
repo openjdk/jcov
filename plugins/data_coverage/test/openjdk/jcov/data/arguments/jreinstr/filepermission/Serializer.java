@@ -20,7 +20,6 @@ public class Serializer implements openjdk.jcov.data.arguments.runtime.Serialize
     @Override
     public Collection<Class> runtime() {
         return Set.of(Serializer.class,
-                openjdk.jcov.data.arguments.runtime.Serializer.class,
                 Implantable.class);
     }
 
