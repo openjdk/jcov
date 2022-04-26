@@ -66,10 +66,6 @@ public class JREInstr {
 
     public int instrument(String jre) throws IOException, InterruptedException {
         String[] params = new String[] {
-//                System.getProperty("java.home") + separator + "bin" + separator + "java",
-//                "-cp", System.getProperty("java.class.path"),
-//                "-jar", "/Users/shura/JDK/git/jcov-mine/JCOV_BUILD/jcov_3.0/jcov.jar",
-//                "JREInstr",
                 "-implantrt", jcovRuntime,
                 "-instr_plugin", pluginClass,
                 "-template", jcovTemplate,
@@ -77,8 +73,6 @@ public class JREInstr {
                 jre};
         System.out.println("Instrumentation parameters: " +
                 Arrays.stream(params).collect(Collectors.joining(" ")));
-//        return new ProcessBuilder(params).redirectOutput(ProcessBuilder.Redirect.INHERIT)
-//                .redirectError(ProcessBuilder.Redirect.INHERIT).start().waitFor();
         return new com.sun.tdk.jcov.JREInstr().run(params);
     }
 }
