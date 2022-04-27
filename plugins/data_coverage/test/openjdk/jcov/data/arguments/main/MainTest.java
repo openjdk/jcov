@@ -26,14 +26,16 @@ package openjdk.jcov.data.arguments.main;
 
 import openjdk.jcov.data.Env;
 import openjdk.jcov.data.Instrument;
-import openjdk.jcov.data.arguments.instrument.MethodFilter;
+import openjdk.jcov.data.arguments.enums.EnumTest;
 import openjdk.jcov.data.arguments.instrument.Plugin;
+import openjdk.jcov.data.arguments.runtime.Collect;
 import openjdk.jcov.data.arguments.runtime.Coverage;
 import openjdk.jcov.data.arguments.runtime.Saver;
+import openjdk.jcov.data.lib.TestStatusListener;
 import openjdk.jcov.data.lib.Util;
-import openjdk.jcov.data.serialization.EnumDeserializer;
-import openjdk.jcov.data.serialization.EnumSerializer;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -41,48 +43,39 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static openjdk.jcov.data.Env.JCOV_DATA_ENV_PREFIX;
 import static openjdk.jcov.data.Instrument.JCOV_TEMPLATE;
-import static openjdk.jcov.data.arguments.analysis.Reader.DESERIALIZER;
 import static openjdk.jcov.data.arguments.instrument.Plugin.*;
-import static openjdk.jcov.data.arguments.runtime.Saver.RESULT_FILE;
+import static openjdk.jcov.data.arguments.runtime.Collect.*;
 import static org.testng.Assert.assertEquals;
 
+@Listeners({TestStatusListener.class})
 public class MainTest {
     private Path test_dir;
-    private Path template;
     private Path coverage;
-    private MethodFilter mainFilter;
 
     @BeforeClass
     public void clean() throws IOException {
         Path data_dir = Paths.get(System.getProperty("user.dir"));
-        test_dir = data_dir.resolve("parameter_test");
-        template = test_dir.resolve("template.lst");
+        test_dir = data_dir.resolve("main_test");
+        Util.rfrm(test_dir);
+        Files.createDirectories(test_dir);
         coverage = test_dir.resolve("coverage.lst");
-        Files.deleteIfExists(template);
-        mainFilter = new MainFilter();
-        Env.properties(Map.of(
-                TEMPLATE_FILE, template.toString(),
-                JCOV_TEMPLATE, test_dir.resolve("template.xml").toString(),
-                METHOD_FILTER, MainFilter.class.getName()));
     }
     private Coverage instrument(Class cls) throws IOException, InterruptedException {
+        Env.clear(JCOV_DATA_ENV_PREFIX);
+        Env.setSystemProperties(Map.of(
+                COVERAGE_OUT, coverage.toString(),
+                JCOV_TEMPLATE, test_dir.resolve("template.xml").toString(),
+                METHOD_FILTER, MainFilter.class.getName()));
         new Instrument().pluginClass(Plugin.class.getName())
                 .instrument(new Util(test_dir).
                         copyBytecode(cls.getName()));
-        return Coverage.readTemplate(template);
-    }
-    @Test
-    public void instrumentStatic() throws IOException, InterruptedException {
-        Coverage tmplt = instrument(UserCodeStatic.class);
-        Map<String, List<List<?>>> userCode =  tmplt.coverage().get(UserCodeStatic.class.getName().replace('.', '/'));
-        assertEquals(userCode.size(), 1);
-        assertEquals(userCode.keySet().iterator().next(), "main([Ljava/lang/String;)V");
+        return Coverage.read(coverage);
     }
     @Test
     public void instrument() throws IOException, InterruptedException {
@@ -90,14 +83,21 @@ public class MainTest {
         assertEquals(tmplt.coverage().size(), 0);
     }
     @Test(dependsOnMethods = "instrument")
+    public void instrumentStatic() throws IOException, InterruptedException {
+        Coverage tmplt = instrument(UserCodeStatic.class);
+        Map<String, List<List<?>>> userCode =  tmplt.coverage().get(UserCodeStatic.class.getName().replace('.', '/'));
+        assertEquals(userCode.size(), 1);
+        assertEquals(userCode.keySet().iterator().next(), "main([Ljava/lang/String;)V");
+    }
+    @Test(dependsOnMethods = "instrumentStatic")
     public void run() throws
             ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException,
             IOException, InstantiationException {
-        Env.properties(Map.of(
-                TEMPLATE_FILE, template.toString(),
-                RESULT_FILE, coverage.toString(),
-                SERIALIZER, StringArraySerializer.class.getName(),
-                DESERIALIZER, StringArrayDeserializer.class.getName()));
+        Env.clear(JCOV_DATA_ENV_PREFIX);
+        Env.setSystemProperties(Map.of(
+                COVERAGE_IN, coverage.toString(),
+                COVERAGE_OUT, coverage.toString(),
+                SERIALIZER, StringArraySerializer.class.getName()));
         new Util(test_dir).runClass(UserCodeStatic.class, new String[] {"one", "two"}, new Saver());
         Coverage res = Coverage.read(coverage, Objects::toString);
         List<List<?>> method =
@@ -107,5 +107,9 @@ public class MainTest {
         assertEquals(method.get(0).size(), 2);
         assertEquals(method.get(0).get(0), "one");
         assertEquals(method.get(0).get(1), "two");
+    }
+    @AfterClass
+    public void tearDown() throws IOException {
+        if(TestStatusListener.status) Util.rfrm(test_dir);
     }
 }

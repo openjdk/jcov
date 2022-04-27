@@ -22,7 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package openjdk.jcov.data.arguments.analysis;
+package openjdk.jcov.data.arguments.runtime;
 
-public class Reader {
+import java.util.Collection;
+
+public interface Implantable {
+    Collection<Class> runtime();
 }

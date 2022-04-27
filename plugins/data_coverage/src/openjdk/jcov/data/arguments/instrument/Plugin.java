@@ -25,22 +25,32 @@
 package openjdk.jcov.data.arguments.instrument;
 
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
-import openjdk.jcov.data.Instrument;
+import openjdk.jcov.data.arguments.runtime.Collect;
 import openjdk.jcov.data.arguments.runtime.Coverage;
 import openjdk.jcov.data.Env;
+import openjdk.jcov.data.arguments.runtime.Implantable;
+import openjdk.jcov.data.arguments.runtime.Saver;
+import openjdk.jcov.data.arguments.runtime.Serializer;
 import org.objectweb.asm.MethodVisitor;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
-import static openjdk.jcov.data.Instrument.JCOV_DATA_ENV_PREFIX;
+import static openjdk.jcov.data.Env.JCOV_DATA_ENV_PREFIX;
+import static openjdk.jcov.data.arguments.runtime.Collect.SERIALIZER;
 import static org.objectweb.asm.Opcodes.*;
 
 /**
@@ -51,7 +61,7 @@ public class Plugin implements InstrumentationPlugin {
     /**
      * Classname of a collector class which will be called from every instrumented method.
      */
-    public static final String COLLECTOR_CLASS = "openjdk.jcov.data.arguments.runtime.Collect"
+    public static final String COLLECTOR_CLASS = Collect.class.getName()
             .replace('.', '/');
     /**
      * Name of the methods which will be called from every instrumented method.
@@ -63,34 +73,18 @@ public class Plugin implements InstrumentationPlugin {
     public static final String COLLECTOR_DESC =
             "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)V";
     /**
-     * Property name prefix for all properties used by this plugin. The property names are started with
-     * <code>Instrument.JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX</code>
-     */
-    public static final String ARGUMENTS_PREFIX = "args.";
-    /**
-     * Name of a property which specifies classname for a class which will be used to "serialize" the collected
-     * values.
-     */
-    public static final String SERIALIZER =
-        Instrument.JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX + ".serializer";
-    /**
-     * Name of a property which contains path of the template file.
-     */
-    public static final String TEMPLATE_FILE =
-            JCOV_DATA_ENV_PREFIX + "arguments.template";
-    /**
      * Name of a property which contains class name for the method filter.
      */
     public static final String METHOD_FILTER =
-        JCOV_DATA_ENV_PREFIX + ARGUMENTS_PREFIX + "method.filter";
+        JCOV_DATA_ENV_PREFIX + Collect.ARGUMENTS_PREFIX + "method.filter";
 
     /**
      * Aux class responsible for code generation for different types.
      */
     public static class TypeDescriptor extends openjdk.jcov.data.instrument.TypeDescriptor {
 
-        public TypeDescriptor(String id, Class cls, int loadOpcode, boolean longOrDouble) {
-            super(id, cls, loadOpcode, longOrDouble);
+        public TypeDescriptor(String id, String cls, int loadOpcode) {
+            super(id, cls, loadOpcode);
         }
 
         public TypeDescriptor(String id, Class cls, int loadOpcode, boolean longOrDouble, boolean isPrimitive) {
@@ -103,8 +97,8 @@ public class Plugin implements InstrumentationPlugin {
             visitor.visitIntInsn(BIPUSH, paramIndex);
             visitor.visitIntInsn(loadOpcode(), stackIndex);
             if(isPrimitive())
-                visitor.visitMethodInsn(INVOKESTATIC, clsName(), "valueOf",
-                        "(" + id() + ")L" + clsName() + ";", false);
+                visitor.visitMethodInsn(INVOKESTATIC, cls(), "valueOf",
+                        "(" + id() + ")L" + cls() + ";", false);
             visitor.visitInsn(AASTORE);
             return stackIndex + (isLongOrDouble() ? 2 : 1);
         }
@@ -114,12 +108,14 @@ public class Plugin implements InstrumentationPlugin {
 
     static {
         primitiveTypes = new HashMap<>();
-        primitiveTypes.put("I", new TypeDescriptor("I", Integer.class, ILOAD, false));
-        primitiveTypes.put("J", new TypeDescriptor("J", Long.class, LLOAD, true));
-        primitiveTypes.put("F", new TypeDescriptor("F", Float.class, FLOAD, false));
-        primitiveTypes.put("D", new TypeDescriptor("D", Double.class, DLOAD, true));
-        primitiveTypes.put("Z", new TypeDescriptor("Z", Boolean.class, ILOAD, false));
-        primitiveTypes.put("B", new TypeDescriptor("B", Byte.class, ILOAD, false));
+        primitiveTypes.put("S", new TypeDescriptor("S", Short.class, ILOAD, false, true));
+        primitiveTypes.put("I", new TypeDescriptor("I", Integer.class, ILOAD, false, true));
+        primitiveTypes.put("J", new TypeDescriptor("J", Long.class, LLOAD, true, true));
+        primitiveTypes.put("F", new TypeDescriptor("F", Float.class, FLOAD, false, true));
+        primitiveTypes.put("D", new TypeDescriptor("D", Double.class, DLOAD, true, true));
+        primitiveTypes.put("Z", new TypeDescriptor("Z", Boolean.class, ILOAD, false, true));
+        primitiveTypes.put("B", new TypeDescriptor("B", Byte.class, ILOAD, false, true));
+        primitiveTypes.put("C", new TypeDescriptor("C", Character.class, ILOAD, false, true));
     }
 
     final static TypeDescriptor objectType = new TypeDescriptor("L", Object.class, ALOAD, false, false);
@@ -134,7 +130,7 @@ public class Plugin implements InstrumentationPlugin {
             IllegalAccessException {
         template = new Coverage();
         methodFilter = Env.getSPIEnv(METHOD_FILTER, (a, o, m, d) -> true);
-        templateFile = Env.getPathEnv(TEMPLATE_FILE, Paths.get("template.lst"));
+        templateFile = Env.getPathEnv(Collect.COVERAGE_OUT, Paths.get("template.lst"));
         serializer = Env.getSPIEnv(SERIALIZER, Object::toString);
     }
 
@@ -144,67 +140,114 @@ public class Plugin implements InstrumentationPlugin {
      */
     @Override
     public MethodVisitor methodVisitor(int access, String owner, String name, String desc, MethodVisitor visitor) {
-        String method = name + desc;
         try {
-            if(methodFilter.accept(access, owner, name, desc)) {
-                template.get(owner, method);
-                return new MethodVisitor(ASM6, visitor) {
-                    @Override
-                    public void visitCode() {
-                        try {
-                            List<TypeDescriptor> params = parseDesc(desc);
-                            if (params.size() > 0) {
-                                super.visitLdcInsn(owner);
-                                super.visitLdcInsn(name);
-                                super.visitLdcInsn(desc);
-                                super.visitIntInsn(BIPUSH, params.size());
-                                super.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-                                int stackIndex = ((access & ACC_STATIC) > 0) ? 0 : 1;
-                                for (int i = 0; i < params.size(); i++) {
-                                    stackIndex = params.get(i).visit(i, stackIndex, this);
+            String method = name + desc;
+            try {
+                if (methodFilter.accept(access, owner, name, desc)) {
+                    template.get(owner, method);
+                    return new MethodVisitor(ASM6, visitor) {
+                        @Override
+                        public void visitCode() {
+                            try {
+                                List<TypeDescriptor> params = MethodFilter.parseDesc(desc);
+                                if (params.size() > 0) {
+                                    super.visitLdcInsn(owner);
+                                    super.visitLdcInsn(name);
+                                    super.visitLdcInsn(desc);
+                                    super.visitIntInsn(BIPUSH, params.size());
+                                    super.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+                                    int stackIndex = ((access & ACC_STATIC) > 0) ? 0 : 1;
+                                    for (int i = 0; i < params.size(); i++) {
+                                        stackIndex = params.get(i).visit(i, stackIndex, this);
+                                    }
+                                    visitor.visitMethodInsn(INVOKESTATIC, COLLECTOR_CLASS, COLLECTOR_METHOD,
+                                            COLLECTOR_DESC, false);
                                 }
-                                visitor.visitMethodInsn(INVOKESTATIC, COLLECTOR_CLASS, COLLECTOR_METHOD,
-                                        COLLECTOR_DESC, false);
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            super.visitCode();
                         }
-                        super.visitCode();
-                    }
-                };
-            } else return visitor;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static List<TypeDescriptor> parseDesc(String desc) throws ClassNotFoundException {
-        if(!desc.startsWith("(")) throw new IllegalArgumentException("Not a method descriptor: " + desc);
-        int pos = 1;
-        List<TypeDescriptor> res = new ArrayList<>();
-        while(desc.charAt(pos) != ')') {
-            String next = desc.substring(pos, pos + 1);
-            if(next.equals("L")) {
-                int l = pos;
-                pos = desc.indexOf(";", pos) + 1;
-                res.add(new TypeDescriptor("L", Class.forName(desc.substring(l + 1, pos - 1)
-                        .replace('/', '.')),
-                        ALOAD, false, false));
-            } else if(next.equals("[")) {
-                //TODO can we do better?
-                res.add(new TypeDescriptor("L", new Object[0].getClass(),
-                        ALOAD, false, false));
-                pos = desc.indexOf(";", pos) + 1;
-            } else {
-                res.add(primitiveTypes.get(next));
-                pos++;
+                    };
+                } else return visitor;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
+        } catch(Throwable e) {
+            //JCov is known for swallowing exceptions
+            e.printStackTrace();
+            throw e;
         }
-        return res;
     }
 
     @Override
     public void instrumentationComplete() throws IOException {
-        Coverage.write(template, templateFile, serializer);
+        try {
+            Coverage.write(template, templateFile);
+        } catch(Throwable e) {
+            //JCov is known for swallowing exceptions
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    private static final Set<Class> runtimeClasses = Set.of(
+            Collect.class, Coverage.class, Saver.class, Saver.NoRuntimeSerializer.class, Env.class,
+            Implantable.class, Serializer.class
+    );
+
+    protected List<Class> runtimeClasses() {
+        return runtimeClasses();
+    }
+
+    @Override
+    public Path runtime() throws Exception {
+        try {
+            Path dest = Files.createTempFile("jcov-data", ".jar");
+            Properties toSave = new Properties();
+            System.getProperties().forEach((k, v) -> {
+                if(k.toString().startsWith(JCOV_DATA_ENV_PREFIX))
+                    toSave.setProperty(k.toString(), v.toString());
+            });
+            Set<Class> allRuntime = runtimeClasses;
+            Function<Object, String> serializer = Env.getSPIEnv(SERIALIZER, null);
+            if(serializer != null && serializer instanceof Implantable) {
+                allRuntime = new HashSet<>(runtimeClasses);
+                allRuntime.addAll(((Implantable)serializer).runtime());
+            }
+            try(JarOutputStream jar = new JarOutputStream(Files.newOutputStream(dest))) {
+                jar.putNextEntry(new JarEntry(Env.PROP_FILE));
+                toSave.store(jar, "");
+                jar.closeEntry();
+                for(Class rc : allRuntime) {
+                    String fileName = rc.getName().replace(".", "/") + ".class";
+                    jar.putNextEntry(new JarEntry(fileName));
+                    try (InputStream ci = rc.getClassLoader().getResourceAsStream(fileName)) {
+                        byte[] buffer = new byte[1024];
+                        int read;
+                        while ((read = ci.read(buffer)) > 0) {
+                            jar.write(buffer, 0, read);
+                        }
+                    }
+                    jar.closeEntry();
+                }
+            }
+            return dest;
+        } catch(Throwable e) {
+            //JCov is known for swallowing exceptions
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Override
+    public String collectorPackage() {
+        try {
+            return Collect.class.getPackage().getName();
+        } catch(Throwable e) {
+            //JCov is known for swallowing exceptions
+            e.printStackTrace();
+            throw e;
+        }
     }
 }

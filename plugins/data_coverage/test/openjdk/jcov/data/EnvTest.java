@@ -22,7 +22,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package openjdk.jcov.data.arguments.analysis;
+package openjdk.jcov.data;
 
-public class Reader {
+import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertEquals;
+
+public class EnvTest {
+    public static final String TEST_PROPERTY = "jcov.data.test.property";
+    public static final String IUNDEFINED_TEST_PROPERTY = "jcov.data.test.property.undefined";
+    @Test
+    public void defaultsTest() {
+        assertEquals(Env.getStringEnv(TEST_PROPERTY, "three"), "one");
+        System.setProperty(TEST_PROPERTY, "two");
+        assertEquals(Env.getStringEnv(TEST_PROPERTY, "three"), "two");
+        assertEquals(Env.getStringEnv(IUNDEFINED_TEST_PROPERTY, "three"), "three");
+        System.setProperty(IUNDEFINED_TEST_PROPERTY, "two");
+        assertEquals(Env.getStringEnv(IUNDEFINED_TEST_PROPERTY, "three"), "two");
+    }
 }

@@ -24,13 +24,15 @@
  */
 package openjdk.jcov.data;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Objects;
-
-import static java.util.stream.Collectors.toMap;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * Much of the functionality in this plugin is controlled through system properties. This class defines some shortcuts
@@ -38,30 +40,66 @@ import static java.util.stream.Collectors.toMap;
  */
 public class Env {
 
-    private static Map<String, String> properties = System.getProperties().entrySet().stream()
-            .collect(toMap(Object::toString, Objects::toString));
+    public static final String PROP_FILE =
+            Env.class.getPackageName().replace('.', '/') +
+            "/instrumentation.properties";
+    /**
+     * Prefix for all system property names which will be passed to the VM running JCov calls.
+     */
+    public static final String JCOV_DATA_ENV_PREFIX = "jcov.data.";
 
-    public static Map<String, String> properties() {
-        return properties;
+    public static final String JCOV_DATA_SAVER = "jcov.data.saver";
+    private static final String JCOV_OPTION_FOR_DATA_SAVER = "jcov.data-saver";
+
+    private static volatile Properties SAVED;
+
+    public static void setSystemProperties(Map<String, String> properties) {
+        properties.forEach((k, v) -> System.setProperty(k, v));
     }
 
-    public static void properties(Map<String, String> properties) {
-        Env.properties = properties;
+    public static void clear(String prefix) {
+        Set<String> keys = System.getProperties().stringPropertyNames();
+        keys.stream().filter(k -> k.startsWith(prefix))
+                .forEach(k -> System.clearProperty(k));
     }
 
     public static String getStringEnv(String property, String defaultValue) {
-        String propValue = properties.get(property);
-        if(propValue != null) return defaultValue;
-        else return defaultValue;
+        synchronized(Env.class) {
+            if (SAVED == null) {
+                try {
+                    SAVED = new Properties();
+                    InputStream in = Env.class.getResourceAsStream("/" + PROP_FILE);
+                    if(in != null) {
+                        SAVED.load(in);
+                        if(System.getProperty(JCOV_OPTION_FOR_DATA_SAVER) == null) {
+                            String saver = SAVED.getProperty(JCOV_DATA_SAVER);
+                            if(saver != null)
+                                System.setProperty(JCOV_OPTION_FOR_DATA_SAVER, saver);
+                        }
+                        System.out.println("Using property definitions from " + PROP_FILE + ":");
+                        SAVED.list(System.out);
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    throw e;
+                }
+            }
+        }
+        String override = System.getProperty(property);
+        return (override != null) ? override : SAVED.getProperty(property, defaultValue);
     }
+
     public static Path getPathEnv(String property, Path defaultValue) {
-        String propValue = properties.get(property);
+        String propValue = getStringEnv(property, null);
         if(propValue != null) return Path.of(propValue);
         else return defaultValue;
     }
+
     public static <SPI> SPI getSPIEnv(String property, SPI defaultValue) throws ClassNotFoundException,
             NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        String propValue = properties.get(property);
+        String propValue = getStringEnv(property, null);
         if(propValue != null) {
             if (!propValue.contains("("))
                 return (SPI) Class.forName(propValue).getConstructor().newInstance();
@@ -69,7 +107,7 @@ public class Env {
                 int ob = propValue.indexOf('(');
                 int cb = propValue.indexOf(')');
                 Class cls = Class.forName(propValue.substring(0, ob));
-                String[] params = propValue.substring(ob, cb - 1).split(",");
+                String[] params = propValue.substring(ob + 1, cb).split(",");
                 Class[] paramTypes = new Class[params.length];
                 Arrays.fill(paramTypes, String.class);
                 return (SPI) cls.getConstructor(paramTypes).newInstance(params);

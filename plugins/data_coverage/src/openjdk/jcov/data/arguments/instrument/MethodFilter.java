@@ -24,9 +24,37 @@
  */
 package openjdk.jcov.data.arguments.instrument;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.objectweb.asm.Opcodes.ALOAD;
+
 /**
  * When used defines which methods to instrument for argument collection.
  */
 public interface MethodFilter {
+    static List<Plugin.TypeDescriptor> parseDesc(String desc) throws ClassNotFoundException {
+        if(!desc.startsWith("(")) throw new IllegalArgumentException("Not a method descriptor: " + desc);
+        int pos = 1;
+        List<Plugin.TypeDescriptor> res = new ArrayList<>();
+        while(desc.charAt(pos) != ')') {
+            char next = desc.charAt(pos);
+            if(next == 'L') {
+                int l = pos;
+                pos = desc.indexOf(";", pos) + 1;
+                res.add(new Plugin.TypeDescriptor("L", desc.substring(l + 1, pos - 1), ALOAD));
+            } else if(next == '[') {
+                //TODO can we do better?
+                res.add(new Plugin.TypeDescriptor("[", "java/lang/Object", ALOAD));
+                if(desc.charAt(pos + 1) == 'L') pos = desc.indexOf(";", pos) + 1;
+                else pos = pos + 2;
+            } else {
+                res.add(Plugin.primitiveTypes.get(new String(new char[] {next})));
+                pos++;
+            }
+        }
+        return res;
+    }
+
     boolean accept(int access, String owner, String name, String desc) throws Exception;
 }
