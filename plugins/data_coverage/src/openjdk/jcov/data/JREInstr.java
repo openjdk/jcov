@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.requireNonNull;
 import static openjdk.jcov.data.Env.JCOV_DATA_ENV_PREFIX;
 
 public class JREInstr {
@@ -65,11 +66,13 @@ public class JREInstr {
     }
 
     public int instrument(String jre) throws IOException, InterruptedException {
+        requireNonNull(jcovRuntime, "Must specify JCov runtime.");
+        requireNonNull(pluginClass, "Must specify an instrumentation plugin.");
+        requireNonNull(jcovTemplate, "Must specify jcov template location.");
         String[] params = new String[] {
                 "-implantrt", jcovRuntime,
                 "-instr_plugin", pluginClass,
                 "-template", jcovTemplate,
-                "-im", "java.base",
                 jre};
         System.out.println("Instrumentation parameters: " +
                 Arrays.stream(params).collect(Collectors.joining(" ")));

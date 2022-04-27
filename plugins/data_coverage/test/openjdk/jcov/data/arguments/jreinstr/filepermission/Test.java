@@ -84,7 +84,7 @@ public class Test {
                 "        Files.delete(file);",
                 "    }",
                 "}"
-            ));
+        ));
         Files.deleteIfExists(jcov_result);
         //no classpath necessary for the next call because the class is implanted
         List<String> command = List.of(
@@ -104,7 +104,7 @@ public class Test {
         assertTrue(Files.readAttributes(template, BasicFileAttributes.class).lastModifiedTime()
                 .compareTo(templateCreated) > 0);
     }
-    
+
     @org.testng.annotations.Test(dependsOnMethods = "testInstrumentation")
     public void testCoverage() throws IOException, InterruptedException {
         Coverage cov = Coverage.read(template, a -> a);
