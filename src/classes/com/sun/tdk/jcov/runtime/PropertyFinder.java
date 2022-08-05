@@ -35,7 +35,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 /**
- *  SE implementation of PropertyFinder 
+ *  SE implementation of PropertyFinder
  *
  * @author Dmitry Fazunenko
  * @author Alexey Fedorchenko
@@ -44,7 +44,7 @@ public final class PropertyFinder {
 
     /**
      *  Reads input string substituting macros. No additional shortcuts
-     * used. 
+     * used.
      *
      * @param str String to parse and substitute
      * @return Parsed string
@@ -55,7 +55,7 @@ public final class PropertyFinder {
 
     /**
      *  Reads input string substituting macros. Additional shortcuts can be
-     * used to enhance or overwrite default macros. 
+     * used to enhance or overwrite default macros.
      *
      * @param str String to parse and substitute
      * @param shortcuts
@@ -220,7 +220,7 @@ public final class PropertyFinder {
     /**
      *  Returns value specified by user. If sys prop defined the value is
      * taken from system property, if not the looks for env variable setting and
-     * the default value is taken in the last turn. 
+     * the default value is taken in the last turn.
      *
      * @param name - variable name. JCOV_{NAME} is used for sys env, jcov.{name}
      * is used for jvm env
@@ -246,7 +246,7 @@ public final class PropertyFinder {
      *  Returns value specified by user. If sys prop is defined the value is
      * taken from system property, if not the looks for env variable setting, if
      * not it looks in property files and the default value is taken in the last
-     * turn. 
+     * turn.
      *
      * @param name - variable name. JCOV_{NAME} is used for sys env, jcov.{name}
      * is used for jvm env
@@ -275,7 +275,7 @@ public final class PropertyFinder {
      * {user.home}/.jcov/jcov.properties file.   Every filename is
      * firstly checked as a file and is read only if such file exists and can be
      * read. If it's not a file, can't be read, doesn't exist or is not a
-     * property file then classpath resource is checked. 
+     * property file then classpath resource is checked.
      *
      * @return Properties read from all possible sources or null if not found.
      */
@@ -359,7 +359,7 @@ public final class PropertyFinder {
     }
 
     /**
-     *  Read a single property from property file 
+     *  Read a single property from property file
      *
      * @param fileName file to look value in
      * @param name name of value to read
