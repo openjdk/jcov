@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
   DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
   This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@
         <mkdir dir="${jcov.src.update}/com/sun/tdk/jcov/tools"/>
         <echo file="${jcov.src.update}/com/sun/tdk/jcov/tools/JcovVersion.java">
             /*
-            * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+            * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
             * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
             *
             * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,8 @@
 
     <target name="build-file.saver" depends="prepare" description="build file saver jar">
 
+        <property file="filesaver.replace.properties"/>
+
         <mkdir dir="${jcov.filesaver.classes}"/>
         <mkdir dir="${jcov.filesaver.src}"/>
 
@@ -228,12 +230,10 @@
             </fileset>
             <filterchain>
                 <tokenfilter>
-                    <replaceregex pattern="\/\*@" replace="@"/>
-                    <replaceregex pattern="@\*\/" replace="@"/>
+                    <replaceregex
+                            pattern="\/\/@.*@\/\/"
+                            replace="${FILE_SAVER}"/>
                 </tokenfilter>
-                <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                    <param type="propertiesfile" value="filesaver.replace.properties"/>
-                </filterreader>
             </filterchain>
         </copy>
         <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="8" source="8"
@@ -253,6 +253,8 @@
 
     <target name="build-network.saver" depends="prepare" description="build network saver jar">
 
+        <property file="networksaver.replace.properties"/>
+
         <mkdir dir="${jcov.networksaver.classes}"/>
         <mkdir dir="${jcov.networksaver.src}"/>
 
@@ -262,12 +264,10 @@
             </fileset>
             <filterchain>
                 <tokenfilter>
-                    <replaceregex pattern="\/\*@" replace="@"/>
-                    <replaceregex pattern="@\*\/" replace="@"/>
+                    <replaceregex
+                            pattern="\/\/@.*@\/\/"
+                            replace="${NETWORK_SAVER}"/>
                 </tokenfilter>
-                <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                    <param type="propertiesfile" value="networksaver.replace.properties"/>
-                </filterreader>
             </filterchain>
         </copy>
         <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="8" source="8"
@@ -287,7 +287,10 @@
 
     <target name="build-jt.observer" depends="prepare" if ="javatest.present" description="build jtobserver jar">
         <mkdir dir="${jcov.jtobserver.classes}"/>
-        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="8" source="8"
+        <javac includeantruntime="false" encoding="iso-8859-1"
+               debug="no"
+               target="8"
+               source="8"
                srcdir="${src.dir}"
                sourcepath=""
                destdir="${jcov.jtobserver.classes}" classpath="${javatestjar}">
@@ -329,7 +332,10 @@ MILESTONE="${build.milestone}"
 
     <target name="test" depends="build-jcov,build-network.saver">
         <mkdir dir="${result.dir}/test/classes" />
-        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="8" source="8"
+        <javac includeantruntime="false" encoding="iso-8859-1"
+               debug="no"
+               target="8"
+               source="8"
                srcdir="${test.src.dir}"
                sourcepath="${test.src.dir}"
                classpath="${testngjar}:${build.dir}/jcov.jar"

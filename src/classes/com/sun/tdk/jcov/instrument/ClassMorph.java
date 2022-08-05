@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.TraceClassVisitor;
 
+import static java.lang.String.format;
+
 /**
  * @author Dmitry Fazunenko
  * @author Alexey Fedorchenko
@@ -53,8 +55,6 @@ public class ClassMorph {
 
     private DataRoot root;
     private final String outputFile;
-    //    private List<String> instrumented = new ArrayList<String>();
-//    private HashSet<String> instrumented = new HashSet<String>(); // Set should work better
     private HashMap<String, Long> instrumented = new HashMap<String, Long>(); // Set should work better
     private HashMap<String, byte[]> instrumentedValues = new HashMap<String, byte[]>(); // Set should work better
     private static final boolean IS_SELFTEST = System.getProperty("jcov.selftest") != null;
@@ -103,12 +103,12 @@ public class ClassMorph {
         }
 
         if (className.startsWith("com/sun/tdk/jcov") && !IS_SELFTEST || className.startsWith("org/objectweb/asm")) {
-            logger.log(Level.INFO, "{0} - skipped (should not perform self-instrument)", className);
+            logger.log(Level.INFO, format("%s - skipped (should not perform self-instrument)", className));
             return false;
         }
 
         if (className.startsWith("sun/reflect/Generated")) {
-            logger.log(Level.WARNING, "{0} - skipped (should not instrument generated classes)");
+            logger.log(Level.WARNING, format("%s - skipped (should not instrument generated classes)", className));
             return false;
         }
 
@@ -140,7 +140,7 @@ public class ClassMorph {
         }
 
         if (classfileBuffer[0] != -54 || classfileBuffer[1] != -2 || classfileBuffer[2] != -70 || classfileBuffer[3] != -66) {
-            throw new IOException("Not a java classfile (0xCAFEBABE header not found)");
+            throw new IOException("Corrupted class file (0xCAFEBABE header not found)");
         }
 
         OffsetLabelingClassReader cr = new OffsetLabelingClassReader(classfileBuffer);
@@ -204,7 +204,7 @@ public class ClassMorph {
             if (!params.isDynamicCollect() && !rtClassesInstrumented && isPreVMLoadClass(fullname)) {
                 rtClassesInstrumented = true;
                 logger.log(Level.WARNING, "It's possible that you are instrumenting classes which are loaded before VM is loaded.\n" +
-                        "It's recomended to add saveatend at java/lang/Shutdown.runHooks method. Data could be lost otherwise.");
+                        "It's recommended to add saveAtEnd at java/lang/Shutdown.runHooks method. Data could be lost otherwise.");
             }
 
             return res;

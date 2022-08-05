@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,8 @@ import java.util.Calendar;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 /**
- * <p> SE implementation of PropertyFinder </p>
+ *  SE implementation of PropertyFinder 
  *
  * @author Dmitry Fazunenko
  * @author Alexey Fedorchenko
@@ -44,8 +43,8 @@ import java.util.regex.Pattern;
 public final class PropertyFinder {
 
     /**
-     * <p> Reads input string substituting macros. No additional shortcarts
-     * used. </p>
+     *  Reads input string substituting macros. No additional shortcuts
+     * used. 
      *
      * @param str String to parse and substitute
      * @return Parsed string
@@ -55,15 +54,15 @@ public final class PropertyFinder {
     }
 
     /**
-     * <p> Reads input string substituting macros. Additional shortcarts can be
-     * used to enhance or overwrite default macros. </p>
+     *  Reads input string substituting macros. Additional shortcuts can be
+     * used to enhance or overwrite default macros. 
      *
      * @param str String to parse and substitute
-     * @param shortcarts
+     * @param shortcuts
      * @param datas
      * @return
      */
-    public static String processMacroString(String str, char shortcarts[], String datas[]) {
+    public static String processMacroString(String str, char shortcuts[], String datas[]) {
         if (str == null) {
             return str;
         }
@@ -88,9 +87,9 @@ public final class PropertyFinder {
                 char ch = patt.charAt(1);
                 if (end - pos == 2) { // prebuilt patterns
                     boolean found = false;
-                    if (shortcarts != null) {
-                        for (int i = 0; i < shortcarts.length; ++i) {
-                            if (shortcarts[i] == ch) {
+                    if (shortcuts != null) {
+                        for (int i = 0; i < shortcuts.length; ++i) {
+                            if (shortcuts[i] == ch) {
                                 found = true;
                                 buf.append(datas[i]);
                             }
@@ -142,7 +141,7 @@ public final class PropertyFinder {
                         Class c = Class.forName(className);
                         Field f = c.getDeclaredField(patt.substring(ind + 1));
                         boolean changed = false;
-                        if (!f.isAccessible()) {
+                        if (!  f.isAccessible()) {
                             f.setAccessible(true);
                             changed = true;
                         }
@@ -219,9 +218,9 @@ public final class PropertyFinder {
     public static final String ENV_PROPERTY_PREFIX = "JCOV_";
 
     /**
-     * <p> Returns value specified by user. If sys prop defined the value is
+     *  Returns value specified by user. If sys prop defined the value is
      * taken from system property, if not the looks for env variable setting and
-     * the default value is taken in the last turn. </p>
+     * the default value is taken in the last turn. 
      *
      * @param name - variable name. JCOV_{NAME} is used for sys env, jcov.{name}
      * is used for jvm env
@@ -244,10 +243,10 @@ public final class PropertyFinder {
     }
 
     /**
-     * <p> Returns value specified by user. If sys prop is defined the value is
+     *  Returns value specified by user. If sys prop is defined the value is
      * taken from system property, if not the looks for env variable setting, if
      * not it looks in property files and the default value is taken in the last
-     * turn. </p>
+     * turn. 
      *
      * @param name - variable name. JCOV_{NAME} is used for sys env, jcov.{name}
      * is used for jvm env
@@ -270,14 +269,13 @@ public final class PropertyFinder {
     }
 
     /**
-     * <p> Searches for jcov property file. First candidate to read is file in
+     *  Searches for jcov property file. First candidate to read is file in
      * JCOV_PROPFILE system env variable. Second candidate is file in
      * jcov.propfile jvm env. Third candidate to read is
-     * /com/sun/tdk/jcov/jcov.properties classpath resourse. Last candidate is
-     * {user.home}/.jcov/jcov.properties file. </p> <p> Every filename is
+     * {user.home}/.jcov/jcov.properties file.   Every filename is
      * firstly checked as a file and is read only if such file exists and can be
      * read. If it's not a file, can't be read, doesn't exist or is not a
-     * property file then classpath resource is checked. </p>
+     * property file then classpath resource is checked. 
      *
      * @return Properties read from all possible sources or null if not found.
      */
@@ -287,25 +285,23 @@ public final class PropertyFinder {
             String propfile = getStaticValue("propfile", null); // jcov.propfile or JCOV_PROPFILE
 
             if (propfile != null) {
-                p = readProperties(propfile);
+                p = loadPropertiesFile(propfile, null);
                 if (p != null) {
                     propsFile = propfile;
                     return p;
                 }
             }
 
-            if (propfile == null || !("/com/sun/tdk/jcov/jcov.properties".equals(propfile))) {
-                p = readProperties("/com/sun/tdk/jcov/jcov.properties");
-                if (p != null) {
-                    propsFile = "/com/sun/tdk/jcov/jcov.properties";
-                    return p;
-                }
-            }
-
             try {
-                p = readProperties(System.getProperty("user.home") + File.separator + ".jcov" + File.separator + "jcov.properties");
+                p = loadPropertiesFile(System.getProperty("user.home") +
+                        File.separator +
+                        ".jcov" +
+                        File.separator +
+                        "jcov.properties", null);
                 if (p != null) {
-                    propsFile = System.getProperty("user.home") + File.separator + ".jcov" + File.separator + "jcov.properties";
+                    propsFile = System.getProperty("user.home") + File.separator +
+                            ".jcov" + File.separator +
+                            "jcov.properties";
                 }
             } catch (Exception ignore) {
             }
@@ -326,34 +322,9 @@ public final class PropertyFinder {
         return properties;
     }
 
-    private static Properties loadPropertiesStream(String path, Properties properties) {
-        try(InputStream in = JCovSaver.class.getResourceAsStream(path)) {
-            Properties p = ( properties == null) ?  new Properties() : properties;
-            p.load(in);
-            resolveProps(p);
-            properties = p;
-        } catch (Exception ignore) {
-            // warning message
-        }
-        return properties;
-    }
-
     /**
-     * <p> Reads jcov property file from specified path </p> <p>
-     * If it can't be read then classpath resource is checked. <p>
-     *
-     * @param path Path to look for a property file.
-     * @return Read properties or null if file was not found neither in file
-     * system neither in classpath
-     */
-    public static Properties readProperties(String path) {
-        Properties p = loadPropertiesFile(path, null);
-        return  p == null ? loadPropertiesStream(path, null) : p;
-    }
-
-    /**
-     * <p> Reads jcov property file from specified path </p> <p>
-     * If it can't be read then classpath resource is checked. <p>
+     *  Reads jcov property file from specified path
+     *  If it can't be read then classpath resource is checked.
      *
      * @param path Path to look for a property file.
      * @return Read properties or null if file was not found neither in file
@@ -363,13 +334,11 @@ public final class PropertyFinder {
         if (properties == null) {
             properties = new Properties();
         }
-        Properties p = loadPropertiesFile(path, properties);
-        return  properties.equals(p) ? loadPropertiesStream(path, properties) : p;
+        return loadPropertiesFile(path, properties);
     }
 
     /**
-     * <p> Resolves all links of ${key} form on other keys in property values.
-     * </p>
+     *  Resolves all links of ${key} form on other keys in property values.
      *
      * @param props Properties to resolve.
      */
@@ -390,7 +359,7 @@ public final class PropertyFinder {
     }
 
     /**
-     * <p> Read a single property from property file </p>
+     *  Read a single property from property file 
      *
      * @param fileName file to look value in
      * @param name name of value to read
@@ -398,17 +367,13 @@ public final class PropertyFinder {
      * property file doesn't exist
      */
     public static String readPropFrom(String fileName, String name) {
-        Properties props = readProperties(fileName);
-        if (props != null) {
-            return props.getProperty(PROPERTY_FILE_PREFIX + name);
-        } else {
-            return null;
-        }
+        Properties props = loadPropertiesFile(fileName, null);
+        return props != null ? props.getProperty(PROPERTY_FILE_PREFIX + name) : null;
     }
 
     /**
-     * <p> Describes source of a property by name. Returns a string containing
-     * description of the property source. E.g.: </p> <ul> <li> "JavaVM property
+     *  Describes source of a property by name. Returns a string containing
+     * description of the property source. E.g.:  <ul> <li> "JavaVM property
      * 'jcov.propfile' </li> <li> "system environment property 'JCOV_TEMPLATE'
      * </li> <li> "property file from '/temp/jcov/jcov.properties' </li> <li>
      * "defaults" </li> </ul>
@@ -441,14 +406,13 @@ public final class PropertyFinder {
     }
 
     /**
-     * <p> Set path for properties file to read values. Can be used many times.
-     * </p>
+     * Set path for properties file to read values. Can be used many times.
      *
      * @param path Path to read
      */
     public static void setPropertiesFile(String path) {
         propsFile = path;
-        p = readProperties(path);
+        p = loadPropertiesFile(path, null);
         propsRead = true;
     }
 
@@ -459,53 +423,38 @@ public final class PropertyFinder {
     }
 
     /**
-     * <p> Installs shutdown hook. ME/Card version can't install shutdown hook.
-     * </p>
+     *  Installs shutdown hook.
      */
     public static void addAutoShutdownSave() {
         if (Collect.saveAtShutdownEnabled && "true".equals(findValue("autosave", "true"))) {
-            try {
-                Runtime.getRuntime().addShutdownHook(new Thread() {
-                    @Override
-                    public void run() {
-                        Collect.disable();
-                        Collect.saveResults();
-                        Collect.enable();
-                        Collect.saveAtShutdownEnabled = false;
-                        Collect.saveEnabled = false;
-                        String s = PropertyFinder.findValue("data-saver", null);
-                        if(s != null) {
-                            try {
-                                Class clz = Class.forName(s);
-                                Object saver = clz.getConstructor().newInstance();
-                                Method mthd = clz.getMethod("saveResults", new Class[] {});
-                                mthd.invoke(saver);
-                            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
-                                    InvocationTargetException | InstantiationException e) {
-                                throw new RuntimeException(e);
-                            }
+            Thread hook = new Thread() {
+                @Override
+                public void run() {
+                    Collect.disable();
+                    Collect.saveResults();
+                    Collect.enable();
+                    Collect.saveAtShutdownEnabled = false;
+                    Collect.saveEnabled = false;
+                    String s = PropertyFinder.findValue("data-saver", null);
+                    if(s != null) {
+                        try {
+                            Class clz = Class.forName(s);
+                            Object saver = clz.getConstructor().newInstance();
+                            Method mthd = clz.getMethod("saveResults", new Class[] {});
+                            mthd.invoke(saver);
+                        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
+                                 InvocationTargetException | InstantiationException e) {
+                            throw new RuntimeException(e);
                         }
                     }
-                });
+                }
+            };
+            try {
+                Runtime.getRuntime().addShutdownHook(hook);
             } catch (Exception ignore) {
                 System.err.println("Can't set shutdown hook.");
                 ignore.printStackTrace();
             }
         }
     }
-
-    /**
-     * <p> Checks whether VM is ready to initialize JCov RT (saver). Most savers
-     * use shutdown hook to save data in time. Shutdown hook needs Thread to be
-     * created but it can't be created in very early VM livetime. </p> <p> Due
-     * to restrictions JCovME version should have it's own isVMReady()
-     * implementation. </p>
-     *
-     * @return true if VM is ready to install shutdown hook and to read
-     * properties
-     */
-    public static boolean isVMReady() {
-        return System.out != null && Runtime.getRuntime() != null;//&& sun.misc.VM.isBooted();
-    }
-
 }
