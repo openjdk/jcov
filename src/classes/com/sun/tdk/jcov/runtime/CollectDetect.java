@@ -140,7 +140,7 @@ public class CollectDetect extends Collect {
     }
 
     public static void hit(int slot) {
-        if (isVMReady()) {
+        if (Collect.isVMReady || Collect.isVMReady()) {
             Thread t = Thread.currentThread();
             if (t != null) {
                 long id = Thread.currentThread().getId();
@@ -158,7 +158,7 @@ public class CollectDetect extends Collect {
     }
 
     public static void hit(int slot, int hash, int fullHash) {
-        if (isVMReady()) {
+        if (Collect.isVMReady || Collect.isVMReady()) {
             Thread t = Thread.currentThread();
             if (t != null) {
                 long id = t.getId();

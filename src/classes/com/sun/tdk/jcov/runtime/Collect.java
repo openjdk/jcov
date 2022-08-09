@@ -52,6 +52,8 @@ public class Collect {
     private static int nextSaver = 0;
     private static Class<SaverDecorator> extension = null;
 
+    protected static boolean isVMReady = false;
+
     // -- savers
     // saving state
     public static boolean enabled = false;
@@ -313,7 +315,7 @@ public class Collect {
     public static void init() {
         if (!isInitialized && !isInternal) {
             isInternal = true;
-            if (Collect.isVMReady()) {
+            if (isVMReady || isVMReady()) {
                 loadSaverExtension();
                 addSaver(instantiateSaver());
                 PropertyFinder.addAutoShutdownSave();
@@ -339,7 +341,8 @@ public class Collect {
      * properties
      */
     public static boolean isVMReady() {
-        return System.out != null && Runtime.getRuntime() != null;
+        isVMReady = System.out != null && Runtime.getRuntime() != null;
+        return isVMReady;
         // return jdk.internal.misc.VM.isBooted();
     }
 }
