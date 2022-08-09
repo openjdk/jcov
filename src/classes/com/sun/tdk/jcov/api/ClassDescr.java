@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class ClassDescr extends AbstractDescr {
     /**
      * List of class methods and fields
      */
-    public final List<MemberDescr> members;
+    public final List<MemberDescr> members = new ArrayList<>();
 
     /**
      * Creates an instance of ClassDescr
@@ -46,7 +46,6 @@ public class ClassDescr extends AbstractDescr {
      */
     public ClassDescr(String name) {
         super(name);
-        members = new ArrayList<MemberDescr>();
     }
 
     /**
@@ -76,8 +75,8 @@ public class ClassDescr extends AbstractDescr {
     /**
      * Finds a class method by its name and signature.
      *
-     * @param name
-     * @param signature
+     * @param name method's name
+     * @param signature  method's signature
      * @return found member or null.
      */
     public MemberDescr findMethod(String name, String signature) {
@@ -90,10 +89,9 @@ public class ClassDescr extends AbstractDescr {
     }
 
     /**
-     * Finds a class method by its name and signature.
+     * Finds a class method by its name.
      *
-     * @param name
-     * @param signature
+     * @param name field name
      * @return found member or null.
      */
     public MemberDescr findField(String name) {

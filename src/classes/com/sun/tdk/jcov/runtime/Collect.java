@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,9 @@ public class Collect {
     private static JCovSaver[] savers = new JCovSaver[MAX_SAVERS];
     private static int nextSaver = 0;
     private static Class<SaverDecorator> extension = null;
-    // This constant is replaced in ANT build script (see files se.replace.properties, me.replace.properties and so on)
-    private final static String saverClassnameString = "/*@BUILD_MODIFIED_SAVER_STRING@*/";
+
+    protected static boolean isVMReady = false;
+
     // -- savers
     // saving state
     public static boolean enabled = false;
@@ -259,11 +260,10 @@ public class Collect {
         if (extension != null) {
             return;
         }
-
         String m = PropertyFinder.findValue("extension", null);
         if (m != null) {
             if (m.equals("javatest") || m.equals("jt") || m.equals("jtreg")) {
-                m = "com.sun.tdk.jcov.runtime.NetworkSatelliteDecorator";
+                m = "com.sun.tdk.jcov.NetworkSatelliteDecorator";
             }
             try {
                 extension = (Class<SaverDecorator>) Class.forName(m);
@@ -277,9 +277,14 @@ public class Collect {
      * <p> Create Saver instance by name. The saver will be wrapped by Satellite
      * instance if any. </p>
      *
-     * @param name Saver to create
      * @return Created Saver
      */
+    private static JCovSaver instantiateSaver() {
+        JCovSaver saver = null;
+        // This line is replaced in ANT build script (see files filesaver.replace.properties, networksaver.replace.properties and so on)
+        //@BUILD_MODIFIED_SAVER_STRING@//
+        return saver;
+    }
     private static JCovSaver instantiateSaver(String name) {
         try {
             return decorateSaver((JCovSaver) Class.forName(name).getDeclaredConstructor().newInstance());
@@ -310,11 +315,9 @@ public class Collect {
     public static void init() {
         if (!isInitialized && !isInternal) {
             isInternal = true;
-            if (PropertyFinder.isVMReady()) {
+            if (isVMReady || isVMReady()) {
                 loadSaverExtension();
-                if (!saverClassnameString.startsWith("/*@")) {
-                    addSaver(instantiateSaver(saverClassnameString));
-                }
+                addSaver(instantiateSaver());
                 PropertyFinder.addAutoShutdownSave();
                 isInitialized = true;
             }
@@ -325,5 +328,21 @@ public class Collect {
     static {
         Collect.enableCounts();
         Collect.init();
+    }
+
+    /**
+     * <p> Checks whether VM is ready to initialize JCov RT (saver). Most savers
+     * use shutdown hook to save data in time. Shutdown hook needs Thread to be
+     * created but it can't be created in very early VM livetime. </p> <p> Due
+     * to restrictions JCovME version should have it's own isVMReady()
+     * implementation. </p>
+     *
+     * @return true if VM is ready to install shutdown hook and to read
+     * properties
+     */
+    public static boolean isVMReady() {
+        isVMReady = System.out != null && Runtime.getRuntime() != null;
+        return isVMReady;
+        // return jdk.internal.misc.VM.isBooted();
     }
 }

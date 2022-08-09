@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import static java.lang.String.format;
+
 /**
  * This class implements miscellaneous utilities, necessary for Jcov
  */
@@ -69,13 +71,13 @@ public final class Utils {
      * Represent digits in a big-radix numeric system
      */
     final static char[] chars = {
-        'q', 'w', 'r', 't', 'y', 'u', 'i', 'o', 'p', 's',
-        'g', 'h', 'j', 'k', 'l', 'z', 'x', 'v', 'n', 'm',
-        'Q', 'W', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'S',
-        'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'V', 'N', 'M',
-        '!', '@', '#', '$', '%', '^', '&', '*', '(', ')',
-        '_', '+', '|', '~', '-', '=', '\\', '[', ']', '{',
-        '}', ';', '\'', ':', '\"', ',', '.', '/', '<', '>', '?'
+            'q', 'w', 'r', 't', 'y', 'u', 'i', 'o', 'p', 's',
+            'g', 'h', 'j', 'k', 'l', 'z', 'x', 'v', 'n', 'm',
+            'Q', 'W', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'S',
+            'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'V', 'N', 'M',
+            '!', '@', '#', '$', '%', '^', '&', '*', '(', ')',
+            '_', '+', '|', '~', '-', '=', '\\', '[', ']', '{',
+            '}', ';', '\'', ':', '\"', ',', '.', '/', '<', '>', '?'
     };
     public final static int radix = chars.length;
     static int[] map = new int[ASCII_CHARS_TOTAL];
@@ -89,17 +91,18 @@ public final class Utils {
 
     public enum FILE_TYPE {
         ZIP, JAR, WAR, CLASS;
+
         public String getExtension() {
             return "." + this.name().toLowerCase();
         }
 
         public static boolean hasExtension(String fileName, FILE_TYPE... fTypes) {
-           for(FILE_TYPE ftype : fTypes) {
-               if( fileName.endsWith(ftype.getExtension()) ) {
-                   return true;
-               }
-           }
-           return false;
+            for (FILE_TYPE ftype : fTypes) {
+                if (fileName.endsWith(ftype.getExtension())) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -107,23 +110,25 @@ public final class Utils {
      * It's possible to set custom classfile extension by "clext" property (through jcov.clext system property, JCOV_CLEXT
      * environment variable and so on) - for example "clazz:.klass".
      */
-    public static final List<String>  CUSTOM_CLASS_FILE_EXTENSIONS =
+    public static final List<String> CUSTOM_CLASS_FILE_EXTENSIONS =
             Arrays.asList(PropertyFinder.findValue("clext", "").split(":").clone());
 
     public static boolean isClassFile(String fileName) {
-        if(FILE_TYPE.hasExtension(fileName, FILE_TYPE.CLASS)) {
+        if (FILE_TYPE.hasExtension(fileName, FILE_TYPE.CLASS)) {
             return true;
         }
-        return CUSTOM_CLASS_FILE_EXTENSIONS.stream().anyMatch(ext->fileName.endsWith(ext));
+        return CUSTOM_CLASS_FILE_EXTENSIONS.stream().anyMatch(ext -> fileName.endsWith(ext));
     }
 
-    public final static int VER1_6  = 160;  // 1.6
-    public final static int VER1_7  = 160;  // 1.7
-    public final static int VER1_8  = 160;  // 1.8
-    public final static int VER9    = 900;  // 9
-    public final static int VER10   = 1000;  // 10
-    public final static int VER17   = 1700;  // 17
-    public final static int VER18   = 1800;  // 18
+    public final static int VER1_6 = 160;  // 1.6
+    public final static int VER1_7 = 160;  // 1.7
+    public final static int VER1_8 = 160;  // 1.8
+    public final static int VER9 = 900;  // 9
+    public final static int VER10 = 1000;  // 10
+    public final static int VER17 = 1700;  // 17
+    public final static int VER18 = 1800;  // 18
+    public final static int VER19 = 1900;  // 19
+    public final static int VER20 = 2000;  // 20
 
     private static int javaVersion = -1;
 
@@ -131,11 +136,13 @@ public final class Utils {
      * @return JVM version: java.version * 100
      */
     public static int getJavaVersion() {
-        if (javaVersion == -1){
+        if (javaVersion == -1) {
             String ver = System.getProperty("java.version");
-            for(int i=1; i<=20; i++) {
-                if( ver.startsWith(String.format( (i <= 8) ? "1.%d" : "%d" , i))) {
-                    return (i <= 8) ? 100 + i*10 : i * 100;
+            for (int i = 1; i < 30; i++) {
+                if (ver.startsWith(format((i <= 8) ? "1.%d" : "%d", i))) {
+                    return (i <= 8) ? 100 + i * 10 : i * 100;
+                } else if(ver.startsWith("%d", i)) {
+                    return i* 100;
                 }
             }
             javaVersion = VER9;
@@ -146,10 +153,10 @@ public final class Utils {
     /**
      * Checks if given array's length is not less than given length.
      *
-     * @param buf array to be checked
-     * @param length minimum required length
+     * @param buf          array to be checked
+     * @param length       minimum required length
      * @param copy_old_buf whether to copy the contents of given buf to newly
-     * created array, if minimum length requirement is not met
+     *                     created array, if minimum length requirement is not met
      * @return buf if the buf length is ok, newly created array of length +
      * length/2 size otherwise
      */
@@ -291,9 +298,9 @@ public final class Utils {
      * where digits are all characters from the chars array field, and the radix
      * is chars.length, and writes it to given String buffer starting from ind.
      *
-     * @param val value to convert
+     * @param val  value to convert
      * @param sbuf buffer where the representation of the value is written
-     * @param ind starting index in sbuf
+     * @param ind  starting index in sbuf
      * @return ind + length of the string representation
      * @see #chars
      */
@@ -458,12 +465,12 @@ public final class Utils {
      * lines.
      *
      * @param fileName file to read
-     * @param start number of line to start from. -1 means start from 0.
-     * @param end number of line to end with. -1 means read all lines till the
-     * end.
+     * @param start    number of line to start from. -1 means start from 0.
+     * @param end      number of line to end with. -1 means read all lines till the
+     *                 end.
      * @return read lines. Never returns null.
      * @throws java.io.IOException - if file does not exist, or i/o errors
-     * happened
+     *                             happened
      */
     public static String[] readLines(String fileName, int start, int end) throws IOException {
         ArrayList lst = new ArrayList();
@@ -573,18 +580,18 @@ public final class Utils {
                             path -> {
                                 File file = Paths.get(path).toFile();
                                 if (file.isDirectory()) {
-                                    if(!file.getName().equalsIgnoreCase("jmods")) {
+                                    if (!file.getName().equalsIgnoreCase("jmods")) {
                                         paths.add(path);
                                     }
                                 } else if (file.isFile()) {
-                                    if( FILE_TYPE.hasExtension(path, FILE_TYPE.ZIP, FILE_TYPE.JAR, FILE_TYPE.WAR) ) {
+                                    if (FILE_TYPE.hasExtension(path, FILE_TYPE.ZIP, FILE_TYPE.JAR, FILE_TYPE.WAR)) {
                                         paths.add(path);
                                     }
                                 }
                             }
                     );
             for (String path : paths) {
-                if ( !Arrays.stream(classpath).anyMatch(cp -> cp.equals(path)) ) {
+                if (!Arrays.stream(classpath).anyMatch(cp -> cp.equals(path))) {
                     String cps = paths.stream().collect(Collectors.joining("#"));
                     String s1 = cps.replaceAll("#", ":");
                     String s2 = cps.replaceAll("#", " ");
@@ -615,7 +622,7 @@ public final class Utils {
             if (f.isDirectory()) {
                 getClassesAndJars(f, classes);
             } else {
-                if (FILE_TYPE.hasExtension(f.getAbsolutePath(), FILE_TYPE.JAR, FILE_TYPE.CLASS) ) {
+                if (FILE_TYPE.hasExtension(f.getAbsolutePath(), FILE_TYPE.JAR, FILE_TYPE.CLASS)) {
                     classes.add(f.getAbsolutePath());
                 }
             }
@@ -689,7 +696,8 @@ public final class Utils {
                 } else {
                     LogManager.getLogManager().reset();
                 }
-            } catch (Exception ignore) {}
+            } catch (Exception ignore) {
+            }
         }
     }
 
@@ -699,7 +707,8 @@ public final class Utils {
 
             try (InputStream in = Utils.class.getResourceAsStream(propfile)) {
                 LogManager.getLogManager().readConfiguration(in);
-            } catch (Exception ignore) {}
+            } catch (Exception ignore) {
+            }
         }
     }
 
@@ -749,7 +758,15 @@ public final class Utils {
 
     static enum PrimitiveTypes {
 
-        BOOLEAN('Z', "boolean"), VOID('V', "void"), INT('I', "int"), LONG('J', "long"), CHAR('C', "char"), BYTE('B', "byte"), DOUBLE('D', "double"), SHORT('S', "short"), FLOAT('F', "float");
+        BOOLEAN('Z', "boolean"),
+        VOID('V', "void"),
+        INT('I', "int"),
+        LONG('J', "long"),
+        CHAR('C', "char"),
+        BYTE('B', "byte"),
+        DOUBLE('D', "double"),
+        SHORT('S', "short"),
+        FLOAT('F', "float");
         private char VMSig;
         private String JLS;
 
@@ -787,7 +804,7 @@ public final class Utils {
     public static String convertVMtoJLS(String methName, String VMsig) {
         Matcher m = java.util.regex.Pattern.compile("\\(([^\\)]*)\\)(.*)").matcher(VMsig);
         if (m.matches()) {
-            return String.format("%s %s(%s)", convertVMType(m.group(2)), methName, getArgs(m.group(1)));
+            return format("%s %s(%s)", convertVMType(m.group(2)), methName, getArgs(m.group(1)));
         } else {
             return methName + " " + VMsig; // some problem occured
         }
@@ -842,11 +859,11 @@ public final class Utils {
         return args.toString();
     }
 
-    public static Pattern[] concatFilters(String[] includes, String[] excludes){
+    public static Pattern[] concatFilters(String[] includes, String[] excludes) {
         return concatFilters(includes, excludes, false);
     }
 
-    public static Pattern[] concatModuleFilters(String[] includes, String[] excludes){
+    public static Pattern[] concatModuleFilters(String[] includes, String[] excludes) {
         return concatFilters(includes, excludes, true);
     }
 
@@ -916,7 +933,6 @@ public final class Utils {
         }
 
         /**
-         *
          * @param element Should not be null
          * @param include
          */
@@ -929,8 +945,7 @@ public final class Utils {
                 } else {
                     if (modulePattern) {
                         this.element = element.replaceAll("([^\\\\])\\$", "$1\\\\\\$");
-                    }
-                    else{
+                    } else {
                         this.element = element.replaceAll("\\.", "/").replaceAll("([^\\\\])\\$", "$1\\\\\\$");
                     }
                     if (this.element.endsWith("/")) {
@@ -1047,10 +1062,10 @@ public final class Utils {
      * <p> Check whether a
      * <code>className</code> is accepted by patterns. </p>
      *
-     * @param alls patterns to use
+     * @param alls          patterns to use
      * @param allowedModifs class modificators to accept. Ignored if null.
-     * @param className class name to check
-     * @param sig class's signature
+     * @param className     class name to check
+     * @param sig           class's signature
      * @return true if a class name is accepted by all patters and contain at
      * least one allowed modificator
      */
@@ -1113,7 +1128,7 @@ public final class Utils {
     /**
      * <p> Checks that hostname is valid </p>
      *
-     * @param hostname Hostname to check
+     * @param hostname    Hostname to check
      * @param description Hostname description (eg "remote server address")
      * @throws com.sun.tdk.jcov.tools.JCovTool.EnvHandlingException
      */
@@ -1130,9 +1145,9 @@ public final class Utils {
     /**
      * <p> Checks a file for some criterias </p>
      *
-     * @param filename File to check
+     * @param filename    File to check
      * @param description File description (eg "output directory")
-     * @param opts criterias to check
+     * @param opts        criterias to check
      * @return File object related with <code>filename</code>
      * @throws com.sun.tdk.jcov.tools.JCovTool.EnvHandlingException
      */
@@ -1148,9 +1163,9 @@ public final class Utils {
     /**
      * <p> Checks a file for some criterias </p>
      *
-     * @param filename File to check
+     * @param filename    File to check
      * @param description File description (eg "output directory")
-     * @param opts criterias to check
+     * @param opts        criterias to check
      * @return File object related with <code>filename</code> or null
      * @throws com.sun.tdk.jcov.tools.JCovTool.EnvHandlingException
      */
@@ -1166,9 +1181,9 @@ public final class Utils {
     /**
      * <p> Checks a file for some criteria </p>
      *
-     * @param file File to check. Can't be null.
+     * @param file        File to check. Can't be null.
      * @param description File description
-     * @param opts criteria to check
+     * @param opts        criteria to check
      * @throws com.sun.tdk.jcov.tools.JCovTool.EnvHandlingException
      */
     public static void checkFile(File file, String description, CheckOptions... opts) throws EnvHandlingException {
@@ -1190,15 +1205,15 @@ public final class Utils {
                     }
                     break;
                 case FILE_CANWRITE:
-                    if ( file.isFile() ) {
+                    if (file.isFile()) {
                         // file exists
-                        if( !file.canWrite() ) {
-                        throw new EnvHandlingException("Incorrect " + description + " (" + file.getPath() + ") - can't write");
+                        if (!file.canWrite()) {
+                            throw new EnvHandlingException("Incorrect " + description + " (" + file.getPath() + ") - can't write");
                         }
                     } else {
                         // a new file
                         File parentDir = file.getAbsoluteFile().getParentFile();
-                        if ( parentDir == null || !parentDir.isDirectory() || ! Files.isWritable(parentDir.toPath()) ) {
+                        if (parentDir == null || !parentDir.isDirectory() || !Files.isWritable(parentDir.toPath())) {
                             throw new EnvHandlingException("Incorrect " + description + " (" + file.getPath() + ") - can't write");
                         }
                     }
@@ -1242,7 +1257,7 @@ public final class Utils {
     public static List<File> getListFiles(File dir) {
         ArrayList<File> listFiles = new ArrayList<>();
         File[] list = dir.listFiles();
-        if( list != null && list.length > 0) {
+        if (list != null && list.length > 0) {
             listFiles.addAll(Arrays.asList(list));
         }
         return listFiles;
@@ -1252,9 +1267,9 @@ public final class Utils {
      * <p> Converts a string to integer using Integer.parseInt() and checks some
      * criterias </p>
      *
-     * @param value String to convert
+     * @param value       String to convert
      * @param description value description (eg "port number")
-     * @param opts criterias to check
+     * @param opts        criterias to check
      * @return integer value
      * @throws com.sun.tdk.jcov.tools.JCovTool.EnvHandlingException
      */
@@ -1318,7 +1333,7 @@ public final class Utils {
     /**
      * Adds directory to zip archive
      *
-     * @param srcFolder directory to zip
+     * @param srcFolder   directory to zip
      * @param destZipFile result zip file
      * @throws Exception exceptions while working with file system
      */
@@ -1410,39 +1425,50 @@ public final class Utils {
         return "";
     }
 
-    public static boolean isAdvanceStaticInstrAllowed(String classname, String methodname) {
-        if ((!classname.equals("java/lang/System"))
-                && (!classname.equals("java/lang/String"))
-                && (!classname.equals("java/lang/StringLatin1"))
-                && (!classname.equals("java/lang/String$CaseInsensitiveComparator"))
-                && (!classname.equals("java/lang/Thread"))
-                && (!classname.equals("java/lang/ThreadGroup"))
-                && (!classname.equals("java/lang/RuntimePermission"))
-                && (!classname.equals("java/security/Permission"))
-                && (!classname.equals("java/security/BasicPermission"))
-                && (!classname.equals("java/lang/Class"))) {
-            return true;
+    private static final HashSet<String> classNameExclusion = new HashSet() {{
+        add("java/lang/System");
+        add("java/lang/String");
+        add("java/lang/StringLatin1");
+        add("java/lang/String$CaseInsensitiveComparator");
+        add("java/lang/Thread");
+        add("java/lang/ThreadGroup");
+        add("java/lang/RuntimePermission");
+        add("java/security/Permission");
+        add("java/security/BasicPermission");
+        add("java/lang/Class");
+        add("java/lang/Runtime");
+
+    }};
+
+    private static final HashSet<String> methodNameExclusion = new HashSet() {{
+        add("<clinit>");
+        add("<init>");
+        add("init");
+        add("length");
+        add("coder");
+        add("isLatin1");
+        add("charAt");
+        add("equals");
+        add("add");
+        add("checkAccess");
+        add("checkParentAccess");
+        add("getSecurityManager");
+        add("allowSecurityManager");
+        add("registerNatives");
+        add("currentTimeMillis");
+        add("identityHashCode");
+        add("nanoTime");
+        add("getId");
+        add("threadId");
+        add("getRuntime");
+    }};
+
+    public static boolean isAdvanceStaticInstrAllowed(String className, String methodName) {
+        if (classNameExclusion.contains(className)) {
+            if (methodNameExclusion.contains(methodName)) {
+                return false;
+            }
         }
-        if (!methodname.equals("<clinit>")
-                && !methodname.equals("<init>")
-                && !methodname.equals("init")
-                && !methodname.equals("length")
-                && !methodname.equals("coder")
-                && !methodname.equals("isLatin1")
-                && !methodname.equals("charAt")
-                && !methodname.equals("equals")
-                && !methodname.equals("add")
-                && !methodname.equals("checkAccess")
-                && !methodname.equals("checkParentAccess")
-                && !methodname.equals("getSecurityManager")
-                && !methodname.equals("allowSecurityManager")
-                && !methodname.equals("registerNatives")
-                && !methodname.equals("currentTimeMillis")
-                && !methodname.equals("identityHashCode")
-                && !methodname.equals("nanoTime")
-                && !methodname.equals("getId")) {
-            return true;
-        }
-        return false;
+        return true;
     }
 }

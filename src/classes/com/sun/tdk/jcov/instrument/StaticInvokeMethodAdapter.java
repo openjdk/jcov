@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,14 +87,17 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
                 InsnList il = new InsnList();
                 il.add(new LdcInsnNode(id));
                 il.add(new MethodInsnNode(INVOKESTATIC,
-                        "com/sun/tdk/jcov/runtime/Collect", "hit", "(I)V", false));
-
+                        "com/sun/tdk/jcov/runtime/Collect", "hit", "(I)V",
+                        false));
                 il.accept(this);
             }
         }
         super.visitFieldInsn(opcode, owner, name, desc);
     }
 
+    /**
+     * Visit the Code Attribute
+     */
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
 
@@ -105,7 +108,8 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
                 InsnList il = new InsnList();
                 il.add(new LdcInsnNode(id));
                 il.add(new MethodInsnNode(INVOKESTATIC,
-                        "com/sun/tdk/jcov/runtime/Collect", "hit", "(I)V", false));
+                        "com/sun/tdk/jcov/runtime/Collect", "hit", "(I)V",
+                        false));
                 il.accept(this);
             }
         }
@@ -121,7 +125,8 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
                     "(I)V", false);
         }
 
-        if (params.isInnerInvacationsOff() && Utils.isAdvanceStaticInstrAllowed(className, name)) {
+        if (params.isInnerInvacationsOff() &&
+                Utils.isAdvanceStaticInstrAllowed(this.className, name)) {
             if (!owner.equals("java/lang/Object") && params.isInnerInstrumentationIncludes(className)) {
               int id =  ( (this.methAccess & ACC_BRIDGE) == 0x0) ? -1 : 0;
                 super.visitLdcInsn(id);
@@ -145,13 +150,18 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
             case Opcodes.LRETURN:
             case Opcodes.DRETURN:
             case Opcodes.RETURN:
-                if (params.isInnerInvacationsOff() && Utils.isAdvanceStaticInstrAllowed(className, methName/*"<init>"*/)) {
+                if (params.isInnerInvacationsOff() &&
+                        Utils.isAdvanceStaticInstrAllowed(className, methName/*"<init>"*/)) {
                     if (!methName.equals("<clinit>")) {
                         int id = 0;
                         super.visitLdcInsn(id);
-                        super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V", false);
+                        super.visitMethodInsn(INVOKESTATIC,
+                                "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V",
+                                false);
                     } else {
-                        super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "leaveClinit", "()V", false);
+                        super.visitMethodInsn(INVOKESTATIC,
+                                "com/sun/tdk/jcov/runtime/CollectDetect", "leaveClinit", "()V",
+                                false);
                     }
                 }
                 break;

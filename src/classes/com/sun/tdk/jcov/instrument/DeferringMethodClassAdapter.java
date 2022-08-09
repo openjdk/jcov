@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,14 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+
+import static java.lang.String.format;
 import static org.objectweb.asm.Opcodes.*;
+
 import org.objectweb.asm.tree.MethodNode;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Dmitry Fazunenko
@@ -39,12 +45,14 @@ import org.objectweb.asm.tree.MethodNode;
  */
 class DeferringMethodClassAdapter extends ClassVisitor {
 
-    private final DataClass k;
+    private final DataClass dataClass;
     private final InstrumentationParams params;
 
-    public DeferringMethodClassAdapter(final ClassVisitor cv, DataClass k, InstrumentationParams params) {
+    private static final Logger logger = Logger.getLogger("com.sun.tdk.jcov");
+
+    public DeferringMethodClassAdapter(final ClassVisitor cv, DataClass dataClass, InstrumentationParams params) {
         super(Utils.ASM_API_VERSION, cv);
-        this.k = k;
+        this.dataClass = dataClass;
         this.params = params;
     }
 
@@ -56,7 +64,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
             final String signature,
             final String superName,
             final String[] interfaces) {
-        k.setInfo(access, signature, superName, interfaces);
+        dataClass.setInfo(access, signature, superName, interfaces);
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
@@ -66,7 +74,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         // that class is not substitued by value  during comilation
         FieldVisitor fv = super.visitField(access, name, desc, signature, value);
         if (params.isInstrumentFields() && ((access & ACC_STATIC) == 0 || value == null)) {
-            DataField fld = new DataField(k, access, name, desc, signature, value);
+            DataField fld = new DataField(dataClass, access, name, desc, signature, value);
             fv = new FieldAnnotationVisitor(fv, fld);
             // this is needed, because DataField contains adding to DataClass
         }
@@ -75,7 +83,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
 
     @Override
     public void visitSource(String source, String debug) {
-        k.setSource(source);
+        dataClass.setSource(source);
         super.visitSource(source, debug);
     }
 
@@ -85,11 +93,12 @@ class DeferringMethodClassAdapter extends ClassVisitor {
             final String desc,
             final String signature,
             final String[] exceptions) {
-        if (!InstrumentationOptions.isSkipped(k.getFullname(), name, access)
+
+        if (!InstrumentationOptions.isSkipped(dataClass.getFullname(), name, access)
                 && params.isDynamicCollect()
                 && params.isInstrumentNative()
                 && (access & ACC_NATIVE) != 0
-                && !"java/lang/invoke/VarHandle".equals(k.getFullname())) {
+                && !"java/lang/invoke/VarHandle".equals(dataClass.getFullname())) {
             // Visit the native method, but change the access flags and rename it with a prefix
             int accessNative = access;
             if ((accessNative & ACC_STATIC) == 0) {
@@ -110,23 +119,26 @@ class DeferringMethodClassAdapter extends ClassVisitor {
 
             // Write the native method, then visit and write the wrapper method
             MethodNode methodWrapper = new MethodNode(access & ~ACC_NATIVE, name, desc, signature, exceptions);
-            DataMethodEntryOnly meth = new DataMethodEntryOnly(k, access, name, desc, signature, exceptions);
+            DataMethodEntryOnly meth = new DataMethodEntryOnly(dataClass, access, name, desc, signature, exceptions);
             return new NativeWrappingMethodAdapter(mvNative, methodWrapper, cv, meth, params);
         }
+
         MethodVisitor mv = cv.visitMethod(access,
                 name,
                 desc,
                 signature,
                 exceptions);
+
         //This code is executed both in dynamic and static mode
-        if (InstrumentationOptions.isSkipped(k.getFullname(), name, access) || mv == null
-                || (access & ACC_ABSTRACT) != 0
-                || (access & ACC_NATIVE) != 0) {
+        if (InstrumentationOptions.isSkipped(dataClass.getFullname(), name, access) ||
+                mv == null ||
+                (access & ACC_ABSTRACT) != 0 ||
+                (access & ACC_NATIVE) != 0) {
             // build method with no content, and we are done
             if ((access & ACC_ABSTRACT) != 0 && params.isInstrumentAbstract()
                     || ((access & ACC_NATIVE) != 0 && params.isInstrumentNative())
-                    || InstrumentationOptions.isSkipped(k.getFullname(), name, access)) {
-                DataMethod meth = new DataMethodInvoked(k, access, name, desc, signature, exceptions);
+                    || InstrumentationOptions.isSkipped(dataClass.getFullname(), name, access)) {
+                DataMethod meth = new DataMethodInvoked(dataClass, access, name, desc, signature, exceptions);
                 return new MethodAnnotationAdapter(mv, meth);
             }
             return mv;
@@ -135,24 +147,23 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         // method could not be instrumented
         // java.lang.VerifyError: (class: sun/awt/X11/XWindowPeer, method: handleButtonPressRelease signature: (IJ)V) Mismatched stack types
         // temporary use only method coverage
-        if (k.getFullname().equals("sun/awt/X11/XWindowPeer")
-                && name.equals("handleButtonPressRelease")) {
-            DataMethodEntryOnly meth = new DataMethodEntryOnly(k, access, name, desc, signature, exceptions);
+        if (dataClass.getFullname().equals("sun/awt/X11/XWindowPeer") && name.equals("handleButtonPressRelease")) {
+            DataMethodEntryOnly meth = new DataMethodEntryOnly(dataClass, access, name, desc, signature, exceptions);
             return new EntryCodeMethodAdapter(mv, meth, params);
         }
 
 
         switch (params.getMode()) {
             case METHOD: {
-                DataMethodEntryOnly meth = new DataMethodEntryOnly(k, access, name, desc, signature, exceptions);
+                DataMethodEntryOnly meth = new DataMethodEntryOnly(dataClass, access, name, desc, signature, exceptions);
                 return new EntryCodeMethodAdapter(mv, meth, params);
             }
             case BLOCK: {
-                DataMethodWithBlocks meth = new DataMethodWithBlocks(k, access, name, desc, signature, exceptions);
+                DataMethodWithBlocks meth = new DataMethodWithBlocks(dataClass, access, name, desc, signature, exceptions);
                 return new BlockCodeMethodAdapter(mv, meth, params);
             }
             case BRANCH: {
-                DataMethodWithBlocks meth = new DataMethodWithBlocks(k, access, name, desc, signature, exceptions);
+                DataMethodWithBlocks meth = new DataMethodWithBlocks(dataClass, access, name, desc, signature, exceptions);
                 return new BranchCodeMethodAdapter(mv, meth, params);
             }
             default:
@@ -162,36 +173,48 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         return null;
     }
 
+    /**
+     * Visit a method declaration
+     */
     @Override
-    public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-        if (!params.isInstrumentSynthetic() && (access & ACC_SYNTHETIC) != 0) {
-            return super.visitMethod(access, name, desc, signature, exceptions);
-        }
-        MethodVisitor mv = visitMethodCoverage(access, name, desc, signature, exceptions);
+    public MethodVisitor visitMethod(int access, String methodName, String desc, String signature, String[] exceptions) {
 
-        if ("<clinit>".equals(name) && !params.isDynamicCollect() && (k.getPackageName().startsWith("java/lang/"))) {
+        if (!params.isInstrumentSynthetic() && (access & ACC_SYNTHETIC) != 0) {
+            return super.visitMethod(access, methodName, desc, signature, exceptions);
+        }
+
+        MethodVisitor mv = visitMethodCoverage(access, methodName, desc, signature, exceptions);
+
+        if ("<clinit>".equals(methodName) &&
+                !params.isDynamicCollect() &&
+                (dataClass.getPackageName().startsWith("java/lang/"))) {
             mv = new MethodVisitor(Utils.ASM_API_VERSION, mv) {
                 public void visitCode() {
-                    mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/Collect", "init", "()V", false);
+                    mv.visitMethodInsn(INVOKESTATIC,
+                            "com/sun/tdk/jcov/runtime/Collect", "init", "()V",
+                            false);
                     super.visitCode();
                 }
             };
         }
 
         if (params.isCallerFilterOn()
-                && params.isCallerFilterAccept(k.getFullname())
+                && params.isCallerFilterAccept(dataClass.getFullname())
                 && !params.isDynamicCollect()) {
 
-            if (name.equals("<clinit>")) {
-                int id = (name + desc).hashCode();
+            if (methodName.equals("<clinit>")) {
+                int id = (methodName + desc).hashCode();
                 mv.visitLdcInsn(id);
-                mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V", false);
+                mv.visitMethodInsn(INVOKESTATIC,
+                        "com/sun/tdk/jcov/runtime/CollectDetect", "setExpected", "(I)V",
+                        false);
             }
 
         }
 
-        if (params.isInnerInvacationsOff() && Utils.isAdvanceStaticInstrAllowed(k.getFullname(), name)) {
-            if (name.equals("<clinit>")) {
+        if (params.isInnerInvacationsOff() &&
+                Utils.isAdvanceStaticInstrAllowed(dataClass.getFullname(), methodName)) {
+            if (methodName.equals("<clinit>")) {
                 mv.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect",
                         "enterClinit",
                         "()V",
@@ -200,11 +223,11 @@ class DeferringMethodClassAdapter extends ClassVisitor {
 
         }
 
-        if (params.isDataSaveFilterAccept(k.getFullname(), name, true)) {
+        if (params.isDataSaveFilterAccept(dataClass.getFullname(), methodName, true)) {
             mv = new SavePointsMethodAdapter(mv, true);
         }
 
-        if (params.isDataSaveFilterAccept(k.getFullname(), name, false)) {
+        if (params.isDataSaveFilterAccept(dataClass.getFullname(), methodName, false)) {
             mv = new SavePointsMethodAdapter(mv, false);
         }
         mv = new MethodVisitor(Utils.ASM_API_VERSION, mv) {
@@ -214,21 +237,21 @@ class DeferringMethodClassAdapter extends ClassVisitor {
             }
         };
         if (params.isDynamicCollect()) {
-            mv = new InvokeMethodAdapter(mv, k.getFullname(), params);
+            mv = new InvokeMethodAdapter(mv, dataClass.getFullname(), params);
         } else {
-            mv = new StaticInvokeMethodAdapter(mv, k.getFullname(), name, access, params);
+            mv = new StaticInvokeMethodAdapter(mv, dataClass.getFullname(), methodName, access, params);
         }
 
         InstrumentationPlugin plugin = params.getInstrumentationPlugin();
-        if(plugin != null)
-            mv = plugin.methodVisitor(access, k.getFullname(), name, desc, mv);
+        if (plugin != null)
+            mv = plugin.methodVisitor(access, dataClass.getFullname(), methodName, desc, mv);
 
         return mv;
     }
 
     @Override
     public AnnotationVisitor visitAnnotation(String anno, boolean b) {
-        k.addAnnotation(anno);
+        dataClass.addAnnotation(anno);
         return super.visitAnnotation(anno, b);
     }
 
@@ -240,9 +263,9 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         // fullClassName can't be null - it's generated if the class is anonym
         // className is individual name as written in the source - anonym classes have null there
         try {
-            if (k.getFullname().equals(fullClassName)) {
-                k.setInner(true);
-                k.setAnonym(className == null);
+            if (dataClass.getFullname().equals(fullClassName)) {
+                dataClass.setInner(true);
+                dataClass.setAnonym(className == null);
             }
         } catch (Exception e) {
         }
