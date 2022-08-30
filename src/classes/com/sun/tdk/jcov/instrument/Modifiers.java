@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,40 +22,28 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.report.ancfilters;
+package com.sun.tdk.jcov.instrument;
 
-import com.sun.tdk.jcov.instrument.DataBlock;
-import com.sun.tdk.jcov.instrument.DataClass;
-import com.sun.tdk.jcov.instrument.DataMethod;
-import com.sun.tdk.jcov.report.AncFilter;
+public interface Modifiers {
+    boolean isPublic();
 
-/**
- * @author Alexey Fedorchenko
- */
-public class DeprecatedANCFilter implements AncFilter {
+    boolean isPrivate();
 
-    @Override
-    public boolean accept(DataClass clz) {
-        return false;
-    }
+    boolean isProtected();
 
-    @Override
-    public boolean accept(DataClass clz, DataMethod m) {
+    boolean isAbstract();
 
-        if (m.getModifiers().isDeprecated()){
-            return true;
-        }
+    boolean isFinal();
 
-        return false;
-    }
+    boolean isSynthetic();
 
-    @Override
-    public boolean accept(DataMethod m, DataBlock b) {
-        return false;
-    }
+    boolean isStatic();
 
-    @Override
-    public String getAncReason() {
-        return "Deprecated method filter";
-    }
+    boolean isInterface();
+
+    boolean isSuper();
+
+    boolean isNative();
+
+    boolean isDeprecated();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package com.sun.tdk.jcov;
 
+import com.sun.tdk.jcov.instrument.ASMUtils;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
 import com.sun.tdk.jcov.instrument.OverriddenClassWriter;
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
@@ -274,7 +275,7 @@ public class JREInstr extends JCovCMDTool {
     private void addJCovRuntimeToJavaBase(File file, ClassLoader cl) {
         try {
             updateModuleInfoFile(file, cl, classWriter ->
-                    new ClassVisitor(Utils.ASM_API_VERSION, classWriter) {
+                    new ClassVisitor(ASMUtils.ASM_API_VERSION, classWriter) {
                         @Override
                         public ModuleVisitor visitModule(String name, int access, String version) {
                             ModuleVisitor mv = super.visitModule(name, access, version);
@@ -305,7 +306,7 @@ public class JREInstr extends JCovCMDTool {
     private void updateHashes(File file, ClassLoader cl) {
         try {
             updateModuleInfoFile(file, cl, classWriter ->
-                    new ClassVisitor(Utils.ASM_API_VERSION, classWriter) {
+                    new ClassVisitor(ASMUtils.ASM_API_VERSION, classWriter) {
                         @Override
                         public void visitAttribute(final Attribute attribute) {
                             if (!attribute.type.equals("ModuleHashes")) {

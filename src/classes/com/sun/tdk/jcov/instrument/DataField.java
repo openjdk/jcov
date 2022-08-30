@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,11 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      */
     private final DataClass parent;
     /**
-     * Field access code
+     * Container for field access code
      *
      * @see org.objectweb.asm.Opcodes
      */
-    private final int access;
+    private final DataModifiers access;
     /**
      * Field name
      */
@@ -119,7 +119,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
         super(k.rootId);
 
         this.parent = k;
-        this.access = access;
+        this.access = new DataModifiers(access);
         this.name = name;
         this.vmSig = desc;
         this.signature = signature;
@@ -225,8 +225,10 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      * @return the access
      */
     public int getAccess() {
-        return access;
+        return access.access();
     }
+
+    public Modifiers getModifiers() { return access; }
 
     /**
      * @return the name
@@ -265,7 +267,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      */
     @Deprecated
     public boolean isPublic() {
-        return (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0;
+        return isPublicAPI();
     }
 
     /**
@@ -276,7 +278,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      * @return true if <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      */
     public boolean isPublicAPI() {
-        return (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0;
+        return access.isPublic() || access.isProtected();
     }
 
     /**
@@ -284,8 +286,9 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      *
      * @return true if field is private
      */
+    @Deprecated
     public boolean hasPrivateModifier() {
-        return (access & Opcodes.ACC_PRIVATE) != 0;
+        return access.isPrivate();
     }
 
     /**
@@ -293,8 +296,9 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      *
      * @return true if field is public
      */
+    @Deprecated
     public boolean hasPublicModifier() {
-        return (access & Opcodes.ACC_PUBLIC) != 0;
+        return access.isPublic();
     }
 
     /**
@@ -302,8 +306,9 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      *
      * @return true if field is protected
      */
+    @Deprecated
     public boolean hasProtectedModifier() {
-        return (access & Opcodes.ACC_PROTECTED) != 0;
+        return access.isProtected();
     }
 
     /**
@@ -311,8 +316,9 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      *
      * @return true if field is static
      */
+    @Deprecated
     public boolean hasStaticModifier() {
-        return (access & Opcodes.ACC_STATIC) != 0;
+        return access.isStatic();
     }
 
     /**
@@ -322,8 +328,9 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      * @see Opcodes
      * @see DataField#getAccess()
      */
+    @Deprecated
     public boolean hasModifier(int modifierCode) {
-        return (access & modifierCode) != 0;
+        return access.is(modifierCode);
     }
 
     /**
@@ -332,7 +339,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      * @return this field`s access flags as String array
      */
     public String[] getAccessFlags() {
-        return accessFlags(access);
+        return accessFlags(access.access());
     }
 
     /**
@@ -378,7 +385,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
     void xmlAttrs(XmlContext ctx) {
         ctx.attrNormalized(XmlNames.NAME, name);
         ctx.attr(XmlNames.VMSIG, vmSig);
-        xmlAccessFlags(ctx, access);
+        xmlAccessFlags(ctx, access.access());
         ctx.attr(XmlNames.ACCESS, access);
         ctx.attr(XmlNames.ID, block.getId());
 
@@ -491,7 +498,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
         out.writeUTF(name);
         writeString(out, signature);
         writeString(out, vmSig);
-        out.writeInt(access & ACCESS_MASK); // we don't save ALL the codes in XML, we shouldn't save all codes in net
+        out.writeInt(access.access() & ACCESS_MASK); // we don't save ALL the codes in XML, we shouldn't save all codes in net
 //        out.write(value); can't - object. Writing only name
         if (value != null) {
             out.writeBoolean(true);
@@ -508,7 +515,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
         name = in.readUTF();
         signature = readString(in);
         vmSig = readString(in);
-        access = in.readInt();
+        access = new DataModifiers(in.readInt());
         if (in.readBoolean()) {
             value = in.readUTF(); // value
         } else {
