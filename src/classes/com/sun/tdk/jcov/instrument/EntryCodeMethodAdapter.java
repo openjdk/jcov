@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ class EntryCodeMethodAdapter extends MethodVisitor {
     EntryCodeMethodAdapter(final MethodVisitor mv,
             final DataMethodEntryOnly method,
             final InstrumentationParams params) {
-        super(Utils.ASM_API_VERSION, mv);
+        super(ASMUtils.ASM_API_VERSION, mv);
         this.method = method;
         this.params = params;
     }

@@ -72,7 +72,7 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
     public StaticInvokeMethodAdapter(MethodVisitor mv, String className,
                                      String methName, int methAccess,
                                      final InstrumentationParams params) {
-        super(Utils.ASM_API_VERSION, mv);
+        super(ASMUtils.ASM_API_VERSION, mv);
         this.className = className;
         this.methName = methName;
         this.methAccess = methAccess;

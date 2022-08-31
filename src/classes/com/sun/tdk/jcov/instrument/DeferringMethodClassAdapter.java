@@ -51,7 +51,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
     private static final Logger logger = Logger.getLogger("com.sun.tdk.jcov");
 
     public DeferringMethodClassAdapter(final ClassVisitor cv, DataClass dataClass, InstrumentationParams params) {
-        super(Utils.ASM_API_VERSION, cv);
+        super(ASMUtils.ASM_API_VERSION, cv);
         this.dataClass = dataClass;
         this.params = params;
     }
@@ -188,7 +188,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         if ("<clinit>".equals(methodName) &&
                 !params.isDynamicCollect() &&
                 (dataClass.getPackageName().startsWith("java/lang/"))) {
-            mv = new MethodVisitor(Utils.ASM_API_VERSION, mv) {
+            mv = new MethodVisitor(ASMUtils.ASM_API_VERSION, mv) {
                 public void visitCode() {
                     mv.visitMethodInsn(INVOKESTATIC,
                             "com/sun/tdk/jcov/runtime/Collect", "init", "()V",
@@ -230,7 +230,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         if (params.isDataSaveFilterAccept(dataClass.getFullname(), methodName, false)) {
             mv = new SavePointsMethodAdapter(mv, false);
         }
-        mv = new MethodVisitor(Utils.ASM_API_VERSION, mv) {
+        mv = new MethodVisitor(ASMUtils.ASM_API_VERSION, mv) {
             @Override
             public void visitLocalVariable(String arg0, String arg1, String arg2, Label arg3, Label arg4, int arg5) {
                 //super.visitLocalVariable(arg0, arg1, arg2, arg3, arg4, arg5);

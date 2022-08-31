@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ public class InvokeClassAdapter extends ClassVisitor {
     private final InstrumentationParams params;
 
     public InvokeClassAdapter(final ClassVisitor cv, final InstrumentationParams params) {
-        super(Utils.ASM_API_VERSION, cv);
+        super(ASMUtils.ASM_API_VERSION, cv);
         this.params = params;
     }
 

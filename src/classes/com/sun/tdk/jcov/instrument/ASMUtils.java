@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,40 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.report.ancfilters;
+package com.sun.tdk.jcov.instrument;
 
-import com.sun.tdk.jcov.instrument.DataBlock;
-import com.sun.tdk.jcov.instrument.DataClass;
-import com.sun.tdk.jcov.instrument.DataMethod;
-import com.sun.tdk.jcov.report.AncFilter;
+import org.objectweb.asm.Opcodes;
 
-/**
- * @author Alexey Fedorchenko
- */
-public class DeprecatedANCFilter implements AncFilter {
-
-    @Override
-    public boolean accept(DataClass clz) {
-        return false;
-    }
-
-    @Override
-    public boolean accept(DataClass clz, DataMethod m) {
-
-        if (m.getModifiers().isDeprecated()){
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
-    public boolean accept(DataMethod m, DataBlock b) {
-        return false;
-    }
-
-    @Override
-    public String getAncReason() {
-        return "Deprecated method filter";
-    }
+public class ASMUtils {
+    /**
+     * The ASM API version that should be used by jcov.
+     */
+    public static final int ASM_API_VERSION = Opcodes.ASM9;
 }

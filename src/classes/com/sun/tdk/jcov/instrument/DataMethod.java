@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,11 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      */
     protected final DataClass parent;
     /**
-     * Method access code
+     * Container for method access code
      *
      * @see org.objectweb.asm.Opcodes
      */
-    protected final int access;
+    protected final DataModifiers access;
     /**
      * Method name
      */
@@ -103,7 +103,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         super(k.rootId);
 
         this.parent = k;
-        this.access = access;
+        this.access = new DataModifiers(access);
         this.name = name;
         this.vmSig = desc;
         this.signature = signature;
@@ -195,8 +195,10 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * @return methods access code
      */
     public int getAccess() {
-        return access;
+        return access.access();
     }
+
+    public Modifiers getModifiers() { return access; }
 
     /**
      * Get this method`s access flags as String array
@@ -204,7 +206,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * @return this method`s access flags as String array
      */
     public String[] getAccessFlags() {
-        return accessFlags(access);
+        return accessFlags(access.access());
     }
 
     /**
@@ -216,7 +218,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      */
     @Deprecated
     public boolean isPublic() {
-        return (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0;
+        return isPublicAPI();
     }
 
     /**
@@ -227,7 +229,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * @return true if <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      */
     public boolean isPublicAPI() {
-        return (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0;
+        return access.isPublic() || access.isProtected();
     }
 
     /**
@@ -237,8 +239,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * @see org.objectweb.asm.Opcodes
      * @return true if <b>access</b> field has ACC_ABSTRACT flag
      */
+    @Deprecated
     public boolean isAbstract() {
-        return (access & Opcodes.ACC_ABSTRACT) != 0;
+        return access.isAbstract();
     }
 
     /**
@@ -246,8 +249,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      *
      * @return true if method is private
      */
+    @Deprecated
     public boolean hasPrivateModifier() {
-        return (access & Opcodes.ACC_PRIVATE) != 0;
+        return access.isPrivate();
     }
 
     /**
@@ -255,8 +259,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      *
      * @return true if method is public
      */
+    @Deprecated
     public boolean hasPublicModifier() {
-        return (access & Opcodes.ACC_PUBLIC) != 0;
+        return access.isPublic();
     }
 
     /**
@@ -264,8 +269,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      *
      * @return true if method is protected
      */
+    @Deprecated
     public boolean hasProtectedModifier() {
-        return (access & Opcodes.ACC_PROTECTED) != 0;
+        return access.isProtected();
     }
 
     /**
@@ -273,8 +279,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      *
      * @return true if method is abstract
      */
+    @Deprecated
     public boolean hasAbstractModifier() {
-        return (access & Opcodes.ACC_ABSTRACT) != 0;
+        return access.isAbstract();
     }
 
     /**
@@ -282,8 +289,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      *
      * @return true if method is static
      */
+    @Deprecated
     public boolean hasStaticModifier() {
-        return (access & Opcodes.ACC_STATIC) != 0;
+        return access.isStatic();
     }
 
     /**
@@ -291,8 +299,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      *
      * @return true if method is native
      */
+    @Deprecated
     public boolean hasNativeModifier() {
-        return (access & Opcodes.ACC_NATIVE) != 0;
+        return access.isNative();
     }
 
     /**
@@ -302,8 +311,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * @see Opcodes
      * @see DataMethod#getAccess()
      */
+    @Deprecated
     public boolean hasModifier(int modifierCode) {
-        return (access & modifierCode) != 0;
+        return access.is(modifierCode);
     }
 
     /**
@@ -410,7 +420,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      */
     @Override
     void xmlGen(XmlContext ctx) {
-        if (ctx.showAbstract || (access & Opcodes.ACC_ABSTRACT) == 0) {
+        if (ctx.showAbstract || !access.isAbstract()) {
             super.xmlGen(ctx);
         }
     }
@@ -423,7 +433,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         ctx.attrNormalized(XmlNames.NAME, name);
         ctx.attr(XmlNames.VMSIG, vmSig);
 
-        xmlAccessFlags(ctx, access);
+        xmlAccessFlags(ctx, access.access());
         ctx.attr(XmlNames.ACCESS, access);
 
         if (!differentiateMethods) {
@@ -583,7 +593,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         out.writeUTF(name);
         writeString(out, vmSig);
         writeString(out, signature);
-        out.writeInt(access & ACCESS_MASK); // we don't save ALL the codes in XML, we shouldn't save all codes in net
+        out.writeInt(access.access() & ACCESS_MASK); // we don't save ALL the codes in XML, we shouldn't save all codes in net
         out.writeBoolean(differentiateMethods);
         writeStrings(out, exceptions);
         if (lineTable != null) {
@@ -603,7 +613,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         name = in.readUTF();
         vmSig = readString(in);
         signature = readString(in);
-        access = in.readInt();
+        access = new DataModifiers(in.readInt());
         differentiateMethods = in.readBoolean();
         exceptions = readStrings(in);
         int len = in.readShort();

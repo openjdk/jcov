@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,13 @@ import com.sun.tdk.jcov.filter.MemberFilter;
 import com.sun.tdk.jcov.instrument.DataClass;
 import com.sun.tdk.jcov.instrument.DataField;
 import com.sun.tdk.jcov.instrument.DataMethod;
+import com.sun.tdk.jcov.instrument.Modifiers;
 import com.sun.tdk.jcov.report.javap.JavapClass;
 import com.sun.tdk.jcov.util.Utils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.objectweb.asm.Opcodes;
 
 /**
  * <p> This class provides access to class coverage information. Sums of
@@ -63,11 +63,12 @@ public class ClassCoverage extends AbstractCoverage {
     private LineCoverage lineCoverage = new LineCoverage();
     private DataType[] supportedColumns = {DataType.CLASS, DataType.METHOD, DataType.FIELD,
         DataType.BLOCK, DataType.BRANCH, DataType.LINE};
-    private int access;
-    private String fullname;
-    private String name;
-    private String packagename;
-    private String modulename;
+    private final int access;
+    private final String fullname;
+    private final String name;
+    private final String packagename;
+    private final String modulename;
+    private final Modifiers modifiers;
     private boolean isInAnc = false;
     protected String ancInfo;
 
@@ -92,6 +93,7 @@ public class ClassCoverage extends AbstractCoverage {
         name = clz.getName();
         packagename = clz.getPackageName();
         modulename = clz.getModuleName();
+        modifiers = clz.getModifiers();
 
         if (ancFilters != null){
             for (AncFilter ancFilter : ancFilters){
@@ -125,7 +127,7 @@ public class ClassCoverage extends AbstractCoverage {
             if (method.getName() != null && method.getName().matches("\\$\\d.*")) {
                 methodCoverage.setInAnonymClass(true);
             }
-            if ((method.getAccess() & Opcodes.ACC_SYNTHETIC) != 0 && method.getName().startsWith("lambda$")){
+            if (method.getModifiers().isSynthetic() && method.getName().startsWith("lambda$")){
                 methodCoverage.setLambdaMethod(true);
             }
 
@@ -177,9 +179,7 @@ public class ClassCoverage extends AbstractCoverage {
      * <b>protected</b>
      * @see ClassCoverage#getAccess()
      */
-    public boolean isPublicAPI() {
-        return (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0;
-    }
+    public boolean isPublicAPI() { return modifiers.isPublic() || modifiers.isProtected(); }
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
@@ -190,7 +190,7 @@ public class ClassCoverage extends AbstractCoverage {
      * @see ClassCoverage#getAccess()
      */
     public boolean isPublic() {
-        return (access & Opcodes.ACC_PUBLIC) != 0;
+        return modifiers.isPublic();
     }
 
     /**
@@ -202,7 +202,7 @@ public class ClassCoverage extends AbstractCoverage {
      * @see ClassCoverage#getAccess()
      */
     public boolean isPrivate() {
-        return (access & Opcodes.ACC_PRIVATE) != 0;
+        return modifiers.isPrivate();
     }
 
     /**
@@ -214,7 +214,7 @@ public class ClassCoverage extends AbstractCoverage {
      * @see ClassCoverage#getAccess()
      */
     public boolean isProtected() {
-        return (access & Opcodes.ACC_PROTECTED) != 0;
+        return modifiers.isProtected();
     }
 
     /**
@@ -226,7 +226,7 @@ public class ClassCoverage extends AbstractCoverage {
      * @see ClassCoverage#getAccess()
      */
     public boolean isAbstract() {
-        return (access & Opcodes.ACC_ABSTRACT) != 0;
+        return modifiers.isAbstract();
     }
 
     /**
@@ -238,14 +238,13 @@ public class ClassCoverage extends AbstractCoverage {
      * @see ClassCoverage#getAccess()
      */
     public boolean isFinal() {
-        return (access & Opcodes.ACC_FINAL) != 0;
+        return modifiers.isFinal();
     }
 
     /**
      * <p> Use this method to check for specific modifiers. </p>
      *
      * @return Access bit-mask of org.objectweb.asm.Opcodes constants.
-     * @see Opcodes
      */
     public int getAccess() {
         return access;

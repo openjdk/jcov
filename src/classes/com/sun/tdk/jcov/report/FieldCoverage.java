@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,14 @@ public class FieldCoverage extends MemberCoverage {
      * @param fld
      */
     public FieldCoverage(DataField fld) {
-        count = fld.getCount();
-        startLine = 0;
-        modifiers = Arrays.deepToString(fld.getAccessFlags());
-        name = fld.getName();
-        signature = fld.getSignature();
-        scale = fld.getScale();
         access = fld.getAccess();
+        modifiersString =  Arrays.deepToString(fld.getAccessFlags());
+        name =  fld.getName();
+        signature = fld.getSignature();
+        startLine = 0;
+        count = fld.getCount();
+        scale = fld.getScale();
+        modifiers = fld.getModifiers();
     }
 
     /**
