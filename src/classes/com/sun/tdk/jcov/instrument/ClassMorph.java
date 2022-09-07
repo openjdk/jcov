@@ -31,19 +31,23 @@ import com.sun.tdk.jcov.runtime.FileSaver;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.DebugUtils;
 import com.sun.tdk.jcov.util.Utils;
+import org.objectweb.asm.Attribute;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ModuleVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.util.TraceClassVisitor;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.Adler32;
-import org.objectweb.asm.Attribute;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.util.TraceClassVisitor;
 
 import static java.lang.String.format;
 
@@ -276,6 +280,37 @@ public class ClassMorph {
 
             return res;
         }
+    }
+
+    public byte[] clearHashes(byte[] moduleInfo, ClassLoader loader) {
+        ClassReader cr = new ClassReader(moduleInfo);
+        ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, loader);
+        cr.accept( new ClassVisitor(ASMUtils.ASM_API_VERSION, cw) {
+            @Override
+            public void visitAttribute(final Attribute attribute) {
+                if (!attribute.type.equals("ModuleHashes")) {
+                    super.visitAttribute(attribute);
+                }
+            }
+        }, 0);
+        return cw.toByteArray();
+    }
+
+    public byte[] addExports(byte[] moduleInfo, List<String> exports, ClassLoader loader) {
+        ClassReader cr = new ClassReader(moduleInfo);
+        ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, loader);
+        cr.accept( new ClassVisitor(ASMUtils.ASM_API_VERSION, cw) {
+            @Override
+            public ModuleVisitor visitModule(String name, int access, String version) {
+                ModuleVisitor mv = super.visitModule(name, access, version);
+                exports.forEach(e -> {
+                    mv.visitPackage(e);
+                    mv.visitExport(e, 0);
+                });
+                return mv;
+            }
+        }, 0);
+        return cw.toByteArray();
     }
 
     public void setCurrentModuleName(String name){

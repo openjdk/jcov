@@ -34,9 +34,13 @@ import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -89,6 +93,12 @@ public class Instr extends JCovCMDTool {
     static {
         Utils.initLogger();
         logger = Logger.getLogger(Instr.class.getName());
+    }
+
+    private boolean needToFixJavaBase = false;
+
+    public void fixJavaBase() {
+        needToFixJavaBase = true;
     }
 
     /**
@@ -173,6 +183,27 @@ public class Instr extends JCovCMDTool {
     public void instrumentFile(String file, File outDir, String includeRTJar, String moduleName) throws IOException {
         if (morph != null){
             morph.setCurrentModuleName(moduleName);
+            if(needToFixJavaBase && "java.base".equals(moduleName)) {
+                File moduleInfo = new File(file + File.separator +  "module-info.class");
+                if(!moduleInfo.exists()) throw new IllegalStateException(moduleInfo + " does not exist!");
+                try(FileInputStream fi = new FileInputStream(moduleInfo)) {
+                    byte[] noHashes = morph.clearHashes(fi.readAllBytes(), cl);
+                    List<String> packages = new ArrayList<>();
+                    packages.add("com/sun/tdk/jcov/runtime");
+                    if(plugin != null) {
+                        String pluginRuntimePackage = plugin.collectorPackage();
+                        if (pluginRuntimePackage != null) {
+                            pluginRuntimePackage = pluginRuntimePackage.replace('.', '/');
+                            packages.add(pluginRuntimePackage);
+                        }
+                    }
+                    byte[] withExports = morph.addExports(noHashes, packages, cl);
+                    try (FileOutputStream fo = new FileOutputStream(((outDir == null) ? file : outDir) +
+                            File.separator +  "module-info.class")) {
+                        fo.write(withExports);
+                    }
+                }
+            }
             instrumentFile(new File(file), outDir, includeRTJar);
         }
     }
@@ -293,7 +324,6 @@ public class Instr extends JCovCMDTool {
                         super.processClassFileInModules(filePath, outDir);
                     }
                 }
-
             };
         }
     }
@@ -704,4 +734,5 @@ public class Instr extends JCovCMDTool {
             new OptionDescr("recursive", "", OptionDescr.VAL_NONE,
                     "Recurse through specified directories instrumenting everything inside. " +
                             "With -flush option it will be able to instrument duplicate classes");
+
 }

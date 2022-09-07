@@ -52,6 +52,10 @@ import static com.sun.tdk.jcov.util.Utils.FILE_TYPE.*;
 import static com.sun.tdk.jcov.util.Utils.isClassFile;
 
 /**
+ * The class is resposible to deal with class files and hierarchies of files, such as directories, jars, zips, modules.
+ * The actual logic of bytecode instrumentation is left for subclasses of this class.
+ * @see #instrument(byte[], int)
+ * @see #finishWork()
  * @author Dmitry Fazunenko
  * @author Alexey Fedorchenko
  */

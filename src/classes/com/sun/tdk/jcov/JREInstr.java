@@ -24,25 +24,20 @@
  */
 package com.sun.tdk.jcov;
 
-import com.sun.tdk.jcov.instrument.ASMUtils;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
-import com.sun.tdk.jcov.instrument.OverriddenClassWriter;
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
-import org.objectweb.asm.*;
 
 import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -110,6 +105,8 @@ public class JREInstr extends JCovCMDTool {
         StaticJREInstrClassLoader cl = new StaticJREInstrClassLoader(new URL[]{toInstrument.toURI().toURL()});
         instr.setClassLoader(cl);
 
+        instr.fixJavaBase();
+
         if (toInstrument.getName().equals("jmods")) {
             logger.log(Level.INFO, "working with jmods");
             File jdk = new File(toInstrument.getParentFile(), "jdk");
@@ -132,18 +129,12 @@ public class JREInstr extends JCovCMDTool {
                 for (File mod : getListFiles(jmodsTemp)) {
                     if (mod != null && mod.isDirectory()) {
                         File modClasses = new File(mod, "classes");
-                        if ("java.base".equals(mod.getName())) {
-                            File mInfo = new File(modClasses, "module-info.class");
-                            addJCovRuntimeToJavaBase(mInfo, cl);
-                            updateHashes(mInfo, cl);
-                        }
                         instr.instrumentFile(modClasses.getAbsolutePath(), null, null, mod.getName());
                         createJMod(mod, jdk, implant.getAbsolutePath(),
                                 (instr.getPlugin() != null && instr.getPlugin().runtime() != null) ?
                                     instr.getPlugin().runtime().toString() : null);
                     }
                 }
-
                 File newJdkDir = runJLink(jmodsTemp, jdk);
                 if (newJdkDir != null) {
                     String jimage_path = File.separator + "lib" + File.separator + "modules" + File.separator + "bootmodules.jimage";
@@ -177,68 +168,70 @@ public class JREInstr extends JCovCMDTool {
                 logger.log(Level.SEVERE, "exception while creating mods, e = " + e);
             }
         } else if (toInstrument.getAbsolutePath().endsWith("bootmodules.jimage")) {
-            ArrayList<File> jdkImages = new ArrayList<>();
-            jdkImages.add(toInstrument);
-            if (addJimages != null) {
-                Collections.addAll(jdkImages, addJimages);
-            }
+            throw new RuntimeException("This functionality has not yet been implemented");
+//            ArrayList<File> jdkImages = new ArrayList<>();
+//            jdkImages.add(toInstrument);
+//            if (addJimages != null) {
+//                Collections.addAll(jdkImages, addJimages);
+//            }
+//
+//            for (File jimageInstr : jdkImages) {
+//                String tempDirName = jimageInstr.getName().substring(0, jimageInstr.getName().indexOf(".jimage"));
+//
+//                expandJimage(jimageInstr, tempDirName);
+//
+//                File dirtoInstrument = new File(jimageInstr.getParent(), tempDirName);
+////                still need it
+//                Utils.addToClasspath(new String[]{dirtoInstrument.getAbsolutePath()});
+//                for (File file : getListFiles(dirtoInstrument)) {
+//                    if (file.isDirectory()) {
+//                        Utils.addToClasspath(new String[]{file.getAbsolutePath()});
+//                    }
+//                }
+//
+//                if (jimageInstr.equals(toInstrument)) {
+//                    for (File mod : getListFiles(dirtoInstrument)) {
+//                        if (mod != null && mod.isDirectory()) {
+//
+//                            if ("java.base".equals(mod.getName())) {
+//                                instr.instrumentFile(mod.getAbsolutePath(), null, implant.getAbsolutePath(), mod.getName());
+//                            } else {
+//                                instr.instrumentFile(mod.getAbsolutePath(), null, null, mod.getName());
+//                            }
+//                        }
+//                    }
+//                } else {
+//                    for (File mod : getListFiles(dirtoInstrument)) {
+//                        if (mod != null && mod.isDirectory()) {
+//                            instr.instrumentFile(mod.getAbsolutePath(), null, null, mod.getName());
+//                        }
+//                    }
+//                }
+//                createJimage(dirtoInstrument, jimageInstr.getAbsolutePath() + "i");
 
-            for (File jimageInstr : jdkImages) {
-                String tempDirName = jimageInstr.getName().substring(0, jimageInstr.getName().indexOf(".jimage"));
-
-                expandJimage(jimageInstr, tempDirName);
-
-                File dirtoInstrument = new File(jimageInstr.getParent(), tempDirName);
-                //still need it
-                Utils.addToClasspath(new String[]{dirtoInstrument.getAbsolutePath()});
-                for (File file : getListFiles(dirtoInstrument)) {
-                    if (file.isDirectory()) {
-                        Utils.addToClasspath(new String[]{file.getAbsolutePath()});
-                    }
-                }
-
-                if (jimageInstr.equals(toInstrument)) {
-                    for (File mod : getListFiles(dirtoInstrument)) {
-                        if (mod != null && mod.isDirectory()) {
-
-                            if ("java.base".equals(mod.getName())) {
-                                instr.instrumentFile(mod.getAbsolutePath(), null, implant.getAbsolutePath(), mod.getName());
-                            } else {
-                                instr.instrumentFile(mod.getAbsolutePath(), null, null, mod.getName());
-                            }
-                        }
-                    }
-                } else {
-                    for (File mod : getListFiles(dirtoInstrument)) {
-                        if (mod != null && mod.isDirectory()) {
-                            instr.instrumentFile(mod.getAbsolutePath(), null, null, mod.getName());
-                        }
-                    }
-                }
-                createJimage(dirtoInstrument, jimageInstr.getAbsolutePath() + "i");
-
-            }
-            for (File jimageInstr : jdkImages) {
-
-                String tempDirName = jimageInstr.getName().substring(0, jimageInstr.getName().indexOf(".jimage"));
-                File dirtoInstrument = new File(jimageInstr.getParent(), tempDirName);
-                if (!Utils.deleteDirectory(dirtoInstrument)) {
-                    logger.log(Level.SEVERE, "please, delete " + tempDirName + " jimage dir manually");
-                }
-
-                Utils.copyFile(jimageInstr, new File(jimageInstr.getParent(), jimageInstr.getName() + ".bak"));
-
-                if (!jimageInstr.delete()) {
-                    logger.log(Level.SEVERE, "please, delete original jimage manually: " + jimageInstr);
-                } else {
-                    Utils.copyFile(new File(jimageInstr.getAbsolutePath() + "i"), jimageInstr);
-                    new File(jimageInstr.getAbsolutePath() + "i").delete();
-                }
-
-            }
+//            }
+//            for (File jimageInstr : jdkImages) {
+//
+//                String tempDirName = jimageInstr.getName().substring(0, jimageInstr.getName().indexOf(".jimage"));
+//                File dirtoInstrument = new File(jimageInstr.getParent(), tempDirName);
+//                if (!Utils.deleteDirectory(dirtoInstrument)) {
+//                    logger.log(Level.SEVERE, "please, delete " + tempDirName + " jimage dir manually");
+//                }
+//
+//                Utils.copyFile(jimageInstr, new File(jimageInstr.getParent(), jimageInstr.getName() + ".bak"));
+//
+//                if (!jimageInstr.delete()) {
+//                    logger.log(Level.SEVERE, "please, delete original jimage manually: " + jimageInstr);
+//                } else {
+//                    Utils.copyFile(new File(jimageInstr.getAbsolutePath() + "i"), jimageInstr);
+//                    new File(jimageInstr.getAbsolutePath() + "i").delete();
+//                }
+//
+//            }
 
         } else {
-            instr.instrumentFile(toInstrument.getAbsolutePath(), null, implant.getAbsolutePath());
+            throw new RuntimeException("This functionality has not yet been implemented");
+//            instr.instrumentFile(toInstrument.getAbsolutePath(), null, implant.getAbsolutePath());
         }
 
         ArrayList<String> srcs = null;
@@ -263,72 +256,8 @@ public class JREInstr extends JCovCMDTool {
         }
 
         instr.finishWork();
+
         return SUCCESS_EXIT_CODE;
-    }
-
-    /**
-     * Add com/sun/tdk/jcov/runtime to the module exports to be visible externally
-     *
-     * @param file  module-info.class file of java.base
-     * @param cl    class loader
-     */
-    private void addJCovRuntimeToJavaBase(File file, ClassLoader cl) {
-        try {
-            updateModuleInfoFile(file, cl, classWriter ->
-                    new ClassVisitor(ASMUtils.ASM_API_VERSION, classWriter) {
-                        @Override
-                        public ModuleVisitor visitModule(String name, int access, String version) {
-                            ModuleVisitor mv = super.visitModule(name, access, version);
-                            mv.visitPackage("com/sun/tdk/jcov/runtime");
-                            mv.visitExport("com/sun/tdk/jcov/runtime", 0);
-                            if(instr.getPlugin() != null) {
-                                String pluginRuntimePackage = instr.getPlugin().collectorPackage();
-                                if(pluginRuntimePackage != null) {
-                                    pluginRuntimePackage = pluginRuntimePackage.replace('.', '/');
-                                    mv.visitPackage(pluginRuntimePackage);
-                                    mv.visitExport(pluginRuntimePackage, 0);
-                                }
-                            }
-                            return mv;
-                        }
-                    });
-        } catch (Exception ex) {
-            logger.log(Level.SEVERE, "Can't update java.base/module-info", ex);
-        }
-    }
-
-    /**
-     * Remove ModuleHashes attribute to skip a check that there are no qualified exports to upgradeable modules
-     *
-     * @param file  module-info.class file of java.base
-     * @param cl    class loader
-     */
-    private void updateHashes(File file, ClassLoader cl) {
-        try {
-            updateModuleInfoFile(file, cl, classWriter ->
-                    new ClassVisitor(ASMUtils.ASM_API_VERSION, classWriter) {
-                        @Override
-                        public void visitAttribute(final Attribute attribute) {
-                            if (!attribute.type.equals("ModuleHashes")) {
-                                super.visitAttribute(attribute);
-                            }
-                        }
-                    });
-        } catch (Exception ex) {
-            logger.log(Level.SEVERE, "Can't remove module hashes from java.base/module-info", ex);
-        }
-    }
-
-    private void updateModuleInfoFile(File file, ClassLoader cl, Function<ClassWriter, ClassVisitor> func) throws Exception {
-        try( InputStream inputStream = new FileInputStream(file.getCanonicalPath()) ) {
-            ClassReader cr = new ClassReader(inputStream);
-            ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, cl);
-            cr.accept(func.apply(cw), 0);
-            try(DataOutputStream outputStream = new DataOutputStream(new FileOutputStream(file.getCanonicalPath())) ) {
-                outputStream.write(cw.toByteArray());
-                outputStream.flush();
-            }
-        }
     }
 
     private boolean doCommand(String command, File where, String msg) throws IOException, InterruptedException {
