@@ -25,7 +25,6 @@
 package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter;
-import com.sun.tdk.jcov.instrument.ASMUtils;
 import com.sun.tdk.jcov.instrument.ClassMorph;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
@@ -38,7 +37,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -97,7 +95,11 @@ public class Instr extends JCovCMDTool {
         logger = Logger.getLogger(Instr.class.getName());
     }
 
-    boolean fixJavaBase = false;
+    private boolean needToFixJavaBase = false;
+
+    public void fixJavaBase() {
+        needToFixJavaBase = true;
+    }
 
     /**
      * <p> Instrument specified files (directories with classfiles and jars) and
@@ -181,7 +183,7 @@ public class Instr extends JCovCMDTool {
     public void instrumentFile(String file, File outDir, String includeRTJar, String moduleName) throws IOException {
         if (morph != null){
             morph.setCurrentModuleName(moduleName);
-            if(fixJavaBase && "java.base".equals(moduleName)) {
+            if(needToFixJavaBase && "java.base".equals(moduleName)) {
                 File moduleInfo = new File(file + File.separator +  "module-info.class");
                 if(!moduleInfo.exists()) throw new IllegalStateException(moduleInfo + " does not exist!");
                 try(FileInputStream fi = new FileInputStream(moduleInfo)) {
@@ -732,4 +734,5 @@ public class Instr extends JCovCMDTool {
             new OptionDescr("recursive", "", OptionDescr.VAL_NONE,
                     "Recurse through specified directories instrumenting everything inside. " +
                             "With -flush option it will be able to instrument duplicate classes");
+
 }

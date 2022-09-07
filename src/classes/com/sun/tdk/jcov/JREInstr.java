@@ -24,25 +24,20 @@
  */
 package com.sun.tdk.jcov;
 
-import com.sun.tdk.jcov.instrument.ASMUtils;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
-import com.sun.tdk.jcov.instrument.OverriddenClassWriter;
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
-import org.objectweb.asm.*;
 
 import java.io.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -110,7 +105,7 @@ public class JREInstr extends JCovCMDTool {
         StaticJREInstrClassLoader cl = new StaticJREInstrClassLoader(new URL[]{toInstrument.toURI().toURL()});
         instr.setClassLoader(cl);
 
-        instr.fixJavaBase = true;
+        instr.fixJavaBase();
 
         if (toInstrument.getName().equals("jmods")) {
             logger.log(Level.INFO, "working with jmods");

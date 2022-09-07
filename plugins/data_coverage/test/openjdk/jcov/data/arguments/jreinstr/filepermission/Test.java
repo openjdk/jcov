@@ -53,7 +53,6 @@ public class Test {
         Files.deleteIfExists(jcov_template);
         Files.deleteIfExists(template);
         String runtime = Arrays.stream(System.getProperty("java.class.path").split(File.pathSeparator))
-                .peek(System.out::println)
                 .filter(s -> s.endsWith("jcov_file_saver.jar")).findAny().get();
         int status = new JREInstr()
                 .clearEnv()
