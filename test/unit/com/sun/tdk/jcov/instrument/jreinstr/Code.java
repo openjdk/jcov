@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.jreinstr;
 
-import org.objectweb.asm.Opcodes;
-
-public class ASMUtils {
-    /**
-     * The ASM API version that should be used by jcov.
-     */
-    public static final int ASM_API_VERSION = Opcodes.ASM9;
-
+public class Code {
+    public static void main(String[] args) {
+        System.out.println("User code has been executed.");
+    }
 }
