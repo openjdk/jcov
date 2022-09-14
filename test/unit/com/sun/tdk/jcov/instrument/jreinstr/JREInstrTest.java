@@ -25,6 +25,12 @@
 package com.sun.tdk.jcov.instrument.jreinstr;
 
 import com.sun.tdk.jcov.JREInstr;
+import com.sun.tdk.jcov.data.FileFormatException;
+import com.sun.tdk.jcov.instrument.DataClass;
+import com.sun.tdk.jcov.instrument.DataMethod;
+import com.sun.tdk.jcov.instrument.DataPackage;
+import com.sun.tdk.jcov.instrument.DataRoot;
+import com.sun.tdk.jcov.io.Reader;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -144,6 +150,17 @@ public class JREInstrTest {
         assertTrue(Files.exists(Paths.get("result.xml")));
     }
 
+    @Test(dependsOnMethods = "testInstrumentation")
+    public void testCoverage() throws IOException, InterruptedException, FileFormatException {
+        DataRoot data = Reader.readXML(Files.newInputStream(Paths.get("result.xml")));
+        DataPackage pkg = data.getPackages().stream().filter(p -> p.getName().equals("java/util")).findAny().get();
+        DataClass cls = pkg.getClasses().stream().filter(c -> c.getName().equals("Random"))
+                .findAny().get();
+        DataMethod method = cls.getMethods().stream().filter(m ->
+                m.getName().equals("nextInt") && m.getVmSignature().equals("()I")
+        ).findFirst().get();
+        assertTrue(method.getCount() >= 1);
+    }
     @AfterClass
     public void tearDown() throws IOException {
         if(jre != null && Files.exists(jre)) rmRF(jre);

@@ -434,7 +434,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         ctx.attr(XmlNames.VMSIG, vmSig);
 
         xmlAccessFlags(ctx, access.access());
-        ctx.attr(XmlNames.ACCESS, access);
+        ctx.attr(XmlNames.ACCESS, access.access());
 
         if (!differentiateMethods) {
             if (name.equals("<init>")) {
