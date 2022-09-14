@@ -386,7 +386,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
         ctx.attrNormalized(XmlNames.NAME, name);
         ctx.attr(XmlNames.VMSIG, vmSig);
         xmlAccessFlags(ctx, access.access());
-        ctx.attr(XmlNames.ACCESS, access);
+        ctx.attr(XmlNames.ACCESS, access.access());
         ctx.attr(XmlNames.ID, block.getId());
 
         if (value != null) {

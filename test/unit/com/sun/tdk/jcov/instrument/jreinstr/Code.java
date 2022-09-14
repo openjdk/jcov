@@ -24,8 +24,11 @@
  */
 package com.sun.tdk.jcov.instrument.jreinstr;
 
+import java.util.Random;
+
 public class Code {
     public static void main(String[] args) {
+        new Random().nextInt();
         System.out.println("User code has been executed.");
     }
 }
