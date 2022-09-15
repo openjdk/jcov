@@ -22,30 +22,44 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
-import com.sun.tdk.jcov.util.Utils;
-import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.MethodVisitor;
+import java.io.IOException;
+import java.io.InputStream;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Label;
 
 /**
- * Class that does nothing but collects runtime annotations
+ * OffsetLabelingClassReader
  *
- * @author Dmitry Fazunenko
+ *
+ * @author Robert Field
  */
-class MethodAnnotationAdapter extends MethodVisitor {
+class OffsetLabelingClassReader extends ClassReader {
 
-    final DataMethod meth;
-
-    @Override
-    public AnnotationVisitor visitAnnotation(String anno, boolean b) {
-        meth.addAnnotation(anno);
-        return super.visitAnnotation(anno, b);
+    public OffsetLabelingClassReader(byte[] b) {
+        super(b);
     }
 
-    MethodAnnotationAdapter(final MethodVisitor mv,
-            final DataMethod method) {
-        super(ASMUtils.ASM_API_VERSION, mv);
-        this.meth = method;
+    public OffsetLabelingClassReader(InputStream in) throws IOException {
+        super(in);
+    }
+
+    /**
+     * @Override public void accept(ClassVisitor cv, Attribute[] attrs, int
+     * flags) { super.accept(new MyClassAdapter(cv), attrs, flags); }
+     ***
+     */
+    @Override
+    protected Label readLabel(int offset, Label[] labels) {
+        OffsetLabel label = (OffsetLabel) labels[offset];
+        if (label == null) {
+            for (int i = 0; i < labels.length; ++i) {
+                labels[i] = new OffsetLabel(i);
+            }
+            label = (OffsetLabel) labels[offset];
+        }
+        label.realLabel = true;
+        return label;
     }
 }

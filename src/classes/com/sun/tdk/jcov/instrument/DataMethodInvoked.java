@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package com.sun.tdk.jcov.instrument;
 
 import com.sun.tdk.jcov.data.Scale;
+import com.sun.tdk.jcov.instrument.asm.InvokeMethodAdapter;
 import com.sun.tdk.jcov.runtime.Collect;
 import com.sun.tdk.jcov.runtime.CollectDetect;
 import com.sun.tdk.jcov.tools.OneElemIterator;
@@ -124,7 +125,7 @@ public class DataMethodInvoked extends DataMethod {
             }
 
             @Override
-            void xmlAttrs(XmlContext ctx) {
+            protected void xmlAttrs(XmlContext ctx) {
                 ctx.attr(XmlNames.ID, getId());
                 ctx.attr(XmlNames.COUNT, getCount());
                 printScale(ctx);
@@ -188,7 +189,7 @@ public class DataMethodInvoked extends DataMethod {
     }
 
     @Override
-    void xmlGen(XmlContext ctx) {
+    public void xmlGen(XmlContext ctx) {
         super.xmlGenBodiless(ctx);
     }
 
@@ -275,7 +276,7 @@ public class DataMethodInvoked extends DataMethod {
             }
 
             @Override
-            void xmlAttrs(XmlContext ctx) {
+            protected void xmlAttrs(XmlContext ctx) {
                 ctx.attr(XmlNames.ID, getId());
                 ctx.attr(XmlNames.COUNT, getCount());
                 printScale(ctx);

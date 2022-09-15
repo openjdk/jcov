@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.io.IOException;
  */
 public class DataBlockFallThrough extends DataBlock {
 
-    DataBlockFallThrough(int rootId) {
+    public DataBlockFallThrough(int rootId) {
         super(rootId);
     }
 
@@ -46,7 +46,7 @@ public class DataBlockFallThrough extends DataBlock {
      * Does the previous block fall into this one?
      */
     @Override
-    boolean isFallenInto() {
+    public boolean isFallenInto() {
         return true;
     }
 

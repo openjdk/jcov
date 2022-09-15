@@ -22,39 +22,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
+import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.Attribute;
-import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
 
 /**
- * Field visitor collecting runtime annotations
+ * Class that does nothing but collects runtime annotations
  *
  * @author Dmitry Fazunenko
  */
-class FieldAnnotationVisitor extends FieldVisitor {
+class MethodAnnotationAdapter extends MethodVisitor {
 
-    final DataField field;
-    final FieldVisitor fv;
+    final DataMethod meth;
 
-    FieldAnnotationVisitor(final FieldVisitor fv, final DataField field) {
-        super(ASMUtils.ASM_API_VERSION, fv);
-        this.fv = fv;
-        this.field = field;
-    }
-
-    public void visitAttribute(Attribute arg0) {
-        fv.visitAttribute(arg0);
-    }
-
-    public void visitEnd() {
-        fv.visitEnd();
-    }
-
+    @Override
     public AnnotationVisitor visitAnnotation(String anno, boolean b) {
-        field.addAnnotation(anno);
-        return fv.visitAnnotation(anno, b);
+        meth.addAnnotation(anno);
+        return super.visitAnnotation(anno, b);
+    }
+
+    MethodAnnotationAdapter(final MethodVisitor mv,
+            final DataMethod method) {
+        super(ASMUtils.ASM_API_VERSION, mv);
+        this.meth = method;
     }
 }

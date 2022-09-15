@@ -26,7 +26,7 @@ package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.constants.MiscConstants;
 import com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter;
-import com.sun.tdk.jcov.instrument.ClassMorph;
+import com.sun.tdk.jcov.instrument.asm.ClassMorph;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.tools.EnvHandler;

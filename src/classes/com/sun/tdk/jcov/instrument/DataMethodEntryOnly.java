@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public class DataMethodEntryOnly extends DataMethod implements Iterable<DataBloc
         int slot = (newData) ? Collect.newSlot() : id;
         entryBlock = new DataBlockMethEnter(rootId, slot, newData, 0) {
             @Override
-            void xmlAttrs(XmlContext ctx) {
+            protected void xmlAttrs(XmlContext ctx) {
                 ctx.attr(XmlNames.ID, getId());
                 ctx.attr(XmlNames.COUNT, getCount());
                 printScale(ctx);
@@ -136,7 +136,7 @@ public class DataMethodEntryOnly extends DataMethod implements Iterable<DataBloc
         int slot = (newData) ? Collect.newSlot() : id;
         entryBlock = new DataBlockMethEnter(rootId, slot, newData, count) {
             @Override
-            void xmlAttrs(XmlContext ctx) {
+            protected void xmlAttrs(XmlContext ctx) {
                 ctx.attr(XmlNames.ID, getId());
                 ctx.attr(XmlNames.COUNT, getCount());
                 printScale(ctx);
@@ -171,7 +171,7 @@ public class DataMethodEntryOnly extends DataMethod implements Iterable<DataBloc
         int slot = (newData) ? Collect.newSlot() : other.getSlot();
         entryBlock = new DataBlockMethEnter(rootId, slot, newData, other.getCount()) {
             @Override
-            void xmlAttrs(XmlContext ctx) {
+            protected void xmlAttrs(XmlContext ctx) {
                 ctx.attr(XmlNames.ID, getId());
                 ctx.attr(XmlNames.COUNT, getCount());
                 printScale(ctx);
@@ -249,7 +249,7 @@ public class DataMethodEntryOnly extends DataMethod implements Iterable<DataBloc
 //        }
 //    }
     @Override
-    void xmlGen(XmlContext ctx) {
+    public void xmlGen(XmlContext ctx) {
         super.xmlGenBodiless(ctx);
     }
 
@@ -317,7 +317,7 @@ public class DataMethodEntryOnly extends DataMethod implements Iterable<DataBloc
         super(parent, in);
         entryBlock = new DataBlockMethEnter(parent.rootId, in) {
             @Override
-            void xmlAttrs(XmlContext ctx) {
+            protected void xmlAttrs(XmlContext ctx) {
                 ctx.attr(XmlNames.ID, getId());
                 ctx.attr(XmlNames.COUNT, getCount());
                 printScale(ctx);

@@ -22,8 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
+import com.sun.tdk.jcov.instrument.DataMethodEntryOnly;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Label;

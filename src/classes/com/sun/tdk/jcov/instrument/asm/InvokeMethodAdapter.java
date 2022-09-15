@@ -22,13 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.InsnList;

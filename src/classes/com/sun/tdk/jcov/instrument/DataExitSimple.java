@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,12 +59,12 @@ public class DataExitSimple extends DataExit {
     }
 
     @Override
-    void xmlGen(XmlContext cxt) {
+    public void xmlGen(XmlContext cxt) {
         xmlGenBodiless(cxt);
     }
 
     @Override
-    void xmlAttrs(XmlContext ctx) {
+    protected void xmlAttrs(XmlContext ctx) {
         super.xmlAttrs(ctx);
         ctx.attr(XmlNames.OPCODE, opcodeName());
     }

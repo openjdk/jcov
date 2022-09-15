@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
 import org.objectweb.asm.Opcodes;
 
