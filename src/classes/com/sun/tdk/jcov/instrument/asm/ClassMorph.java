@@ -22,9 +22,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
 import com.sun.tdk.jcov.data.FileFormatException;
+import com.sun.tdk.jcov.instrument.BasicBlock;
+import com.sun.tdk.jcov.instrument.DataBlock;
+import com.sun.tdk.jcov.instrument.DataClass;
+import com.sun.tdk.jcov.instrument.DataField;
+import com.sun.tdk.jcov.instrument.DataMethod;
+import com.sun.tdk.jcov.instrument.DataMethodEntryOnly;
+import com.sun.tdk.jcov.instrument.DataMethodInvoked;
+import com.sun.tdk.jcov.instrument.DataMethodWithBlocks;
+import com.sun.tdk.jcov.instrument.DataPackage;
+import com.sun.tdk.jcov.instrument.DataRoot;
+import com.sun.tdk.jcov.instrument.InstrumentationOptions;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
+import com.sun.tdk.jcov.instrument.XmlNames;
 import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.runtime.Collect;
 import com.sun.tdk.jcov.runtime.FileSaver;
@@ -224,7 +237,7 @@ public class ClassMorph {
             }
         }
         if (moduleName == null){
-            moduleName = "module "+XmlNames.NO_MODULE;
+            moduleName = "module "+ XmlNames.NO_MODULE;
         }
 
         if (!params.isModuleIncluded(moduleName.substring(7, moduleName.length()))){

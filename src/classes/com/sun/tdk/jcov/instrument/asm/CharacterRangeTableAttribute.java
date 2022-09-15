@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
 import com.sun.tdk.jcov.data.FileFormatException;
+import com.sun.tdk.jcov.instrument.DataRoot;
+import com.sun.tdk.jcov.instrument.LocationConcrete;
+import com.sun.tdk.jcov.instrument.XmlContext;
+import com.sun.tdk.jcov.instrument.XmlNames;
 import com.sun.tdk.jcov.instrument.reader.Reader;
 import com.sun.tdk.jcov.instrument.reader.ReaderFactory;
 import org.objectweb.asm.Attribute;
@@ -84,7 +88,7 @@ public class CharacterRangeTableAttribute extends Attribute {
             return XmlNames.RANGE;
         }
 
-        void xmlAttrs(XmlContext ctx) {
+        public void xmlAttrs(XmlContext ctx) {
             super.xmlAttrs(ctx);
             if ((flags & CRT_STATEMENT) != 0) {
                 ctx.attr(XmlNames.A_STATEMENT, true);
@@ -216,7 +220,7 @@ public class CharacterRangeTableAttribute extends Attribute {
      * Since there is no multiple inheritance, we aren't a DataAbstract, but
      * we'll fake it
      */
-    void xmlGen(XmlContext ctx) {
+    public void xmlGen(XmlContext ctx) {
         ctx.indent();
         ctx.println("<" + XmlNames.CRT + ">");
         ctx.incIndent();

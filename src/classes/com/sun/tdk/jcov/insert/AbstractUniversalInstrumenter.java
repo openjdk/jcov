@@ -24,7 +24,7 @@
  */
 package com.sun.tdk.jcov.insert;
 
-import com.sun.tdk.jcov.instrument.OverriddenClassWriter;
+import com.sun.tdk.jcov.instrument.asm.OverriddenClassWriter;
 import com.sun.tdk.jcov.util.Utils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

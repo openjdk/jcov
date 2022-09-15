@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class BasicBlock extends LocationConcrete {
     /**
      * Creates a new instance of BasicBlock
      */
-    BasicBlock(int rootId, int startBCI) {
+    public BasicBlock(int rootId, int startBCI) {
         super(rootId, startBCI);
         blockMap = new IdentityHashMap<DataBlock, LabelNode>();
     }
@@ -76,7 +76,7 @@ public class BasicBlock extends LocationConcrete {
         this(rootId, -1);
     }
 
-    void add(DataBlock blk, LabelNode label) {
+    public void add(DataBlock blk, LabelNode label) {
         blockMap.put(blk, label);
         if (blk.isFallenInto()) {
             fallenInto = blk;
@@ -88,7 +88,7 @@ public class BasicBlock extends LocationConcrete {
         add(blk, null);
     }
 
-    LabelNode getLabel(DataBlock blk) {
+    public LabelNode getLabel(DataBlock blk) {
         return blockMap.get(blk);
     }
 
@@ -96,7 +96,7 @@ public class BasicBlock extends LocationConcrete {
         return blockMap.containsKey(blk);
     }
 
-    DataBlock fallenInto() {
+    public DataBlock fallenInto() {
         return fallenInto;
     }
 
@@ -104,11 +104,11 @@ public class BasicBlock extends LocationConcrete {
         this.exit = exit;
     }
 
-    Collection<DataBlock> blocks() {
+    public Collection<DataBlock> blocks() {
         return blockMap.keySet();
     }
 
-    Set<Map.Entry<DataBlock, LabelNode>> blockLabelSet() {
+    public Set<Map.Entry<DataBlock, LabelNode>> blockLabelSet() {
         return blockMap.entrySet();
     }
 

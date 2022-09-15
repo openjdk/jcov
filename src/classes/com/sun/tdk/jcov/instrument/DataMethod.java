@@ -419,7 +419,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * XML Generation. Not supposed to use outside.
      */
     @Override
-    void xmlGen(XmlContext ctx) {
+    public void xmlGen(XmlContext ctx) {
         if (ctx.showAbstract || !access.isAbstract()) {
             super.xmlGen(ctx);
         }

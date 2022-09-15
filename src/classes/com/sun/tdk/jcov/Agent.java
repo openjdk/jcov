@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.constants.MiscConstants;
 import com.sun.tdk.jcov.instrument.*;
+import com.sun.tdk.jcov.instrument.asm.ClassMorph;
 import com.sun.tdk.jcov.runtime.AgentSocketSaver;
 import com.sun.tdk.jcov.runtime.Collect;
 import com.sun.tdk.jcov.runtime.CollectDetect;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ public abstract class DataBlock extends LocationRef {
      * Does the previous block fall into this one? Override for blocks that are
      * fallen into.
      */
-    boolean isFallenInto() {
+    public boolean isFallenInto() {
         return false;
     }
 
@@ -170,7 +170,7 @@ public abstract class DataBlock extends LocationRef {
      * XML Generation
      */
     @Override
-    void xmlAttrs(XmlContext ctx) {
+    protected void xmlAttrs(XmlContext ctx) {
         super.xmlAttrs(ctx);
         ctx.attr(XmlNames.ID, getId());
         ctx.attr(XmlNames.COUNT, getCount());
@@ -198,7 +198,7 @@ public abstract class DataBlock extends LocationRef {
     }
 
     @Override
-    void xmlGen(XmlContext ctx) {
+    public void xmlGen(XmlContext ctx) {
         xmlGenBodiless(ctx);
     }
 

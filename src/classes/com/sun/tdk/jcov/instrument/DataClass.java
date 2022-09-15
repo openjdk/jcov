@@ -601,7 +601,7 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      * XML Generation. Not supposed to use outside.
      */
     @Override
-    void xmlGen(XmlContext ctx) {
+    public void xmlGen(XmlContext ctx) {
 
         if ((!ctx.skipNotCoveredClasses || wasHit() && methods.size() > 0)) {
 

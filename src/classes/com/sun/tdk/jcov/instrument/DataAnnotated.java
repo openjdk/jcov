@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public abstract class DataAnnotated extends DataAbstract {
      *
      * @param anno
      */
-    void addAnnotation(String anno) {
+    public void addAnnotation(String anno) {
         if (annotations == null) {
             annotations = new ArrayList<String>();
         }
@@ -57,7 +57,7 @@ public abstract class DataAnnotated extends DataAbstract {
         return annotations != null && annotations.contains(anno);
     }
 
-    protected List<String> getAnnotations() {
+    public List<String> getAnnotations() {
         return annotations;
     }
 

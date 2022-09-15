@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
+import com.sun.tdk.jcov.instrument.DataMethodEntryOnly;
+import com.sun.tdk.jcov.instrument.InstrumentationOptions;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.ClassVisitor;
 
@@ -179,7 +182,8 @@ class NativeWrappingMethodAdapter extends ForkingMethodAdapter {
         } else {
             invokeOp = INVOKESTATIC;
         }
-        instructions.add(new MethodInsnNode(invokeOp, dataMethod.getParent().getFullname(), InstrumentationOptions.nativePrefix + dataMethod.getName(), dataMethod.getVmSignature()));
+        instructions.add(new MethodInsnNode(invokeOp, dataMethod.getParent().getFullname(),
+                InstrumentationOptions.nativePrefix + dataMethod.getName(), dataMethod.getVmSignature()));
 
         // return correct type
         switch (descriptor.charAt(index + 1)) {

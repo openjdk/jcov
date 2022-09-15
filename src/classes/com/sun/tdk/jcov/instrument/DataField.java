@@ -24,6 +24,7 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.instrument.asm.InvokeMethodAdapter;
 import com.sun.tdk.jcov.util.NaturalComparator;
 import com.sun.tdk.jcov.data.Scale;
 import com.sun.tdk.jcov.data.ScaleOptions;
@@ -370,7 +371,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      * XML Generation. Not supposed to use outside.
      */
     @Override
-    void xmlGen(XmlContext ctx) {
+    public void xmlGen(XmlContext ctx) {
         super.xmlGenBodiless(ctx);
     }
 

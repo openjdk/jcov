@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,40 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
-import org.objectweb.asm.Label;
+import com.sun.tdk.jcov.instrument.DataField;
+import com.sun.tdk.jcov.util.Utils;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Attribute;
+import org.objectweb.asm.FieldVisitor;
 
 /**
- * OffsetLabel
+ * Field visitor collecting runtime annotations
  *
- * @author Robert Field
+ * @author Dmitry Fazunenko
  */
-class OffsetLabel extends Label {
+class FieldAnnotationVisitor extends FieldVisitor {
 
-    int originalOffset;
-    boolean realLabel;
+    final DataField field;
+    final FieldVisitor fv;
 
-    OffsetLabel(int originalOffset) {
-        this.originalOffset = originalOffset;
+    FieldAnnotationVisitor(final FieldVisitor fv, final DataField field) {
+        super(ASMUtils.ASM_API_VERSION, fv);
+        this.fv = fv;
+        this.field = field;
+    }
+
+    public void visitAttribute(Attribute arg0) {
+        fv.visitAttribute(arg0);
+    }
+
+    public void visitEnd() {
+        fv.visitEnd();
+    }
+
+    public AnnotationVisitor visitAnnotation(String anno, boolean b) {
+        field.addAnnotation(anno);
+        return fv.visitAnnotation(anno, b);
     }
 }
