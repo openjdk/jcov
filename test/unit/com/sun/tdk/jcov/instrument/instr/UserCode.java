@@ -22,13 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument.jreinstr;
+package com.sun.tdk.jcov.instrument.instr;
 
-import javax.swing.JFrame;
-
-public class Code {
+public class UserCode {
+    private static int count = 0;
     public static void main(String[] args) {
-        new JFrame();
-        System.out.println("User code has been executed.");
+        if(args[0].equals("-")) count--;
+        else if(args[0].equals("+")) count++;
+        System.out.println("User code is running.");
     }
 }

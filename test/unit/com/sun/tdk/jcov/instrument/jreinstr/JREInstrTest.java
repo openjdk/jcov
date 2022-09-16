@@ -30,6 +30,7 @@ import com.sun.tdk.jcov.instrument.DataClass;
 import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.instrument.DataPackage;
 import com.sun.tdk.jcov.instrument.DataRoot;
+import com.sun.tdk.jcov.instrument.Util;
 import com.sun.tdk.jcov.io.Reader;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -39,14 +40,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,43 +54,6 @@ public class JREInstrTest {
 
     Path jre;
     Path userCode;
-
-    private Path copyJRE(Path src) throws IOException, InterruptedException {
-        Path dest = Files.createTempDirectory("JDK");
-        System.out.println("Copying " + src + " to " + dest);
-        Files.walk(src).forEach(s -> {
-            try {
-                Files.copy(s, dest.resolve(src.relativize(s)), StandardCopyOption.REPLACE_EXISTING);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        });
-        return dest;
-    }
-
-    private void rmRF(Path jre) throws IOException {
-        System.out.println("Removing " + jre);
-        Files.walkFileTree(jre, new FileVisitor<Path>() {
-            @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                return FileVisitResult.CONTINUE;
-            }
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
-            @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
-                return FileVisitResult.CONTINUE;
-            }
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                Files.delete(dir);
-                return FileVisitResult.CONTINUE;
-            }
-        });
-    }
 
     static void createUserCode(Path location, Class code) throws IOException {
         String fileName = code.getName().replace('.', '/') + ".class";
@@ -116,7 +75,7 @@ public class JREInstrTest {
         if(testJRE == null) {
             testJRE = System.getProperty("java.home");
         }
-        jre = copyJRE(Paths.get(testJRE));
+        jre = Util.copyJRE(Paths.get(testJRE));
         userCode = Paths.get("user_code");
         createUserCode(userCode, Code.class);
     }
@@ -153,18 +112,18 @@ public class JREInstrTest {
     @Test(dependsOnMethods = "testInstrumentation")
     public void testCoverage() throws IOException, InterruptedException, FileFormatException {
         DataRoot data = Reader.readXML(Files.newInputStream(Paths.get("result.xml")));
-        DataPackage pkg = data.getPackages().stream().filter(p -> p.getName().equals("java/util")).findAny().get();
-        DataClass cls = pkg.getClasses().stream().filter(c -> c.getName().equals("Random"))
+        DataPackage pkg = data.getPackages().stream().filter(p -> p.getName().equals("javax/swing")).findAny().get();
+        DataClass cls = pkg.getClasses().stream().filter(c -> c.getName().equals("JFrame"))
                 .findAny().get();
         DataMethod method = cls.getMethods().stream().filter(m ->
-                m.getName().equals("nextInt") && m.getVmSignature().equals("()I")
+                m.getName().equals("<init>") && m.getVmSignature().equals("()V")
         ).findFirst().get();
-        assertTrue(method.getCount() >= 1);
+        assertEquals(method.getCount(), 1);
     }
     @AfterClass
     public void tearDown() throws IOException {
-        if(jre != null && Files.exists(jre)) rmRF(jre);
-        if(userCode != null && Files.exists(userCode)) rmRF(userCode);
+        if(jre != null && Files.exists(jre)) Util.rmRF(jre);
+        if(userCode != null && Files.exists(userCode)) Util.rmRF(userCode);
         Files.deleteIfExists(Paths.get("result.xml"));
     }
 

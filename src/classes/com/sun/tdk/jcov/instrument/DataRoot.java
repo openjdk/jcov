@@ -1354,7 +1354,7 @@ public class DataRoot extends DataAbstract {
                     } else {
                         DataMethodWithBlocks mb = (DataMethodWithBlocks) meth;
                         for (BasicBlock bb : mb.getBasicBlocks()) {
-                            for (DataBlock db : bb.blockMap.keySet()) {
+                            for (DataBlock db : bb.blocks()) {
                                 long count = merge ? db.getCount() : 0;
                                 db.setCount(count + counts[db.getId()]);
                             }
