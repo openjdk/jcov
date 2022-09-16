@@ -190,7 +190,6 @@ public abstract class AbstractUniversalInstrumenter {
             logger.log(Level.SEVERE, "  Error reading data from '" + fname + "' - skipped", e);
             instredFine = false;
         } catch (NullPointerException e) {
-            e.printStackTrace();
             logger.log(Level.SEVERE, "  Error reading data from '" + fname + "' - skipped", e);
             instredFine = false;
         } catch (Exception e) {
