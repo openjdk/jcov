@@ -25,16 +25,15 @@
 package com.sun.tdk.jcov.instrument;
 
 import com.sun.tdk.jcov.tools.DelegateIterator;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Set;
-import java.util.Map;
-import java.util.IdentityHashMap;
 import java.util.Collection;
-
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
-import org.objectweb.asm.tree.LabelNode;
+import java.util.Set;
 
 /**
  * BasicBlock
@@ -53,7 +52,7 @@ import org.objectweb.asm.tree.LabelNode;
 public class BasicBlock extends LocationConcrete {
 
     private DataBlock fallenInto = null;
-    public final Map<DataBlock, LabelNode> blockMap;
+    private final Set<DataBlock> blocks;
     public DataExit exit = null;
 
     /**
@@ -61,7 +60,7 @@ public class BasicBlock extends LocationConcrete {
      */
     public BasicBlock(int rootId, int startBCI) {
         super(rootId, startBCI);
-        blockMap = new IdentityHashMap<DataBlock, LabelNode>();
+        blocks = Collections.newSetFromMap(new IdentityHashMap<>());
     }
 
     /**
@@ -69,31 +68,23 @@ public class BasicBlock extends LocationConcrete {
      */
     BasicBlock(int rootId, int startBCI, int endBCI) {
         super(rootId, startBCI, endBCI);
-        blockMap = new IdentityHashMap<DataBlock, LabelNode>();
+        blocks = Collections.newSetFromMap(new IdentityHashMap<>());
     }
 
     public BasicBlock(int rootId) {
         this(rootId, -1);
     }
 
-    public void add(DataBlock blk, LabelNode label) {
-        blockMap.put(blk, label);
+    public void add(DataBlock blk) {
+        blocks.add(blk);
         if (blk.isFallenInto()) {
             fallenInto = blk;
         }
         blk.setConcreteLocation(this);
     }
 
-    public void add(DataBlock blk) {
-        add(blk, null);
-    }
-
-    public LabelNode getLabel(DataBlock blk) {
-        return blockMap.get(blk);
-    }
-
     boolean contains(DataBlock blk) {
-        return blockMap.containsKey(blk);
+        return blocks.contains(blk);
     }
 
     public DataBlock fallenInto() {
@@ -105,11 +96,7 @@ public class BasicBlock extends LocationConcrete {
     }
 
     public Collection<DataBlock> blocks() {
-        return blockMap.keySet();
-    }
-
-    public Set<Map.Entry<DataBlock, LabelNode>> blockLabelSet() {
-        return blockMap.entrySet();
+        return blocks;
     }
 
     boolean wasHit() {
@@ -130,8 +117,8 @@ public class BasicBlock extends LocationConcrete {
     }
 
     void xmlDetailBody(XmlContext ctx) {
-        if (ctx.showNonNested && blockMap != null) {//BRANCH only
-            for (DataBlock block : blockMap.keySet()) {
+        if (ctx.showNonNested && blocks != null) {//BRANCH only
+            for (DataBlock block : blocks) {
                 if (!block.isNested()) {
                     block.xmlGen(ctx);
                 }
@@ -143,9 +130,9 @@ public class BasicBlock extends LocationConcrete {
     }
 
     public void checkCompatibility(BasicBlock other) throws MergeException {
-        if (blockMap.keySet().size() != other.blocks().size()) {
+        if (blocks.size() != other.blocks().size()) {
             throw new MergeException("Block has other number of data blocks than "
-                    + "it's merging copy, expected " + blockMap.keySet().size() + "; found " + other.blocks().size(),
+                    + "it's merging copy, expected " + blocks.size() + "; found " + other.blocks().size(),
                     "", MergeException.HIGH);
         }
 
@@ -160,7 +147,7 @@ public class BasicBlock extends LocationConcrete {
 
             if (branch.branchTargets.size() != obranch.branchTargets.size()) {
                 throw new MergeException("Block has other number of data blocks (targets) than "
-                        + "it's merging copy, expected " + blockMap.keySet().size() + "; found " + other.blocks().size(),
+                        + "it's merging copy, expected " + blocks.size() + "; found " + other.blocks().size(),
                         "", MergeException.HIGH);
             }
         }
@@ -169,7 +156,7 @@ public class BasicBlock extends LocationConcrete {
     public void merge(BasicBlock other) {
         boolean dynamicCollected = DataRoot.getInstance(rootId).getParams().isDynamicCollect() || DataRoot.getInstance(other.rootId).getParams().isDynamicCollect();
 
-        mergeDataBlocks(blockMap.keySet(), other.blocks(), dynamicCollected);
+        mergeDataBlocks(blocks, other.blocks(), dynamicCollected);
 
         if (exit instanceof DataBranch) {
             DataBranch branch = (DataBranch) exit;
@@ -212,7 +199,7 @@ public class BasicBlock extends LocationConcrete {
             protected Iterator<DataBlock> nextIterator() {
                 if (index == 0) {
                     index++;
-                    return blockMap.keySet().iterator();
+                    return blocks.iterator();
                 } else if (index == 1) {
                     index++;
                     if (exit != null) {
@@ -276,19 +263,19 @@ public class BasicBlock extends LocationConcrete {
     BasicBlock(int rootId, DataInput in) throws IOException {
         super(rootId, in);
         int blockNum = in.readShort();
-        blockMap = new IdentityHashMap<DataBlock, LabelNode>(blockNum);
+        blocks = Collections.newSetFromMap(new IdentityHashMap<>());
         int code;
         for (int i = 0; i < blockNum; ++i) {
             code = in.readByte();
             switch (code) {
                 case 0:
-                    blockMap.put(new DataBlockCatch(rootId, in), null);
+                    blocks.add(new DataBlockCatch(rootId, in));
                     break;
                 case 1:
-                    blockMap.put(new DataBlockFallThrough(rootId, in), null);
+                    blocks.add(new DataBlockFallThrough(rootId, in));
                     break;
                 case 2:
-                    blockMap.put(new DataBlockMethEnter(rootId, in), null);
+                    blocks.add(new DataBlockMethEnter(rootId, in));
                     break;
                 // for some reason we can _create_ data with DataBlockTarget in blockMap, but we do not _save_ and _read_ them in XML
                 default:

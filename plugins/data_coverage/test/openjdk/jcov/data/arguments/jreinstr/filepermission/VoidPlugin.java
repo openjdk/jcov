@@ -1,6 +1,6 @@
 package openjdk.jcov.data.arguments.jreinstr.filepermission;
 
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.InstrumentationPlugin;
 import org.objectweb.asm.MethodVisitor;
 
 import java.nio.file.Path;
