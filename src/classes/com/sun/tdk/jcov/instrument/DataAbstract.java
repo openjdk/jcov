@@ -31,7 +31,10 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.objectweb.asm.Opcodes.*;
 
@@ -42,6 +45,30 @@ import static org.objectweb.asm.Opcodes.*;
  * @author Robert Field
  */
 public abstract class DataAbstract {
+
+    final private static Map<String, Integer> map =
+            Collections.synchronizedMap(new HashMap<String, Integer>());
+    static volatile int invokeCount = 0;
+
+    public static int getInvokeID(String owner, String name, String descr) {
+        String sig = owner + "." + name + descr;
+        synchronized (map) {
+            Integer id = map.get(sig);
+            if (id != null) {
+                return id;
+            }
+            //return 0;
+            id = invokeCount++;
+            map.put(sig, id);
+            return id;
+        }
+    }
+
+    //never used
+    public static void addID(String className, String name, String descr, int id) {
+        String sig = className + "." + name + descr;
+        map.put(sig, id);
+    }
 
     protected int rootId;
 

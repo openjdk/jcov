@@ -24,7 +24,6 @@
  */
 package com.sun.tdk.jcov.instrument;
 
-import com.sun.tdk.jcov.instrument.asm.InvokeMethodAdapter;
 import com.sun.tdk.jcov.util.NaturalComparator;
 import com.sun.tdk.jcov.data.Scale;
 import com.sun.tdk.jcov.data.ScaleOptions;
@@ -135,17 +134,17 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
 
             @Override
             protected boolean wasCollectHit() {
-                return CollectDetect.wasInvokeHit(InvokeMethodAdapter.getInvokeID(k.getFullname(), name, desc));
+                return CollectDetect.wasInvokeHit(DataAbstract.getInvokeID(k.getFullname(), name, desc));
             }
 
             @Override
             protected long collectCount() {
-                return CollectDetect.invokeCountFor(InvokeMethodAdapter.getInvokeID(k.getFullname(), name, desc));
+                return CollectDetect.invokeCountFor(DataAbstract.getInvokeID(k.getFullname(), name, desc));
             }
 
             @Override
             protected void setCollectCount(long count) {
-                CollectDetect.setInvokeCountFor(InvokeMethodAdapter.getInvokeID(k.getFullname(), name, desc), count);
+                CollectDetect.setInvokeCountFor(DataAbstract.getInvokeID(k.getFullname(), name, desc), count);
             }
 
         };
@@ -529,17 +528,17 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
 
             @Override
             protected boolean wasCollectHit() {
-                return CollectDetect.wasInvokeHit(InvokeMethodAdapter.getInvokeID(c.getFullname(), name, vmSig));
+                return CollectDetect.wasInvokeHit(DataAbstract.getInvokeID(c.getFullname(), name, vmSig));
             }
 
             @Override
             protected long collectCount() {
-                return CollectDetect.invokeCountFor(InvokeMethodAdapter.getInvokeID(c.getFullname(), name, vmSig));
+                return CollectDetect.invokeCountFor(DataAbstract.getInvokeID(c.getFullname(), name, vmSig));
             }
 
             @Override
             protected void setCollectCount(long count) {
-                CollectDetect.setInvokeCountFor(InvokeMethodAdapter.getInvokeID(c.getFullname(), name, vmSig), count);
+                CollectDetect.setInvokeCountFor(DataAbstract.getInvokeID(c.getFullname(), name, vmSig), count);
             }
         };
     }
