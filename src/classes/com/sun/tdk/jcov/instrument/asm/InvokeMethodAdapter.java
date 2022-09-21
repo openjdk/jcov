@@ -26,12 +26,9 @@ package com.sun.tdk.jcov.instrument.asm;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
+import com.sun.tdk.jcov.instrument.DataAbstract;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
-import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.LdcInsnNode;
@@ -52,25 +49,8 @@ import static org.objectweb.asm.Opcodes.*;
  */
 public class InvokeMethodAdapter extends MethodVisitor {
 
-    static volatile int invokeCount = 0;
     private final String className;
     private final InstrumentationParams params;
-
-    public static int getInvokeID(String owner, String name, String descr) {
-        String sig = owner + "." + name + descr;
-        synchronized (map) {
-            Integer id = map.get(sig);
-            if (id != null) {
-                return id;
-            }
-            //return 0;
-            id = invokeCount++;
-            map.put(sig, id);
-            return id;
-        }
-    }
-    final private static Map<String, Integer> map =
-            Collections.synchronizedMap(new HashMap<String, Integer>());
 
     public InvokeMethodAdapter(MethodVisitor mv, String className, final InstrumentationParams params) {
         super(ASMUtils.ASM_API_VERSION, mv);
@@ -84,7 +64,7 @@ public class InvokeMethodAdapter extends MethodVisitor {
                 && params.isInstrumentFields() && params.isIncluded(owner)
                 && params.isCallerFilterAccept(className)) {
             InsnList il = new InsnList();
-            il.add(new LdcInsnNode(getInvokeID(owner, name, desc)));
+            il.add(new LdcInsnNode(DataAbstract.getInvokeID(owner, name, desc)));
             il.add(new MethodInsnNode(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "invokeHit", "(I)V", false));
             il.accept(this);
         }
@@ -110,7 +90,7 @@ public class InvokeMethodAdapter extends MethodVisitor {
                 && params.isInstrumentAbstract()
                 && params.isIncluded(owner)
                 && params.isCallerFilterAccept(className)) {
-            super.visitLdcInsn(getInvokeID(owner, name, desc));
+            super.visitLdcInsn(DataAbstract.getInvokeID(owner, name, desc));
             super.visitMethodInsn(INVOKESTATIC, "com/sun/tdk/jcov/runtime/CollectDetect", "invokeHit", "(I)V", false);
         }
         super.visitMethodInsn(opcode, owner, name, desc, itf);
@@ -285,9 +265,4 @@ public class InvokeMethodAdapter extends MethodVisitor {
         return res;
     }
 
-    //never used
-    public static void addID(String className, String name, String descr, int id) {
-        String sig = className + "." + name + descr;
-        map.put(sig, id);
-    }
 }
