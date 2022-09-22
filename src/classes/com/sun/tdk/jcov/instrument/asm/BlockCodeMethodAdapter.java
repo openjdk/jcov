@@ -437,7 +437,7 @@ class BlockCodeMethodAdapter extends OffsetRecordingMethodAdapter {
     public void visitAttribute(Attribute attr) {
         super.visitAttribute(attr);
         if (attr instanceof CharacterRangeTableAttribute) {
-            method().setCharacterRangeTable(((CharacterRangeTableAttribute) attr).crt);
+            method().setCharacterRangeTable(((CharacterRangeTableAttribute) attr).getCrt());
         }
     }
 

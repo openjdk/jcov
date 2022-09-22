@@ -41,11 +41,15 @@ import org.objectweb.asm.Label;
  */
 public class CharacterRangeTableAttribute extends Attribute {
 
-    CharacterRangeTable crt;
+    private CharacterRangeTable crt;
 
     CharacterRangeTableAttribute(CharacterRangeTable crt) {
         super("CharacterRangeTable");
         this.crt = crt;
+    }
+
+    public CharacterRangeTable getCrt() {
+        return crt;
     }
 
     @Override
