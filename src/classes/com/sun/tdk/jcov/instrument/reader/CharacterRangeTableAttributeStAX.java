@@ -25,8 +25,8 @@
 package com.sun.tdk.jcov.instrument.reader;
 
 import com.sun.tdk.jcov.data.FileFormatException;
-import com.sun.tdk.jcov.instrument.asm.CharacterRangeTableAttribute;
-import com.sun.tdk.jcov.instrument.asm.CharacterRangeTableAttribute.CRTEntry;
+import com.sun.tdk.jcov.instrument.CharacterRangeTable;
+import com.sun.tdk.jcov.instrument.CharacterRangeTable.CRTEntry;
 import com.sun.tdk.jcov.instrument.XmlNames;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,11 +40,11 @@ import javax.xml.stream.XMLStreamReader;
  */
 public class CharacterRangeTableAttributeStAX implements Reader {
 
-    CharacterRangeTableAttribute crt;
+    CharacterRangeTable crt;
     private XMLStreamReader parser;
 
     public void readData(Object dest) throws FileFormatException {
-        crt = (CharacterRangeTableAttribute) dest;
+        crt = (CharacterRangeTable) dest;
         try {
             readData();
         } catch (XMLStreamException ex) {

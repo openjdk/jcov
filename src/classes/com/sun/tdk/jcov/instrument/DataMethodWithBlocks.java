@@ -25,7 +25,6 @@
 package com.sun.tdk.jcov.instrument;
 
 import com.sun.tdk.jcov.data.Scale;
-import com.sun.tdk.jcov.instrument.asm.CharacterRangeTableAttribute;
 import com.sun.tdk.jcov.tools.DelegateIterator;
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -49,7 +48,7 @@ public class DataMethodWithBlocks extends DataMethod {
     /**
      *
      */
-    private CharacterRangeTableAttribute characterRangeTable = null;
+    private CharacterRangeTable characterRangeTable = null;
     /**
      * Including blocks
      */
@@ -121,7 +120,7 @@ public class DataMethodWithBlocks extends DataMethod {
      *
      * @param crt
      */
-    public void setCharacterRangeTable(CharacterRangeTableAttribute crt) {
+    public void setCharacterRangeTable(CharacterRangeTable crt) {
         this.characterRangeTable = crt;
     }
 
@@ -130,7 +129,7 @@ public class DataMethodWithBlocks extends DataMethod {
      *
      * @return
      */
-    public CharacterRangeTableAttribute getCharacterRangeTable() {
+    public CharacterRangeTable getCharacterRangeTable() {
         return characterRangeTable;
     }
 

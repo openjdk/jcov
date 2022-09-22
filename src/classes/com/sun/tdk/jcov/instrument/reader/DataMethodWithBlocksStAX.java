@@ -26,7 +26,7 @@ package com.sun.tdk.jcov.instrument.reader;
 
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.instrument.BasicBlock;
-import com.sun.tdk.jcov.instrument.asm.CharacterRangeTableAttribute;
+import com.sun.tdk.jcov.instrument.CharacterRangeTable;
 import com.sun.tdk.jcov.instrument.DataAbstract.LocationCoords;
 import com.sun.tdk.jcov.instrument.DataMethodWithBlocks;
 import com.sun.tdk.jcov.instrument.DataRoot;
@@ -95,7 +95,7 @@ public class DataMethodWithBlocksStAX implements Reader {
                 bb.readDataFrom();
                 blocks.add(bb);
             } else if (XmlNames.CRT.equals(elem)) {
-                meth.setCharacterRangeTable(new CharacterRangeTableAttribute(meth.rootId()));
+                meth.setCharacterRangeTable(new CharacterRangeTable(meth.rootId()));
                 meth.getCharacterRangeTable().readDataFrom();
             } else {
                 Reader r = rf.getSuperReaderFor(DataMethodWithBlocks.class);
