@@ -28,6 +28,7 @@ import java.util.*;
 
 import static org.objectweb.asm.Opcodes.*;
 
+import com.sun.tdk.jcov.instrument.CharacterRangeTable;
 import com.sun.tdk.jcov.instrument.DataBlock;
 import com.sun.tdk.jcov.instrument.DataBlockFallThrough;
 import com.sun.tdk.jcov.instrument.DataBlockTargetDefault;
@@ -325,10 +326,10 @@ class BlockCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                     continue;
                 }
 
-                for (CharacterRangeTableAttribute.CRTEntry entry : method().getCharacterRangeTable().getEntries()) {
+                for (CharacterRangeTable.CRTEntry entry : method().getCharacterRangeTable().getEntries()) {
                     if (entry.startBCI() == bci) {
 
-                        if ((entry.flags & CharacterRangeTableAttribute.CRTEntry.CRT_STATEMENT) != 0 /*& newBlock*/) {
+                        if ((entry.flags & CharacterRangeTable.CRTEntry.CRT_STATEMENT) != 0 /*& newBlock*/) {
                             newBlock = false;
                             if (insnToBB.get(insn) == null) {
                                 //System.out.println("Should add block at: " + bci + " in " + method().name +
@@ -338,7 +339,7 @@ class BlockCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                             }
                         }
                     } else {
-                        if (entry.endBCI() == index && (entry.flags & CharacterRangeTableAttribute.CRTEntry.CRT_FLOW_TARGET) != 0) {
+                        if (entry.endBCI() == index && (entry.flags & CharacterRangeTable.CRTEntry.CRT_FLOW_TARGET) != 0) {
                             newBlock = true;
                         }
                     }
@@ -436,7 +437,7 @@ class BlockCodeMethodAdapter extends OffsetRecordingMethodAdapter {
     public void visitAttribute(Attribute attr) {
         super.visitAttribute(attr);
         if (attr instanceof CharacterRangeTableAttribute) {
-            method().setCharacterRangeTable((CharacterRangeTableAttribute) attr);
+            method().setCharacterRangeTable(((CharacterRangeTableAttribute) attr).getCrt());
         }
     }
 

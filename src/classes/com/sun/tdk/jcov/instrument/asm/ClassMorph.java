@@ -26,6 +26,7 @@ package com.sun.tdk.jcov.instrument.asm;
 
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.instrument.BasicBlock;
+import com.sun.tdk.jcov.instrument.CharacterRangeTable;
 import com.sun.tdk.jcov.instrument.DataBlock;
 import com.sun.tdk.jcov.instrument.DataClass;
 import com.sun.tdk.jcov.instrument.DataField;
@@ -271,7 +272,8 @@ public class ClassMorph {
         ClassVisitor cv = cw;
         cv = new DeferringMethodClassAdapter(cv, k, params);
 
-        cr.accept(cv, new Attribute[]{new CharacterRangeTableAttribute(root.rootId())}, 0);
+        cr.accept(cv,
+                new Attribute[]{new CharacterRangeTableAttribute(new CharacterRangeTable(root.rootId()))}, 0);
 
         if (k.hasModifier(Opcodes.ACC_SYNTHETIC) && !params.isInstrumentSynthetic()) {
             return null;
