@@ -172,7 +172,7 @@ public class ClassCoverage extends AbstractCoverage {
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
-     * getAccess() method returns a bit-mask of org.objectweb.asm.Opcodes
+     * getAccess() method returns a bit-mask
      * constants. </p>
      *
      * @return true if class access modifiers are <b>public</b> or
@@ -183,7 +183,7 @@ public class ClassCoverage extends AbstractCoverage {
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
-     * getAccess() method returns a bit-mask of org.objectweb.asm.Opcodes
+     * getAccess() method returns a bit-mask
      * constants. </p>
      *
      * @return true if class is <b>public</b> or <b>protected</b>
@@ -195,7 +195,7 @@ public class ClassCoverage extends AbstractCoverage {
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
-     * getAccess() method returns a bit-mask of org.objectweb.asm.Opcodes
+     * getAccess() method returns a bit-mask
      * constants. </p>
      *
      * @return true if class is <b>public</b>
@@ -207,7 +207,7 @@ public class ClassCoverage extends AbstractCoverage {
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
-     * getAccess() method returns a bit-mask of org.objectweb.asm.Opcodes
+     * getAccess() method returns a bit-mask
      * constants. </p>
      *
      * @return true if class is <b>protected</b>
@@ -219,7 +219,7 @@ public class ClassCoverage extends AbstractCoverage {
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
-     * getAccess() method returns a bit-mask of org.objectweb.asm.Opcodes
+     * getAccess() method returns a bit-mask
      * constants. </p>
      *
      * @return true if class is <b>abstract</b>
@@ -231,7 +231,7 @@ public class ClassCoverage extends AbstractCoverage {
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
-     * getAccess() method returns a bit-mask of org.objectweb.asm.Opcodes
+     * getAccess() method returns a bit-mask
      * constants. </p>
      *
      * @return true if class is <b>final</b>
@@ -244,7 +244,7 @@ public class ClassCoverage extends AbstractCoverage {
     /**
      * <p> Use this method to check for specific modifiers. </p>
      *
-     * @return Access bit-mask of org.objectweb.asm.Opcodes constants.
+     * @return Access bit-mask.
      */
     public int getAccess() {
         return access;

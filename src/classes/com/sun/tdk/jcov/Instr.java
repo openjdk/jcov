@@ -27,7 +27,7 @@ package com.sun.tdk.jcov;
 import com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.asm.ClassMorph;
-import com.sun.tdk.jcov.instrument.asm.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;

@@ -24,7 +24,7 @@
  */
 package com.sun.tdk.jcov.instrument.plugin.jreinstr;
 
-import com.sun.tdk.jcov.instrument.asm.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import org.objectweb.asm.MethodVisitor;
 
 import java.io.IOException;
@@ -32,7 +32,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TestPlugin implements InstrumentationPlugin {
+public class TestPlugin implements ASMInstrumentationPlugin {
 
     public static AtomicInteger calledTimes = new AtomicInteger(0);
     public static AtomicInteger savedTimes = new AtomicInteger(0);

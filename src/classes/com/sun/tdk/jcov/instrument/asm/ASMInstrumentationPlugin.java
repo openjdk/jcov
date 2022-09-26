@@ -24,39 +24,17 @@
  */
 package com.sun.tdk.jcov.instrument.asm;
 
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import org.objectweb.asm.MethodVisitor;
-
-import java.nio.file.Path;
 
 /**
  * SPI class which allows to do additional instrumentation, in addition to instrumentation performed by JCov by default.
  * @author Alexander (Shura) Ilin.
  */
-public interface InstrumentationPlugin {
+public interface ASMInstrumentationPlugin extends InstrumentationPlugin {
     /**
      * Supplies a MethodVisitor to perform additional instrumentation.
      * @return A valid method visitor. If no instrumentation needed, must return <code>visitor</code> argument.
      */
     MethodVisitor methodVisitor(int access, String owner, String name, String desc, MethodVisitor visitor);
-
-    /**
-     * Called after all instrumentation is complete.
-     * @throws Exception should some
-     */
-    void instrumentationComplete() throws Exception;
-
-    /**
-     * For the instrumented code to work independently (i.e. without adding additional classes  to the classpath), some
-     * classes can be "implanted" into the instrumented code.
-     * @return Path containing the classes to be implanted. Must be in a form which can be added to Java classpath.
-     */
-    //TODO perhaps this can return a list of classes to be implanted
-    Path runtime() throws Exception;
-
-    /**
-     * Name of a package which contains code, that will be called from the instrumented
-     * code. Such package may need to be exported from a module.
-     * @return package name
-     */
-    String collectorPackage();
 }

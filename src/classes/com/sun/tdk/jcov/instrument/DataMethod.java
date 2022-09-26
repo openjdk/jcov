@@ -24,6 +24,7 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.instrument.asm.ASMModifiers;
 import com.sun.tdk.jcov.util.NaturalComparator;
 import com.sun.tdk.jcov.data.Scale;
 import com.sun.tdk.jcov.util.Utils;
@@ -32,7 +33,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.objectweb.asm.Opcodes;
 
 /**
  * Parent for all method data classes. Keeps base information about method
@@ -50,10 +50,8 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
     protected final DataClass parent;
     /**
      * Container for method access code
-     *
-     * @see org.objectweb.asm.Opcodes
      */
-    protected final DataModifiers access;
+    protected final Modifiers access;
     /**
      * Method name
      */
@@ -103,7 +101,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         super(k.rootId);
 
         this.parent = k;
-        this.access = new DataModifiers(access);
+        this.access = new ASMModifiers(access);
         this.name = name;
         this.vmSig = desc;
         this.signature = signature;
@@ -117,13 +115,6 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * created object to <b>k</b> DataClass. Do not use this constructor in
      * iterators.
      *
-     * @param k
-     * @param access
-     * @param name
-     * @param desc
-     * @param signature
-     * @param exceptions
-     * @param differentiateMethods
      */
     protected DataMethod(DataMethod other) {
         super(other.rootId);
@@ -190,8 +181,6 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
 
     /**
      * Get methods access code
-     *
-     * @see org.objectweb.asm.Opcodes
      * @return methods access code
      */
     public int getAccess() {
@@ -206,14 +195,13 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * @return this method`s access flags as String array
      */
     public String[] getAccessFlags() {
-        return accessFlags(access.access());
+        return accessFlags(access);
     }
 
     /**
      * Check whether <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      *
      * @see #getAccess()
-     * @see org.objectweb.asm.Opcodes
      * @return true if <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      */
     @Deprecated
@@ -225,7 +213,6 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * Check whether <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      *
      * @see #getAccess()
-     * @see org.objectweb.asm.Opcodes
      * @return true if <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      */
     public boolean isPublicAPI() {
@@ -236,7 +223,6 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * Check whether <b>access</b> field has ACC_ABSTRACT flag
      *
      * @see #getAccess()
-     * @see org.objectweb.asm.Opcodes
      * @return true if <b>access</b> field has ACC_ABSTRACT flag
      */
     @Deprecated
@@ -305,10 +291,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
     }
 
     /**
-     * Checks whether this method has specified modifier (by Opcodes)
+     * Checks whether this method has specified modifier
      *
      * @return true if method has specified modifier
-     * @see Opcodes
      * @see DataMethod#getAccess()
      */
     @Deprecated
@@ -433,7 +418,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         ctx.attrNormalized(XmlNames.NAME, name);
         ctx.attr(XmlNames.VMSIG, vmSig);
 
-        xmlAccessFlags(ctx, access.access());
+        xmlAccessFlags(ctx, access);
         ctx.attr(XmlNames.ACCESS, access.access());
 
         if (!differentiateMethods) {
@@ -545,7 +530,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * @return method`s access flags as String array
      */
     @Override
-    String[] accessFlags(int access) {
+    String[] accessFlags(Modifiers access) {
         String[] as = super.accessFlags(access);
         List<String> lst = new ArrayList();
         for (String s : as) {
@@ -593,7 +578,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         out.writeUTF(name);
         writeString(out, vmSig);
         writeString(out, signature);
-        out.writeInt(access.access() & ACCESS_MASK); // we don't save ALL the codes in XML, we shouldn't save all codes in net
+        out.writeInt(access.access());
         out.writeBoolean(differentiateMethods);
         writeStrings(out, exceptions);
         if (lineTable != null) {
@@ -613,7 +598,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         name = in.readUTF();
         vmSig = readString(in);
         signature = readString(in);
-        access = new DataModifiers(in.readInt());
+        access = new ASMModifiers(in.readInt());
         differentiateMethods = in.readBoolean();
         exceptions = readStrings(in);
         int len = in.readShort();

@@ -46,4 +46,34 @@ public interface Modifiers {
     boolean isNative();
 
     boolean isDeprecated();
+
+    boolean isSynchronized();
+
+    boolean isVolatile();
+
+    boolean isBridge();
+
+    boolean isVarargs();
+
+    boolean isTransient();
+
+    boolean isStrict();
+
+    boolean isAnnotation();
+
+    boolean isEnum();
+
+    int access();
+
+    /**
+     * This method is only a part of the contract to support deprecated methods.
+     * @param code
+     * @return
+     * @see DataClass#hasModifier(int)
+     * @see DataField#hasModifier(int)
+     * @see DataMethod#hasModifier(int)
+     */
+    @Deprecated
+    boolean is(int code);
+
 }
