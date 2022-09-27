@@ -37,105 +37,67 @@ public class ASMModifiers implements Modifiers {
     }
 
     @Override
-    public int access() {
-        return access & ACCESS_MASK;
-    }
+    public int access() { return access & ACCESS_MASK; }
 
     @Override
-    public boolean is(int flag) {
-        return (access & flag) != 0;
-    }
+    public boolean is(int flag) { return (access & flag) != 0; }
 
     @Override
-    public boolean isPublic() {
-        return is(ACC_PUBLIC);
-    }
+    public boolean isPublic() { return is(ACC_PUBLIC); }
 
     @Override
-    public boolean isPrivate() {
-        return is(ACC_PRIVATE);
-    }
+    public boolean isPrivate() { return is(ACC_PRIVATE); }
 
     @Override
     public boolean isProtected() { return is(ACC_PROTECTED); }
 
     @Override
-    public boolean isAbstract() {
-        return is(ACC_ABSTRACT);
-    }
+    public boolean isAbstract() { return is(ACC_ABSTRACT); }
 
     @Override
-    public boolean isFinal() {
-        return is(ACC_FINAL);
-    }
+    public boolean isFinal() { return is(ACC_FINAL); }
 
     @Override
-    public boolean isSynthetic() {
-        return is(ACC_SYNTHETIC);
-    }
+    public boolean isSynthetic() { return is(ACC_SYNTHETIC); }
 
     @Override
-    public boolean isStatic() {
-        return is(ACC_STATIC);
-    }
+    public boolean isStatic() { return is(ACC_STATIC); }
 
     @Override
-    public boolean isInterface() {
-        return is(ACC_INTERFACE);
-    }
+    public boolean isInterface() { return is(ACC_INTERFACE); }
 
     @Override
-    public boolean isSuper() {
-        return is(ACC_SUPER);
-    }
+    public boolean isSuper() { return is(ACC_SUPER); }
 
     @Override
-    public boolean isNative() {
-        return is(ACC_NATIVE);
-    }
+    public boolean isNative() { return is(ACC_NATIVE); }
 
     @Override
     public boolean isDeprecated() { return is(ACC_DEPRECATED); }
 
     @Override
-    public boolean isSynchronized() {
-        return is(ACC_SYNCHRONIZED);
-    }
+    public boolean isSynchronized() { return is(ACC_SYNCHRONIZED); }
 
     @Override
-    public boolean isVolatile() {
-        return is(ACC_VOLATILE);
-    }
+    public boolean isVolatile() { return is(ACC_VOLATILE); }
 
     @Override
-    public boolean isBridge() {
-        return is(ACC_BRIDGE);
-    }
+    public boolean isBridge() { return is(ACC_BRIDGE); }
 
     @Override
-    public boolean isVarargs() {
-        return is(ACC_VARARGS);
-    }
+    public boolean isVarargs() { return is(ACC_VARARGS); }
 
     @Override
-    public boolean isTransient() {
-        return is(ACC_TRANSIENT);
-    }
+    public boolean isTransient() { return is(ACC_TRANSIENT); }
 
     @Override
-    public boolean isStrict() {
-        return is(ACC_STRICT);
-    }
+    public boolean isStrict() { return is(ACC_STRICT); }
 
     @Override
-    public boolean isAnnotation() {
-        return is(ACC_ANNOTATION);
-    }
+    public boolean isAnnotation() { return is(ACC_ANNOTATION); }
 
     @Override
-    public boolean isEnum() {
-        return is(ACC_ENUM);
-    }
+    public boolean isEnum() { return is(ACC_ENUM); }
 
     public static final int ACCESS_MASK = ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED | ACC_FINAL | ACC_STATIC | ACC_SYNCHRONIZED
             | ACC_VOLATILE | ACC_BRIDGE | ACC_VARARGS | ACC_TRANSIENT | ACC_NATIVE | ACC_ABSTRACT | ACC_INTERFACE
@@ -160,8 +122,9 @@ public class ASMModifiers implements Modifiers {
             if (flag.contains(XmlNames.A_ANNOTATION)) access |= ACC_ANNOTATION;
             if (flag.contains(XmlNames.A_ENUM)) access |= ACC_ENUM;
             if (flag.contains(XmlNames.A_SYNTHETIC)) access |= ACC_SYNTHETIC;
-            if (flag.contains(XmlNames.A_SYNCHRONIZED))  access |= ACC_SYNCHRONIZED;
+            if (flag.contains(XmlNames.A_SYNCHRONIZED)) access |= ACC_SYNCHRONIZED;
         }
         return new ASMModifiers(access);
     }
 }
+
