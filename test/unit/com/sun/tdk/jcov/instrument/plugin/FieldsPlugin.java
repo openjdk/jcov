@@ -24,7 +24,7 @@
  */
 package com.sun.tdk.jcov.instrument.plugin;
 
-import com.sun.tdk.jcov.instrument.asm.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import com.sun.tdk.jcov.runtime.JCovSaver;
 import org.objectweb.asm.MethodVisitor;
 
@@ -46,7 +46,7 @@ import static org.objectweb.asm.Opcodes.*;
  * This plugin only supports Object and int data types.
  * This class also defines the logic to be used at runtime to save the collected data by printing it into the output.
  */
-public class FieldsPlugin implements InstrumentationPlugin, JCovSaver {
+public class FieldsPlugin implements ASMInstrumentationPlugin, JCovSaver {
 
     public static final Map<String, Set<Object>> values = new HashMap<>();
     public static final String INSTRUMENTATION_COMPLETE = "Instrumentation complete: ";

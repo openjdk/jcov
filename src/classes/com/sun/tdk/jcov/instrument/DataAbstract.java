@@ -25,6 +25,7 @@
 package com.sun.tdk.jcov.instrument;
 
 import com.sun.tdk.jcov.data.FileFormatException;
+import com.sun.tdk.jcov.instrument.asm.ASMModifiers;
 import com.sun.tdk.jcov.instrument.reader.Reader;
 import com.sun.tdk.jcov.instrument.reader.ReaderFactory;
 import java.io.DataInput;
@@ -35,8 +36,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.objectweb.asm.Opcodes.*;
 
 /**
  * DataAbstract
@@ -135,7 +134,7 @@ public abstract class DataAbstract {
         xmlTagSingle(ctx, kind());
     }
 
-    void xmlAccessFlags(XmlContext ctx, int access) {
+    void xmlAccessFlags(XmlContext ctx, Modifiers access) {
         ctx.print(" " + XmlNames.FLAGS + "='");
         String[] flags = accessFlags(access);
         for (String fl : flags) {
@@ -153,122 +152,67 @@ public abstract class DataAbstract {
         r.readData(this);
     }
 
-    String[] accessFlags(int access) {
+    String[] accessFlags(Modifiers access) {
         List<String> flags = new ArrayList<String>();
-        if ((access & ACC_PUBLIC) != 0) {
+        if (access.isPublic()) {
             flags.add(XmlNames.A_PUBLIC);
         }
-        if ((access & ACC_PRIVATE) != 0) {
+        if (access.isPrivate()) {
             flags.add(XmlNames.A_PRIVATE);
         }
-        if ((access & ACC_PROTECTED) != 0) {
+        if (access.isProtected()) {
             flags.add(XmlNames.A_PROTECTED);
         }
-        if ((access & ACC_STATIC) != 0) {
+        if (access.isStatic()) {
             flags.add(XmlNames.A_STATIC);
         }
-        if ((access & ACC_FINAL) != 0) {
+        if (access.isFinal()) {
             flags.add(XmlNames.A_FINAL);
         }
-        if ((access & ACC_SYNCHRONIZED) != 0) {
+        if (access.isSynchronized()) {
             flags.add(XmlNames.A_SYNCHRONIZED);
         }
-        if ((access & ACC_VOLATILE) != 0) {
+        if (access.isVolatile()) {
             flags.add(XmlNames.A_VOLATILE);
         }
-        if ((access & ACC_BRIDGE) != 0) {
+        if (access.isBridge()) {
             flags.add(XmlNames.A_BRIDGE);
         }
-        if ((access & ACC_VARARGS) != 0) {
+        if (access.isVarargs()) {
             flags.add(XmlNames.A_VARARGS);
         }
-        if ((access & ACC_TRANSIENT) != 0) {
+        if (access.isTransient()) {
             flags.add(XmlNames.A_TRANSIENT);
         }
-        if ((access & ACC_NATIVE) != 0) {
+        if (access.isNative()) {
             flags.add(XmlNames.A_NATIVE);
         }
-        if ((access & ACC_INTERFACE) != 0) {
+        if (access.isInterface()) {
             flags.add(XmlNames.A_INTERFACE);
         }
-        if ((access & ACC_ABSTRACT) != 0) {
+        if (access.isAbstract()) {
             flags.add(XmlNames.A_ABSTRACT);
         }
-        if ((access & ACC_STRICT) != 0) {
+        if (access.isStrict()) {
             flags.add(XmlNames.A_STRICT);
         }
-        if ((access & ACC_ANNOTATION) != 0) {
+        if (access.isAnnotation()) {
             flags.add(XmlNames.A_ANNOTATION);
         }
-        if ((access & ACC_ENUM) != 0) {
+        if (access.isEnum()) {
             flags.add(XmlNames.A_ENUM);
         }
-        if ((access & ACC_SYNTHETIC) != 0) {
+        if (access.isSynthetic()) {
             flags.add(XmlNames.A_SYNTHETIC);
         }
         return flags.isEmpty() ? new String[0] : flags.toArray(new String[flags.size()]);
     }
 
-    public int access(String[] accessFlags) {
-        int access = 0;
-        for (String flag : accessFlags) {
-            if (flag.contains(XmlNames.A_PUBLIC)) {
-                access |= ACC_PUBLIC;
-            }
-            if (flag.contains(XmlNames.A_PRIVATE)) {
-                access |= ACC_PRIVATE;
-            }
-            if (flag.contains(XmlNames.A_PROTECTED)) {
-                access |= ACC_PROTECTED;
-            }
-            if (flag.contains(XmlNames.A_STATIC)) {
-                access |= ACC_STATIC;
-            }
-            if (flag.contains(XmlNames.A_FINAL)) {
-                access |= ACC_FINAL;
-            }
-            if (flag.contains(XmlNames.A_VOLATILE)) {
-                access |= ACC_VOLATILE;
-            }
-            if (flag.contains(XmlNames.A_BRIDGE)) {
-                access |= ACC_BRIDGE;
-            }
-            if (flag.contains(XmlNames.A_VARARGS)) {
-                access |= ACC_VARARGS;
-            }
-            if (flag.contains(XmlNames.A_TRANSIENT)) {
-                access |= ACC_TRANSIENT;
-            }
-            if (flag.contains(XmlNames.A_NATIVE)) {
-                access |= ACC_NATIVE;
-            }
-            if (flag.contains(XmlNames.A_INTERFACE) || flag.contains(XmlNames.A_DEFENDER_METH)) {
-                access |= ACC_INTERFACE;
-            }
-            if (flag.contains(XmlNames.A_ABSTRACT)) {
-                access |= ACC_ABSTRACT;
-            }
-            if (flag.contains(XmlNames.A_STRICT)) {
-                access |= ACC_STRICT;
-            }
-            if (flag.contains(XmlNames.A_ANNOTATION)) {
-                access |= ACC_ANNOTATION;
-            }
-            if (flag.contains(XmlNames.A_ENUM)) {
-                access |= ACC_ENUM;
-            }
-            if (flag.contains(XmlNames.A_SYNTHETIC)) {
-                access |= ACC_SYNTHETIC;
-            }
-            if (flag.contains(XmlNames.A_SYNCHRONIZED)) {
-                access |= ACC_SYNCHRONIZED;
-            }
-
-        }
-        return access;
+    public Modifiers access(String[] accessFlags) {
+        return ASMModifiers.parse(accessFlags);
     }
 
-    public String access(int access) {
+    public String access(Modifiers access) {
         String res = "";
         for (String s : accessFlags(access)) {
             res += " " + s;
@@ -322,7 +266,4 @@ public abstract class DataAbstract {
             return null;
         }
     }
-    public static final int ACCESS_MASK = ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED | ACC_FINAL | ACC_STATIC | ACC_SYNCHRONIZED
-            | ACC_VOLATILE | ACC_BRIDGE | ACC_VARARGS | ACC_TRANSIENT | ACC_NATIVE | ACC_ABSTRACT | ACC_INTERFACE
-            | ACC_STRICT | ACC_ANNOTATION | ACC_ENUM | ACC_SYNTHETIC;
 }

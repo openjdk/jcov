@@ -26,7 +26,7 @@ package com.sun.tdk.jcov.instrument;
 
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.ABSTRACTMODE;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.InstrumentationMode;
-import com.sun.tdk.jcov.instrument.asm.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.runtime.Collect;
 import com.sun.tdk.jcov.runtime.CollectDetect;
 import com.sun.tdk.jcov.util.Utils;
@@ -228,9 +228,7 @@ public class InstrumentationParams {
         return instrumentAnonymous;
     }
 
-    public InstrumentationPlugin getInstrumentationPlugin() {
-        return plugin;
-    }
+    public InstrumentationPlugin getInstrumentationPlugin() { return plugin; }
 
 //    public boolean skipNotCoveredClasses() {
 //        return dynamicCollect;

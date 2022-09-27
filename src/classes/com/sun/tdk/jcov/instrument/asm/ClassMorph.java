@@ -636,8 +636,8 @@ public class ClassMorph {
             for (DataPackage pack : root.getPackages()) {
                 for (DataClass clazz : pack.getClasses()) {
                     for (DataMethod meth : clazz.getMethods()) {
-                        if (meth.access(meth.getAccess()).matches(".*abstract.*")
-                                || meth.access(meth.getAccess()).matches(".*native.*")) {
+                        if (meth.access(meth.getModifiers()).matches(".*abstract.*")
+                                || meth.access(meth.getModifiers()).matches(".*native.*")) {
                             int id = 0;
                             if (meth instanceof DataMethodInvoked) {
                                 id = ((DataMethodInvoked) meth).getId();

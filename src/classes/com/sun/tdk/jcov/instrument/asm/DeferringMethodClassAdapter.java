@@ -39,12 +39,10 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import static java.lang.String.format;
 import static org.objectweb.asm.Opcodes.*;
 
 import org.objectweb.asm.tree.MethodNode;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -72,7 +70,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
             final String signature,
             final String superName,
             final String[] interfaces) {
-        dataClass.setInfo(access, signature, superName, interfaces);
+        dataClass.setInfo(new ASMModifiers(access), signature, superName, interfaces);
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
@@ -250,7 +248,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
             mv = new StaticInvokeMethodAdapter(mv, dataClass.getFullname(), methodName, access, params);
         }
 
-        InstrumentationPlugin plugin = params.getInstrumentationPlugin();
+        ASMInstrumentationPlugin plugin = (ASMInstrumentationPlugin) params.getInstrumentationPlugin();
         if (plugin != null)
             mv = plugin.methodVisitor(access, dataClass.getFullname(), methodName, desc, mv);
 

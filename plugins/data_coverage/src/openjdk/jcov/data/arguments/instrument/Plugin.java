@@ -24,7 +24,7 @@
  */
 package openjdk.jcov.data.arguments.instrument;
 
-import com.sun.tdk.jcov.instrument.asm.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import openjdk.jcov.data.arguments.runtime.Collect;
 import openjdk.jcov.data.arguments.runtime.Coverage;
 import openjdk.jcov.data.Env;
@@ -57,7 +57,7 @@ import static org.objectweb.asm.Opcodes.*;
  * An instrumention plugin responsible for adding necessary bytecode instructions to collect and pass argument values to
  * a specified collector.
  */
-public class Plugin implements InstrumentationPlugin {
+public class Plugin implements ASMInstrumentationPlugin {
     /**
      * Classname of a collector class which will be called from every instrumented method.
      */
