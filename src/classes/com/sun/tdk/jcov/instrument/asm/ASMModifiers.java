@@ -160,7 +160,7 @@ public class ASMModifiers implements Modifiers {
             if (flag.contains(XmlNames.A_ANNOTATION)) access |= ACC_ANNOTATION;
             if (flag.contains(XmlNames.A_ENUM)) access |= ACC_ENUM;
             if (flag.contains(XmlNames.A_SYNTHETIC)) access |= ACC_SYNTHETIC;
-            if (flag.contains(XmlNames.A_SYNCHRONIZED)) access |= ACC_SYNCHRONIZED;
+            if (flag.contains(XmlNames.A_SYNCHRONIZED))  access |= ACC_SYNCHRONIZED;
         }
         return new ASMModifiers(access);
     }
