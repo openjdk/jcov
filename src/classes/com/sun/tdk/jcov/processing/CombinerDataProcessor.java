@@ -30,6 +30,7 @@ import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.instrument.DataMethodEntryOnly;
 import com.sun.tdk.jcov.instrument.DataPackage;
 import com.sun.tdk.jcov.instrument.DataRoot;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -104,9 +105,6 @@ public class CombinerDataProcessor implements DataProcessor {
                     String prefix = createPrefix(clzName, mainClassName);
                     for (DataMethod m : c.getMethods()) {
                         int newAccess = isPublic ? m.getAccess() : makePrivate(m.getAccess());
-                        if ((c.getAccess() & Opcodes.ACC_SYNTHETIC) != 0 && (m.getAccess() & Opcodes.ACC_SYNTHETIC) == 0){
-                            newAccess = m.getAccess() | Opcodes.ACC_SYNTHETIC;
-                        }
 
                         DataMethod nm = m.clone(newClass, newAccess, prefix + m.getName());
                         // for -type=method methods exist witout blocks and branches
@@ -189,7 +187,6 @@ public class CombinerDataProcessor implements DataProcessor {
     /**
      * Scans given modifiers in attempt to find "public".
      *
-     * @param modifiers - array to scan
      * @return true if given array is not null and contains "public"
      */
     private boolean isPublic(DataClass c, DataClass outClass) {
@@ -197,7 +194,7 @@ public class CombinerDataProcessor implements DataProcessor {
             return isPublicAnonymous(c, outClass);
         }
 
-        return (c.getAccess() & Opcodes.ACC_PUBLIC) != 0;
+        return c.getModifiers().isPublic();
     }
 
     private boolean isPublicAnonymous(DataClass c, DataClass outClass) {
