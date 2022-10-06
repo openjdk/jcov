@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,9 @@ import com.sun.tdk.jcov.instrument.DataPackage;
 import com.sun.tdk.jcov.instrument.DataRoot;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TreeSet;
-import org.objectweb.asm.Opcodes;
 
 /**
  * Processor, that combines classes derived from the same sources.
@@ -96,7 +93,6 @@ public class CombinerDataProcessor implements DataProcessor {
                         continue; // skip mainClass
                     }
 
-                    boolean isPublic = isPublic(c, toMerge);
                     String clzName = c.getName();
                     int j = clzName.lastIndexOf("/");
                     if (j >= 0) {
@@ -104,9 +100,7 @@ public class CombinerDataProcessor implements DataProcessor {
                     }
                     String prefix = createPrefix(clzName, mainClassName);
                     for (DataMethod m : c.getMethods()) {
-                        int newAccess = isPublic ? m.getAccess() : makePrivate(m.getAccess());
-
-                        DataMethod nm = m.clone(newClass, newAccess, prefix + m.getName());
+                        DataMethod nm = m.clone(newClass, m.getAccess(), prefix + m.getName());
                         // for -type=method methods exist witout blocks and branches
                         if (nm instanceof DataMethodEntryOnly) {
                             nm.setCount(m.getCount());
@@ -115,9 +109,7 @@ public class CombinerDataProcessor implements DataProcessor {
                         // new created method will be added to the newClass
                     }
                     for (DataField f : c.getFields()) {
-                        int newAccess = isPublic ? f.getAccess() : makePrivate(f.getAccess());
-                        f.clone(newClass, newAccess, prefix + f.getName());
-                        // new created field will be added to the newClass
+                        f.clone(newClass, f.getAccess(), prefix + f.getName());
                     }
                 }
                 result.addClass(newClass);
@@ -165,115 +157,4 @@ public class CombinerDataProcessor implements DataProcessor {
         }
     }
 
-    /**
-     * Returns true if the given class is public (contains "public" modifier)
-     * and all its outers are public as well.
-     *
-     * @param cls - class to analyze
-     * @param peers classes the could be potentionaly outer of the cls
-     * @return true or false
-     */
-    private boolean isPublic(DataClass cls, ArrayList<DataClass> peers) {
-        ArrayList<DataClass> outers = findOuters(cls, peers);
-        DataClass outClass = outers.get(outers.size() - 1);
-        for (DataClass c : outers) {
-            if (!isPublic(c, outClass)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Scans given modifiers in attempt to find "public".
-     *
-     * @return true if given array is not null and contains "public"
-     */
-    private boolean isPublic(DataClass c, DataClass outClass) {
-        if (isAnonymous(c.getName())) {
-            return isPublicAnonymous(c, outClass);
-        }
-
-        return c.getModifiers().isPublic();
-    }
-
-    private boolean isPublicAnonymous(DataClass c, DataClass outClass) {
-
-        TreeSet<DataMethod> sortedMethods = new TreeSet<DataMethod>(new Comparator<DataMethod>() {
-            @Override
-            public int compare(DataMethod dm1, DataMethod dm2) {
-                return dm1.getLineTable().get(dm1.getLineTable().size() - 1).line - dm2.getLineTable().get(dm2.getLineTable().size() - 1).line;
-            }
-        });
-
-        for (DataMethod dm : outClass.getMethods()) {
-            if (dm.getLineTable() != null) {
-                sortedMethods.add(dm);
-            }
-        }
-
-        DataMethod initMethod = c.findMethod("<init>");
-
-        if (sortedMethods != null && initMethod != null) {
-            for (DataMethod dataMethod : sortedMethods) {
-
-                if (initMethod.getLineTable().get(0).line <= dataMethod.getLineTable().get(dataMethod.getLineTable().size() - 1).line) {
-
-                    //Anonymous classes in init and clinit is not public
-                    if (dataMethod.getName().equals("<init>") || dataMethod.getName().equals("<clinit>")) {
-                        return false;
-                    }
-
-                    return dataMethod.isPublicAPI();
-                }
-
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Finds outer classes among classes obtained from the same source.
-     *
-     * @param cls - class to find outers
-     * @param peers - class obtained from the same source
-     * @return list of outers including cls itself.
-     */
-    private ArrayList<DataClass> findOuters(DataClass cls, ArrayList<DataClass> peers) {
-        ArrayList<DataClass> result = new ArrayList<DataClass>();
-        result.add(cls);
-        String name = cls.getName();
-        for (DataClass c : peers) {
-            if (name.startsWith(c.getName() + "$")) {
-                result.add(c);
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Removes "public" and "protected" modifiers from the given list
-     *
-     * @param modifiers array of modifiers
-     * @return modified array
-     */
-    private int makePrivate(int modifiers) {
-        return modifiers & ~Opcodes.ACC_PUBLIC & ~Opcodes.ACC_PROTECTED;
-    }
-
-    /**
-     * @param name - name of a class
-     * @return true, if the given class name is anonyomous
-     */
-    private boolean isAnonymous(String name) {
-        if (name == null) {
-            return false;
-        }
-        int index = name.lastIndexOf("$");
-        if (index < 0) {
-            return false;
-        }
-        return Character.isDigit(name.charAt(index + 1));
-    }
 }
