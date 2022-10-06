@@ -1,0 +1,121 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+This code is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License version 2 only, as
+published by the Free Software Foundation.  Oracle designates this
+particular file as subject to the "Classpath" exception as provided
+by Oracle in the LICENSE file that accompanied this code.
+
+This code is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+version 2 for more details (a copy is included in the LICENSE file that
+accompanied this code).
+
+You should have received a copy of the GNU General Public License version
+2 along with this work; if not, write to the Free Software Foundation,
+Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+or visit www.oracle.com if you need additional information or have any
+questions.
+-->
+
+<coverage
+        xmlns='http://java.sun.com/jcov/namespace'
+        xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+        xsi:schemaLocation='http://java.sun.com/jcov/namespace coverage.xsd'>
+
+	<head>
+		<property name='coverage.generator.args' val=''/>
+		<property name='coverage.generator.mode' val='BRANCH'/>
+		<property name='coverage.generator.internal' val='include'/>
+		<property name='coverage.generator.include' val=''/>
+		<property name='coverage.generator.exclude' val=''/>
+		<property name='coverage.generator.caller_include' val='.*'/>
+		<property name='coverage.generator.caller_exclude' val=''/>
+		<property name='coverage.created.date' val='2022-10-04'/>
+		<property name='coverage.created.time' val='19:13:10'/>
+		<property name='coverage.generator.fullversion' val=' 3.0_13 (os.ea) September 30, 2022'/>
+		<property name='coverage.generator.name' val='jcov'/>
+		<property name='coverage.generator.version' val='3.0'/>
+		<property name='coverage.spec.version' val='1.3'/>
+		<property name='java.runtime.version' val='11.0.12+8-LTS-237'/>
+		<property name='java.version' val='11.0.12'/>
+		<property name='os.arch' val='x86_64'/>
+		<property name='os.name' val='Mac OS X'/>
+		<property name='os.version' val='11.5'/>
+		<property name='user.name' val='shura'/>
+		<property name='dynamic.collected' val='false'/>
+		<property name='id.count' val='9'/>
+	</head>
+	<package name="pkg" moduleName="no_module">
+		<class name="TestCode" supername="java/lang/Object" checksum="4029051559" interface="true" source="TestCode.java" flags=' public'>
+			<meth name="&lt;init&gt;" vmsig="()V" flags=' public' access="1" cons="true" length="14">
+				<bl s="0" e="13">
+					<methenter s="0" e="13" id="6" count="0"/>
+					<exit s="13" e="13" opcode="return"/>
+				</bl>
+				<lt>0=4;4=5;13=8;</lt>
+			</meth>
+			<meth name="method" vmsig="()V" flags='' access="0" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="7" count="0"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=10;9=13;</lt>
+			</meth>
+		</class>
+		<class name="TestCode$1" supername="java/lang/Object" checksum="641620908" interface="true" source="TestCode.java" inner="anon" flags=''>
+			<meth name="&lt;init&gt;" vmsig="(Lpkg/TestCode;)V" flags='' access="0" cons="true" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="0" count="0"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=5;</lt>
+			</meth>
+			<meth name="publicMethod" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="1" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=6;</lt>
+			</meth>
+		</class>
+		<class name="TestCode$2" supername="java/lang/Object" checksum="3175112320" interface="true" source="TestCode.java" inner="anon" flags=''>
+			<meth name="&lt;init&gt;" vmsig="(Lpkg/TestCode;)V" flags='' access="0" cons="true" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="2" count="0"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=10;</lt>
+			</meth>
+			<meth name="publicMethod" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="3" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=11;</lt>
+			</meth>
+		</class>
+		<class name="TestCode$Inner" supername="java/lang/Object" checksum="706304885" interface="true" source="TestCode.java" inner="inner" flags=''>
+			<meth name="&lt;init&gt;" vmsig="(Lpkg/TestCode;)V" flags='' access="0" cons="true" length="10">
+				<bl s="0" e="9">
+					<methenter s="0" e="9" id="4" count="0"/>
+					<exit s="9" e="9" opcode="return"/>
+				</bl>
+				<lt>0=14;</lt>
+			</meth>
+			<meth name="publicMethod" vmsig="()V" flags=' public' access="1" length="1">
+				<bl s="0" e="0">
+					<methenter s="0" e="0" id="5" count="0"/>
+					<exit s="0" e="0" opcode="return"/>
+				</bl>
+				<lt>0=15;</lt>
+			</meth>
+		</class>
+	</package>
+</coverage>
