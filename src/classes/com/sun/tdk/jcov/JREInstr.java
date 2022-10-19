@@ -130,9 +130,7 @@ public class JREInstr extends JCovCMDTool {
                     if (mod != null && mod.isDirectory()) {
                         File modClasses = new File(mod, "classes");
                         instr.instrumentFile(modClasses.getAbsolutePath(), null, null, mod.getName());
-                        createJMod(mod, jdk, implant.getAbsolutePath(),
-                                (instr.getPlugin() != null && instr.getPlugin().runtime() != null) ?
-                                    instr.getPlugin().runtime().toString() : null);
+                        createJMod(mod, jdk, implant.getAbsolutePath(), null);
                     }
                 }
                 File newJdkDir = runJLink(jmodsTemp, jdk);

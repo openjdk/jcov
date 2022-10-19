@@ -72,6 +72,8 @@ public class InstrumentationParams {
     private Pattern[] inner_alls;
     private boolean innerInvocations;
     private InstrumentationPlugin plugin;
+    private String input;
+    private String output;
 
     //TODO replace by a builder!!!
     public InstrumentationParams(boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields,
@@ -198,6 +200,17 @@ public class InstrumentationParams {
         this.all_modules = Utils.concatModuleFilters(m_includes, m_excludes);
         this.inner_alls = Utils.concatFilters(inner_includes, inner_excludes);
         this.plugin = plugin;
+    }
+
+    public InstrumentationPlugin filter(InstrumentationPlugin plugin) {
+        //TODO is it possible to optimize to return the original plugin
+        //in case for filtering options are provided?
+        return new InstrumentationPlugin.FilteringPlugin(plugin) {
+            @Override
+            protected boolean filter(String cls) {
+                return isIncluded(cls);
+            }
+        };
     }
 
     public boolean isDetectInternal() {
@@ -388,6 +401,16 @@ public class InstrumentationParams {
 
     public InstrumentationParams setInstrumentationPlugin(InstrumentationPlugin plugin) {
         this.plugin = plugin;
+        return this;
+    }
+
+    public InstrumentationParams setInput(String input) {
+        this.input = input;
+        return this;
+    }
+
+    public InstrumentationParams setOutput(String output) {
+        this.output = output;
         return this;
     }
 

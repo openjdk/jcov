@@ -139,8 +139,8 @@ public class ClassMorph {
 
     public boolean shouldTransform(String className) {
         return isTransformable(className)
-                && !isAlreadyTransformed(className)
-                && params.isIncluded(className);
+                && !isAlreadyTransformed(className);
+                //&& params.isIncluded(className);
     }
 
     /**
@@ -197,9 +197,9 @@ public class ClassMorph {
                 if (isAlreadyTransformed(fullname)) {
                     logger.log(Level.INFO, "{0} - skipped (already instrumented)", fullname);
                 }
-                if (!params.isIncluded(fullname)) {
-                    logger.log(Level.INFO, "{0} - skipped (is not included or is excluded explicitly)", fullname);
-                }
+//                if (!params.isIncluded(fullname)) {
+//                    logger.log(Level.INFO, "{0} - skipped (is not included or is excluded explicitly)", fullname);
+//                }
                 //null tells to AbstractUniversalInstrumenter not to overwrite existing data
                 return null;
             }
@@ -636,8 +636,7 @@ public class ClassMorph {
             for (DataPackage pack : root.getPackages()) {
                 for (DataClass clazz : pack.getClasses()) {
                     for (DataMethod meth : clazz.getMethods()) {
-                        if (meth.access(meth.getModifiers()).matches(".*abstract.*")
-                                || meth.access(meth.getModifiers()).matches(".*native.*")) {
+                        if (meth.getModifiers().isAbstract() || meth.getModifiers().isNative()) {
                             int id = 0;
                             if (meth instanceof DataMethodInvoked) {
                                 id = ((DataMethodInvoked) meth).getId();

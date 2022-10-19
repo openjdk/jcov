@@ -249,8 +249,8 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         }
 
         ASMInstrumentationPlugin plugin = (ASMInstrumentationPlugin) params.getInstrumentationPlugin();
-        if (plugin != null)
-            mv = plugin.methodVisitor(access, dataClass.getFullname(), methodName, desc, mv);
+//        if (plugin != null)
+//            mv = plugin.methodVisitor(access, dataClass.getFullname(), methodName, desc, mv);
 
         return mv;
     }

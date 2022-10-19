@@ -68,7 +68,7 @@ public class ProductInstr extends JCovCMDTool {
     private String[] callerInclude;
     private String[] callerExclude;
 
-    public void instrumentProduct() throws IOException {
+    public void instrumentProduct() throws Exception {
         logger.log(Level.INFO, " - Instrumenting product");
         logger.log(Level.CONFIG, "Product location: ''{0}'', target location: ''{1}''", new Object[]{instrProductDir.getPath(), instrOutputDir.getPath()});
 

@@ -139,6 +139,10 @@ public class DataRoot extends DataAbstract {
         return instances.get(i);
     }
 
+    public DataRoot() {
+        this("", true, null);
+    }
+
     /**
      * <p> Create empty DataRoot. </p> <p> Every DataRoot has it's own ID and is
      * stored in static library. </p> <p> To remove DataRoot use destroy() </p>

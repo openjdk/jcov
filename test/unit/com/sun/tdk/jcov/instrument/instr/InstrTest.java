@@ -57,23 +57,44 @@ public class InstrTest {
         Util.rmRF(test_dir);
         template = test_dir.resolve("template.lst");
     }
-    @Test
-    public void instrument() throws IOException, InterruptedException, FileFormatException {
+    //@Test
+    public void instrumentClass() throws IOException, InterruptedException, FileFormatException,
+            ClassNotFoundException, InvocationTargetException, NoSuchMethodException,
+            IllegalAccessException, InstantiationException {
         List<String> params = new ArrayList<>();
         params.add("-t");
         params.add(template.toString());
         params.add(new Util(test_dir).copyBytecode(UserCode.class.getName()).get(0).toString());
         new Instr().run(params.toArray(new String[0]));
+        testInstrumentation();
+        run();
+    }
+    @Test
+    public void instrumentDir() throws IOException, InterruptedException, FileFormatException,
+            ClassNotFoundException, InvocationTargetException, NoSuchMethodException,
+            IllegalAccessException, InstantiationException {
+        List<String> params = new ArrayList<>();
+        params.add("-t");
+        params.add(template.toString());
+        params.add("-i");
+        params.add("UserCode");
+        new Util(test_dir).copyBytecode(UserCode.class.getName(), InstrTest.class.getName());
+        params.add(test_dir.toString());
+        new Instr().run(params.toArray(new String[0]));
+        testInstrumentation();
+        run();
+    }
+    private void testInstrumentation() throws FileFormatException {
         DataRoot data = Reader.readXML(template.toString());
         DataMethod dm =
                 data.getPackages().stream().filter(p -> p.getName().equals("com/sun/tdk/jcov/instrument/instr")).findAny().get()
-                .getClasses().stream().filter(c -> c.getName().equals("UserCode")).findAny().get()
-                .getMethods().stream().filter(m -> m.getName().equals("main")).findAny().get();
+                        .getClasses().stream().filter(c -> c.getName().equals("UserCode")).findAny().get()
+                        .getMethods().stream().filter(m -> m.getName().equals("main")).findAny().get();
         method_slot = dm.getSlot();
         assertTrue(method_slot > 0);
     }
 
-    @Test(dependsOnMethods = "instrument")
+//    @Test(dependsOnMethods = "instrumentDir")
     public void run() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
             IllegalAccessException, IOException, InstantiationException {
         new Util(test_dir).runClass(UserCode.class, new String[] {"+"});

@@ -1,29 +1,126 @@
+/*
+ * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
 package com.sun.tdk.jcov.instrument;
 
-import java.nio.file.Path;
+import java.io.OutputStream;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
+/**
+ * TODO describe the lifecycle
+ */
 public interface InstrumentationPlugin {
-    /**
-     * Called after all instrumentation is complete.
-     *
-     * @throws Exception should some
-     */
-    void instrumentationComplete() throws Exception;
 
-    /**
-     * For the instrumented code to work independently (i.e. without adding additional classes  to the classpath), some
-     * classes can be "implanted" into the instrumented code.
-     *
-     * @return Path containing the classes to be implanted. Must be in a form which can be added to Java classpath.
-     */
-    //TODO perhaps this can return a list of classes to be implanted
-    Path runtime() throws Exception;
+    void instrument(Collection<String> classes, Function<String, byte[]> loader, BiConsumer<String, byte[]> saver,
+                    InstrumentationParams parameters) throws Exception;
 
-    /**
-     * Name of a package which contains code, that will be called from the instrumented
-     * code. Such package may need to be exported from a module.
-     *
-     * @return package name
-     */
-    String collectorPackage();
+    void complete(Supplier<OutputStream> templateStreamSupplier) throws Exception;
+
+    //TODO properly relocate the inner classes
+
+    abstract class FilteringPlugin implements InstrumentationPlugin {
+        private final InstrumentationPlugin inner;
+
+        public FilteringPlugin(InstrumentationPlugin inner) {
+            this.inner = inner;
+        }
+
+        protected abstract boolean filter(String cls);
+        @Override
+        public void instrument(Collection<String> classes, Function<String, byte[]> loader,
+                               BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
+            inner.instrument(classes.stream().filter(this::filter).collect(Collectors.toList()),
+                    loader, saver, parameters);
+        }
+
+        @Override
+        public void complete(Supplier<OutputStream> templateStreamSupplier) throws Exception {
+            inner.complete(templateStreamSupplier);
+        }
+    }
+
+    interface ModuleImplant {
+        //TODO qualified exports?
+        List<String> exports();
+        Collection<String> classes();
+        Function<String, byte[]> loader();
+    }
+    abstract class ModuleImplantingPlugin implements InstrumentationPlugin {
+
+        private final InstrumentationPlugin inner;
+
+        public ModuleImplantingPlugin(InstrumentationPlugin inner) {
+            this.inner = inner;
+        }
+
+        //TODO how does the plugin know the method name? Is it possible to extract that from module-info.class?
+        protected abstract ModuleImplant getImplant(String module);
+
+        @Override
+        public void instrument(Collection<String> classes, Function<String, byte[]> loader,
+                               BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
+            inner.instrument(classes, loader, saver, parameters);
+        }
+
+        @Override
+        public void complete(Supplier<OutputStream> template) throws Exception {
+            inner.complete(template);
+        }
+    }
+
+    class ImplantingPlugin implements InstrumentationPlugin {
+        private final Collection<String> implant;
+        private final Function<String, byte[]> implantLoader;
+        private final InstrumentationPlugin inner;
+
+        //TODO similar to ModuleImplantingPlugin have different implants for different locations somehow?
+        public ImplantingPlugin(InstrumentationPlugin inner,
+                                Collection<String> implant, Function<String, byte[]> loader) {
+            this.implant = implant;
+            this.implantLoader = loader;
+            this.inner = inner;
+        }
+
+        @Override
+        public void instrument(Collection<String> classes, Function<String, byte[]> loader,
+                               BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
+            inner.instrument(classes, loader, saver, parameters);
+            implant.forEach(c -> saver.accept(c, implantLoader.apply(c)));
+        }
+
+        @Override
+        public void complete(Supplier<OutputStream> templateStreamSupplier) throws Exception {
+            inner.complete(templateStreamSupplier);
+        }
+
+        protected InstrumentationPlugin inner() {
+            return inner;
+        }
+    }
 }

@@ -31,8 +31,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
-
-public class TestPlugin implements ASMInstrumentationPlugin {
+//TODO
+public class TestPlugin /*implements ASMInstrumentationPlugin*/ {
 
     public static AtomicInteger calledTimes = new AtomicInteger(0);
     public static AtomicInteger savedTimes = new AtomicInteger(0);
@@ -51,23 +51,23 @@ public class TestPlugin implements ASMInstrumentationPlugin {
         savedTimes.set(0);
     }
 
-    @Override
+//    @Override
     public MethodVisitor methodVisitor(int access, String owner, String name, String desc, MethodVisitor visitor) {
         calledTimes.incrementAndGet();
         return visitor;
     }
 
-    @Override
+//    @Override
     public void instrumentationComplete() throws Exception {
         savedTimes.incrementAndGet();
     }
 
-    @Override
+//    @Override
     public Path runtime() {
         return rt;
     }
 
-    @Override
+//    @Override
     public String collectorPackage() {
         return Collect.class.getPackage().getName();
     }
