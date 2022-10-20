@@ -71,21 +71,36 @@ public interface InstrumentationPlugin {
         Collection<String> classes();
         Function<String, byte[]> loader();
     }
+
     abstract class ModuleImplantingPlugin implements InstrumentationPlugin {
 
-        private final InstrumentationPlugin inner;
+        public static final String MODULE_INFO_CLASS = "module-info.class";
 
-        public ModuleImplantingPlugin(InstrumentationPlugin inner) {
-            this.inner = inner;
+        public interface ModuleInstrumentationPlugin extends InstrumentationPlugin {
+            String getModuleName(byte[] moduleInfo);
+            byte[] addExports(List<String> exports, byte[] moduleInfo);
         }
 
-        //TODO how does the plugin know the method name? Is it possible to extract that from module-info.class?
-        protected abstract ModuleImplant getImplant(String module);
+        private final ModuleInstrumentationPlugin inner;
+        private final Function<String, ModuleImplant> implants;
+
+        public ModuleImplantingPlugin(ModuleInstrumentationPlugin inner, Function<String, ModuleImplant> implants) {
+            this.inner = inner;
+            this.implants = implants;
+        }
 
         @Override
         public void instrument(Collection<String> classes, Function<String, byte[]> loader,
                                BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
             inner.instrument(classes, loader, saver, parameters);
+            String moduleName = inner.getModuleName(loader.apply(MODULE_INFO_CLASS));
+            if(moduleName != null) {
+                ModuleImplant implant = implants.apply(moduleName);
+                if(implant != null) {
+                    saver.accept(MODULE_INFO_CLASS, loader.apply(MODULE_INFO_CLASS));
+                    for(String c : implant.classes()) saver.accept(c, implant.loader().apply(c));
+                }
+            }
         }
 
         @Override
