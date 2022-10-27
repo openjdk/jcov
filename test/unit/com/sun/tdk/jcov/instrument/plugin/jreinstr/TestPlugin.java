@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,15 @@
  */
 package com.sun.tdk.jcov.instrument.plugin.jreinstr;
 
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import org.objectweb.asm.MethodVisitor;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
-
-public class TestPlugin implements InstrumentationPlugin {
+//TODO
+public class TestPlugin /*implements ASMInstrumentationPlugin*/ {
 
     public static AtomicInteger calledTimes = new AtomicInteger(0);
     public static AtomicInteger savedTimes = new AtomicInteger(0);
@@ -51,23 +51,23 @@ public class TestPlugin implements InstrumentationPlugin {
         savedTimes.set(0);
     }
 
-    @Override
+//    @Override
     public MethodVisitor methodVisitor(int access, String owner, String name, String desc, MethodVisitor visitor) {
         calledTimes.incrementAndGet();
         return visitor;
     }
 
-    @Override
+//    @Override
     public void instrumentationComplete() throws Exception {
         savedTimes.incrementAndGet();
     }
 
-    @Override
+//    @Override
     public Path runtime() {
         return rt;
     }
 
-    @Override
+//    @Override
     public String collectorPackage() {
         return Collect.class.getPackage().getName();
     }

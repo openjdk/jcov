@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.instrument.asm.ASMModifiers;
 import com.sun.tdk.jcov.util.NaturalComparator;
 import com.sun.tdk.jcov.filter.MemberFilter;
 import java.io.DataInput;
@@ -31,7 +32,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import org.objectweb.asm.Opcodes;
 import java.util.List;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -80,11 +80,9 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      */
     private final List<DataField> fields;
     /**
-     * Access code of this class
-     *
-     * @see org.objectweb.asm.Opcodes
+     * Container for access code of this class
      */
-    private int access;
+    private Modifiers access;
     /**
      * Class signature
      */
@@ -160,13 +158,12 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      */
     public void setInfo(String flags, String signature, String superName, String interfaces) {
         String[] accessFlags = flags.split(" ");
-        int acc = access(accessFlags);
         String[] sInterfaces = null;
         if (interfaces != null) {
             sInterfaces = interfaces.split(";");
         }
 
-        setInfo(acc, signature, superName, sInterfaces);
+        setInfo(access(accessFlags), signature, superName, sInterfaces);
 
     }
 
@@ -178,7 +175,7 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      * @param superName
      * @param interfaces
      */
-    public void setInfo(int access, String signature, String superName, String[] interfaces) {
+    public void setInfo(Modifiers access, String signature, String superName, String[] interfaces) {
         this.access = access;
         this.signature = signature;
         this.superName = superName;
@@ -268,23 +265,22 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
     /**
      * Set access code of this class
      *
-     * @see org.objectweb.asm.Opcodes
      * @param access
      */
     public void setAccess(int access) {
-        this.access = access;
+        this.access = new ASMModifiers(access);
     }
 
     /**
      * Get access code of this class
      *
-     * @see org.objectweb.asm.Opcodes
      * @return access code of this class
      */
     public int getAccess() {
-        return access;
+        return access.access();
     }
 
+    public Modifiers getModifiers() { return access; }
     /**
      * Set checksum of this class. It's used in equals() method
      *
@@ -369,23 +365,19 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      * Check whether <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      *
      * @see #getAccess()
-     * @see org.objectweb.asm.Opcodes
      * @return true if <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      */
     @Deprecated
-    public boolean isPublic() {
-        return (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0;
-    }
+    public boolean isPublic() { return isPublicAPI(); }
 
     /**
      * Check whether <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      *
      * @see #getAccess()
-     * @see org.objectweb.asm.Opcodes
      * @return true if <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      */
     public boolean isPublicAPI() {
-        return (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0;
+        return access.isPublic() || access.isProtected();
     }
 
     /**
@@ -393,8 +385,9 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      *
      * @return true if class is private
      */
+    @Deprecated
     public boolean hasPrivateModifier() {
-        return (access & Opcodes.ACC_PRIVATE) != 0;
+        return access.isPrivate();
     }
 
     /**
@@ -402,8 +395,9 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      *
      * @return true if class is public
      */
+    @Deprecated
     public boolean hasPublicModifier() {
-        return (access & Opcodes.ACC_PUBLIC) != 0;
+        return access.isPublic();
     }
 
     /**
@@ -411,8 +405,9 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      *
      * @return true if class is protected
      */
+    @Deprecated
     public boolean hasProtectedModifier() {
-        return (access & Opcodes.ACC_PROTECTED) != 0;
+        return access.isProtected();
     }
 
     /**
@@ -420,8 +415,9 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      *
      * @return true if class is abstract
      */
+    @Deprecated
     public boolean hasAbstractModifier() {
-        return (access & Opcodes.ACC_ABSTRACT) != 0;
+        return access.isAbstract();
     }
 
     /**
@@ -429,20 +425,19 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      *
      * @return true if class is static
      */
+    @Deprecated
     public boolean hasStaticModifier() {
-        return (access & Opcodes.ACC_STATIC) != 0;
+        return access.isStatic();
     }
 
     /**
-     * Checks whether this class has specified modifier (by Opcodes)
+     * Checks whether this class has specified modifier
      *
      * @return true if class has specified modifier
-     * @see Opcodes
      * @see DataClass#getAccess()
      */
-    public boolean hasModifier(int modifierCode) {
-        return (access & modifierCode) != 0;
-    }
+    @Deprecated
+    public boolean hasModifier(int modifierCode) { return access.is(modifierCode); }
 
     /**
      * Add method data to this class
@@ -588,7 +583,7 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
     @Override
     public String kind() {
         if (differentiateClass) {
-            return (access & Opcodes.ACC_INTERFACE) == 0 ? XmlNames.CLASS : XmlNames.INTERFACE;
+            return access.isInterface() ? XmlNames.INTERFACE : XmlNames.CLASS;
         } else {
             return XmlNames.CLASS;
         }
@@ -598,21 +593,21 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      * XML Generation. Not supposed to use outside.
      */
     @Override
-    void xmlGen(XmlContext ctx) {
+    public void xmlGen(XmlContext ctx) {
 
         if ((!ctx.skipNotCoveredClasses || wasHit() && methods.size() > 0)) {
 
             // check abstract on
             if (ctx.showAbstract) {
                 super.xmlGen(ctx);
-            } else if ((access & Opcodes.ACC_INTERFACE) == 0) {
+            } else if (!access.isInterface()) {
                 super.xmlGen(ctx);
             } else {
                 // cheking interface
                 // find default methods even when abstract off
                 List<DataMethod> onlyDefaultMethods = new ArrayList<DataMethod>();
                 for (DataMethod method : methods) {
-                    if ((method.getAccess() & Opcodes.ACC_ABSTRACT) == 0) {
+                    if (!method.getModifiers().isAbstract()) {
                         onlyDefaultMethods.add(method);
                     }
                 }
@@ -636,7 +631,7 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
         if (checksum != -1) {
             ctx.attr(XmlNames.CHECKSUM, checksum);
         }
-        if (!differentiateClass && (access & Opcodes.ACC_INTERFACE) != 0) {
+        if (!differentiateClass && !access.isInterface()) {
             ctx.attr(XmlNames.INTERFACE, true);
         }
         if (signature != null) {
@@ -679,7 +674,7 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      * @return class`s access flags as String array
      */
     @Override
-    String[] accessFlags(int access) {
+    String[] accessFlags(Modifiers access) {
         String[] as = super.accessFlags(access);
         List<String> lst = new LinkedList();
         for (String s : as) {
@@ -929,7 +924,6 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
     /**
      * Return true, if merge error is critical, false for warnings
      *
-     * @param errorSeverity - error severity
      * @param level - loose level set by user
      * @return true, if merge error is critical, false for warnings
      */
@@ -984,9 +978,9 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
                     trace, MergeException.MEDIUM);
         }
         // if any problems with access - make mask to filter out access codes in DataClass(int, DataInput)
-        if ((access | Opcodes.ACC_SUPER) != (other.access | Opcodes.ACC_SUPER)) {
+        if (access.isSuper() != other.access.isSuper()) {
             throw new MergeException(
-                    "Access mismatch: expected '" + access + "'; found '" + other.access + "'",
+                    "Access mismatch: expected '" + access.access() + "'; found '" + other.access.access() + "'",
                     trace, MergeException.LOW);
         }
         if (fields.size() != other.fields.size()) {
@@ -1075,7 +1069,7 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
         writeString(out, superName);
         writeString(out, superInterfaces);
         out.writeLong(checksum);
-        out.writeInt(access & ACCESS_MASK); // we don't save ALL the codes in XML, we shouldn't save all codes in net
+        out.writeInt(access.access());
         out.writeByte((differentiateClass ? 1 : 0) + (inner ? 2 : 0) + (anonym ? 4 : 0));
 
         out.writeShort(fields.size());
@@ -1086,13 +1080,13 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
         out.writeShort(methods.size());
         for (DataMethod m : methods) {
             if (m instanceof DataMethodEntryOnly) {
-                if ((m.access & (Opcodes.ACC_NATIVE | Opcodes.ACC_ABSTRACT)) != 0) {
+                if (m.access.isNative() || m.access.isAbstract()) {
                     out.write(2); // DMI
                 } else {
                     out.write(1); // DMEO
                 }
             } else if (m instanceof DataMethodInvoked) {
-                if ((m.access & (Opcodes.ACC_NATIVE | Opcodes.ACC_ABSTRACT)) != 0) {
+                if (m.access.isNative() || m.access.isAbstract()) {
                     out.write(2); // DMI
                 } else {
                     out.write(1); // DMEO
@@ -1119,7 +1113,7 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
         superName = readString(in);
         superInterfaces = readString(in);
         checksum = in.readLong();
-        access = in.readInt();
+        access = new ASMModifiers(in.readInt());
         byte b = in.readByte();
         differentiateClass = (b & 1) != 0;
         inner = (b & 2) != 0;
@@ -1166,4 +1160,5 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
     public void setAnonym(boolean b) {
         this.anonym = b;
     }
+
 }

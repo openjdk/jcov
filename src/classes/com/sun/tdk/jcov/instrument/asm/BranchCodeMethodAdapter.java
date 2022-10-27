@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
-import com.sun.tdk.jcov.instrument.CharacterRangeTableAttribute.CRTEntry;
+import com.sun.tdk.jcov.instrument.BasicBlock;
 import java.util.*;
 
 import static org.objectweb.asm.Opcodes.*;
 
+import com.sun.tdk.jcov.instrument.CharacterRangeTable;
+import com.sun.tdk.jcov.instrument.Constants;
+import com.sun.tdk.jcov.instrument.DataBlock;
+import com.sun.tdk.jcov.instrument.DataBlockCatch;
+import com.sun.tdk.jcov.instrument.DataBlockFallThrough;
+import com.sun.tdk.jcov.instrument.DataBlockMethEnter;
+import com.sun.tdk.jcov.instrument.DataBlockTarget;
+import com.sun.tdk.jcov.instrument.DataBlockTargetCase;
+import com.sun.tdk.jcov.instrument.DataBlockTargetCond;
+import com.sun.tdk.jcov.instrument.DataBlockTargetDefault;
+import com.sun.tdk.jcov.instrument.DataBlockTargetGoto;
+import com.sun.tdk.jcov.instrument.DataBranchCond;
+import com.sun.tdk.jcov.instrument.DataBranchGoto;
+import com.sun.tdk.jcov.instrument.DataBranchSwitch;
+import com.sun.tdk.jcov.instrument.DataExit;
+import com.sun.tdk.jcov.instrument.DataExitSimple;
+import com.sun.tdk.jcov.instrument.DataMethodWithBlocks;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Attribute;
@@ -47,9 +65,10 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
     private final List<DataBlock> src;
     private final Map<AbstractInsnNode, BasicBlock> insnToBB;
     private final InstrumentationParams params;
+    private final Map<DataBlock, LabelNode> blockLabels;
 
     public BranchCodeMethodAdapter(final MethodVisitor mv,
-            final DataMethodWithBlocks method, InstrumentationParams params) {
+                                   final DataMethodWithBlocks method, InstrumentationParams params) {
         super(new MethodNode(method.getAccess(), method.getName(), method.getVmSignature(), method.getSignature(), method.getExceptions()),
                 method);
         this.nextVisitor = mv;
@@ -57,12 +76,13 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
         this.exits = new ArrayList<DataExit>();
         this.src = new ArrayList<DataBlock>();
         this.params = params;
+        blockLabels = new IdentityHashMap<>();
     }
 
     private BasicBlock getBB(AbstractInsnNode insn, int startBCI) {
         BasicBlock bb = insnToBB.get(insn);
         if (bb == null) {
-            bb = new BasicBlock(method.rootId, startBCI);
+            bb = new BasicBlock(method.rootId(), startBCI);
             insnToBB.put(insn, bb);
         } else if (startBCI >= 0) {
             bb.setStartBCI(startBCI);
@@ -147,7 +167,7 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                         LabelNode insnTrue = jumpInsn.label;
                         int bciFalse = bcis[insnIdx]; // fall-through
 
-                        DataBranchCond branch = new DataBranchCond(method.rootId, bci, bciFalse - 1);
+                        DataBranchCond branch = new DataBranchCond(method.rootId(), bci, bciFalse - 1);
                         DataBlockTarget blockTrue = new DataBlockTargetCond(branch.rootId(), true);
                         DataBlockTarget blockFalse = new DataBlockTargetCond(branch.rootId(), false);
                         branch.addTarget(blockTrue);
@@ -163,7 +183,8 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                         // assign a new label for branch counting
                         LabelNode nlab = new LabelNode();
                         jumpInsn.label = nlab;  // branch to new label
-                        bbTrue.add(blockTrue, nlab);
+                        bbTrue.add(blockTrue);
+                        blockLabels.put(blockTrue, nlab);
 
                         bbFalse.add(blockFalse);
                         break;
@@ -180,11 +201,12 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                         // assign a new default label for branch counting
                         LabelNode nlab = new LabelNode();
                         switchInsn.dflt = nlab;  // branch to new label
-                        bbDefault.add(blockDefault, nlab);
+                        bbDefault.add(blockDefault);
+                        blockLabels.put(blockDefault, nlab);
 
                         // Create the branch information
                         int bciEnd = bcis[insnIdx] - 1; // end of the switch
-                        DataBranchSwitch branch = new DataBranchSwitch(method.rootId, bci, bciEnd, blockDefault);
+                        DataBranchSwitch branch = new DataBranchSwitch(method.rootId(), bci, bciEnd, blockDefault);
                         branch.addTarget(blockDefault);
                         exits.add(branch);
 
@@ -201,7 +223,8 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                             // assign a new label to the case for branch counting
                             nlab = new LabelNode();
                             lit.set(nlab);
-                            bbCase.add(blockCase, nlab);
+                            bbCase.add(blockCase);
+                            blockLabels.put(blockCase, nlab);
                         }
                         break;
                     }
@@ -217,11 +240,12 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                         // assign a new default label for branch counting
                         LabelNode nlab = new LabelNode();
                         switchInsn.dflt = nlab;  // branch to new label
-                        bbDefault.add(blockDefault, nlab);
+                        bbDefault.add(blockDefault);
+                        blockLabels.put(blockDefault, nlab);
 
                         // Create the branch information
                         int bciEnd = bcis[insnIdx] - 1; // end of the switch
-                        DataBranchSwitch branch = new DataBranchSwitch(method.rootId, bci, bciEnd, blockDefault);
+                        DataBranchSwitch branch = new DataBranchSwitch(method.rootId(), bci, bciEnd, blockDefault);
                         branch.addTarget(blockDefault);
                         exits.add(branch);
 
@@ -239,7 +263,8 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                             // assign a new label to the case for branch counting
                             nlab = new LabelNode();
                             lit.set(nlab);
-                            bbCase.add(blockCase, nlab);
+                            bbCase.add(blockCase);
+                            blockLabels.put(blockCase, nlab);
                         }
                         break;
                     }
@@ -249,7 +274,7 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
 
                         // Create origin info, a branch
                         int bciEnd = bcis[insnIdx] - 1;
-                        DataBranchGoto branch = new DataBranchGoto(method.rootId, bci, bciEnd);
+                        DataBranchGoto branch = new DataBranchGoto(method.rootId(), bci, bciEnd);
                         exits.add(branch);
 
                         // Create destination info, a block target
@@ -261,7 +286,8 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                         // assign a new label for branch counting
                         LabelNode nlab = new LabelNode();
                         jumpInsn.label = nlab;  // branch to new label
-                        bbTarget.add(blockTarget, nlab);
+                        bbTarget.add(blockTarget);
+                        blockLabels.put(blockTarget, nlab);
                         break;
                     }
                     case ATHROW:
@@ -273,7 +299,7 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                     case ARETURN:
                     case RETURN: {
                         int bciNext = bcis[insnIdx];
-                        DataExit exit = new DataExitSimple(method.rootId, bci, bciNext - 1, insn.getOpcode());
+                        DataExit exit = new DataExitSimple(method.rootId(), bci, bciNext - 1, insn.getOpcode());
                         exits.add(exit);
 
                         AbstractInsnNode insnNext = peek(iit);
@@ -306,7 +332,8 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                 // assign a new label for catch counting
                 LabelNode nlab = new LabelNode();
                 tcbn.handler = nlab;  // change handler
-                bbCatch.add(blockCatch, nlab);
+                bbCatch.add(blockCatch);
+                blockLabels.put(blockCatch, nlab);
             }
         }
         if (method().getCharacterRangeTable() != null) {
@@ -329,10 +356,10 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                     continue;
                 }
 
-                for (CharacterRangeTableAttribute.CRTEntry entry : method().getCharacterRangeTable().getEntries()) {
+                for (CharacterRangeTable.CRTEntry entry : method().getCharacterRangeTable().getEntries()) {
                     if (entry.startBCI() == bci) {
 
-                        if ((entry.flags & CRTEntry.CRT_STATEMENT) != 0 /*& newBlock*/) {
+                        if ((entry.flags & CharacterRangeTable.CRTEntry.CRT_STATEMENT) != 0 /*& newBlock*/) {
                             newBlock = false;
                             if (insnToBB.get(insn) == null) {
                                 //System.out.println("Should add block at: " + bci + " in " + method().name +
@@ -342,7 +369,7 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
                             }
                         }
                     } else {
-                        if (entry.endBCI() == index && (entry.flags & CRTEntry.CRT_FLOW_TARGET) != 0) {
+                        if (entry.endBCI() == index && (entry.flags & CharacterRangeTable.CRTEntry.CRT_FLOW_TARGET) != 0) {
                             newBlock = true;
                         }
                     }
@@ -433,8 +460,8 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
             BasicBlock bb = entry.getValue();
 
             // Get the entry blocks for this basic block
-            Set<Map.Entry<DataBlock, LabelNode>> pairs = bb.blockLabelSet();
-            int remaining = pairs.size();
+            Collection<DataBlock> blocks = bb.blocks();
+            int remaining = blocks.size();
             LabelNode realStuff = null;
             if (remaining > 1) {
                 // There are two or more entries to this block.
@@ -445,7 +472,7 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
             // switching was done for them.
             DataBlock fallenInto = bb.fallenInto();
             if (fallenInto != null) {
-                assert (bb.getLabel(fallenInto) == null);
+                assert (blockLabels.get(fallenInto) == null);
                 instructions.insertBefore(insn, Instrumenter.instrumentation(fallenInto, params.isDetectInternal()));
                 if (--remaining > 0) {
                     // jump over the next instrumentation of this basic block
@@ -454,11 +481,10 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
             }
 
             // Process the other entry blocks
-            for (Map.Entry<DataBlock, LabelNode> pair : pairs) {
-                DataBlock block = pair.getKey();
+            for (DataBlock block : blocks) {
                 if (!block.isFallenInto()) {
                     // insert the label
-                    LabelNode lnode = pair.getValue();
+                    LabelNode lnode = blockLabels.get(block);
                     assert (lnode != null);
 
                     // insert created label
@@ -485,7 +511,7 @@ class BranchCodeMethodAdapter extends OffsetRecordingMethodAdapter {
     public void visitAttribute(Attribute attr) {
         super.visitAttribute(attr);
         if (attr instanceof CharacterRangeTableAttribute) {
-            method().setCharacterRangeTable((CharacterRangeTableAttribute) attr);
+            method().setCharacterRangeTable(((CharacterRangeTableAttribute) attr).getCrt());
         }
     }
 

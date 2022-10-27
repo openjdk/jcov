@@ -139,6 +139,10 @@ public class DataRoot extends DataAbstract {
         return instances.get(i);
     }
 
+    public DataRoot() {
+        this("", true, null);
+    }
+
     /**
      * <p> Create empty DataRoot. </p> <p> Every DataRoot has it's own ID and is
      * stored in static library. </p> <p> To remove DataRoot use destroy() </p>
@@ -1354,7 +1358,7 @@ public class DataRoot extends DataAbstract {
                     } else {
                         DataMethodWithBlocks mb = (DataMethodWithBlocks) meth;
                         for (BasicBlock bb : mb.getBasicBlocks()) {
-                            for (DataBlock db : bb.blockMap.keySet()) {
+                            for (DataBlock db : bb.blocks()) {
                                 long count = merge ? db.getCount() : 0;
                                 db.setCount(count + counts[db.getId()]);
                             }

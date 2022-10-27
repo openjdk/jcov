@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 package com.sun.tdk.jcov.report;
 
 import com.sun.tdk.jcov.data.Scale;
+import com.sun.tdk.jcov.instrument.Modifiers;
 import com.sun.tdk.jcov.util.Utils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.objectweb.asm.Opcodes;
 
 /**
  * Base class for Method and Field Coverage.
@@ -42,9 +42,10 @@ public abstract class MemberCoverage extends AbstractCoverage {
     protected int startLine;
     protected String name;
     protected String signature;
-    protected String modifiers;
+    protected String modifiersString;
     protected int access;
     protected Scale scale;
+    protected Modifiers modifiers;
 
     /**
      * @return hit count.
@@ -86,8 +87,8 @@ public abstract class MemberCoverage extends AbstractCoverage {
     /**
      * @return String-encoded modifiers
      */
-    public String getModifiers() {
-        return modifiers;
+    public String getModifiersString() {
+        return modifiersString;
     }
 
     /**
@@ -148,7 +149,7 @@ public abstract class MemberCoverage extends AbstractCoverage {
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
-     * getAccess() method returns a bit-mask of org.objectweb.asm.Opcodes
+     * getAccess() method returns a bit-mask
      * constants. </p>
      *
      * @return true if member access modifiers are <b>public</b> or
@@ -156,74 +157,73 @@ public abstract class MemberCoverage extends AbstractCoverage {
      * @see ClassCoverage#getAccess()
      */
     public boolean isPublicAPI() {
-        return (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0;
+        return modifiers.isPublic() || modifiers.isProtected();
     }
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
-     * getAccess() method returns a bit-mask of org.objectweb.asm.Opcodes
+     * getAccess() method returns a bit-mask
      * constants. </p>
      *
      * @return true if member is <b>public</b> or <b>protected</b>
      * @see ClassCoverage#getAccess()
      */
     public boolean isPublic() {
-        return (access & Opcodes.ACC_PUBLIC) != 0;
+        return modifiers.isPublic();
     }
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
-     * getAccess() method returns a bit-mask of org.objectweb.asm.Opcodes
+     * getAccess() method returns a bit-mask
      * constants. </p>
      *
      * @return true if member is <b>public</b>
      * @see ClassCoverage#getAccess()
      */
     public boolean isPrivate() {
-        return (access & Opcodes.ACC_PRIVATE) != 0;
+        return modifiers.isPrivate();
     }
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
-     * getAccess() method returns a bit-mask of org.objectweb.asm.Opcodes
+     * getAccess() method returns a bit-mask
      * constants. </p>
      *
      * @return true if member is <b>protected</b>
      * @see ClassCoverage#getAccess()
      */
     public boolean isProtected() {
-        return (access & Opcodes.ACC_PROTECTED) != 0;
+        return modifiers.isProtected();
     }
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
-     * getAccess() method returns a bit-mask of org.objectweb.asm.Opcodes
+     * getAccess() method returns a bit-mask
      * constants. </p>
      *
      * @return true if member is <b>abstract</b>
      * @see ClassCoverage#getAccess()
      */
     public boolean isAbstract() {
-        return (access & Opcodes.ACC_ABSTRACT) != 0;
+        return modifiers.isAbstract();
     }
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
-     * getAccess() method returns a bit-mask of org.objectweb.asm.Opcodes
+     * getAccess() method returns a bit-mask
      * constants. </p>
      *
      * @return true if member is <b>final</b>
      * @see ClassCoverage#getAccess()
      */
     public boolean isFinal() {
-        return (access & Opcodes.ACC_FINAL) != 0;
+        return modifiers.isFinal();
     }
 
     /**
      * <p> Use this method to check for specific modifiers. </p>
      *
-     * @return Access bit-mask of org.objectweb.asm.Opcodes constants.
-     * @see Opcodes
+     * @return Access bit-mask.
      */
     public int getAccess() {
         return access;

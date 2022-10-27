@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,44 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
-import java.io.IOException;
-import java.io.InputStream;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
 
-/**
- * OffsetLabelingClassReader
- *
- *
- * @author Robert Field
- */
-class OffsetLabelingClassReader extends ClassReader {
-
-    public OffsetLabelingClassReader(byte[] b) {
-        super(b);
-    }
-
-    public OffsetLabelingClassReader(InputStream in) throws IOException {
-        super(in);
-    }
-
+public class ASMUtils {
     /**
-     * @Override public void accept(ClassVisitor cv, Attribute[] attrs, int
-     * flags) { super.accept(new MyClassAdapter(cv), attrs, flags); }
-     ***
+     * The ASM API version that should be used by jcov.
      */
-    @Override
-    protected Label readLabel(int offset, Label[] labels) {
-        OffsetLabel label = (OffsetLabel) labels[offset];
-        if (label == null) {
-            for (int i = 0; i < labels.length; ++i) {
-                labels[i] = new OffsetLabel(i);
-            }
-            label = (OffsetLabel) labels[offset];
-        }
-        label.realLabel = true;
-        return label;
-    }
+    public static final int ASM_API_VERSION = Opcodes.ASM9;
+
 }

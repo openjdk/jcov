@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public abstract class LocationConcrete extends LocationAbstract {
     /**
      * Creates a new instance of LocationAbstract
      */
-    LocationConcrete(int rootId, int startBCI, int endBCI) {
+    protected LocationConcrete(int rootId, int startBCI, int endBCI) {
         super(rootId);
         this.startBCI = startBCI;
         this.endBCI = endBCI;

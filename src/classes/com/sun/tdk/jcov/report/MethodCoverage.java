@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import com.sun.tdk.jcov.instrument.XmlNames;
 import com.sun.tdk.jcov.instrument.DataBlock;
 import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.util.Utils;
-import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -83,26 +82,22 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
      * @param countBlocks not used
      */
     public MethodCoverage(DataMethod method, boolean countBlocks,  AncFilter[] ancFilters, String ancReason) {
-        modifiers = Arrays.deepToString(method.getAccessFlags());
-        name = method.getName();
-        scale = method.getScale();
-        signature = method.getVmSignature();
         access = method.getAccess();
+        modifiersString = Arrays.deepToString(method.getAccessFlags());
+        name = method.getName();
+        signature = (method.getVmSignature() != null) ? method.getVmSignature() : "";
+        startLine = (method.getLineTable() != null && method.getLineTable().size() > 0) ?
+                        method.getLineTable().get(0).line : 0;
+        count = method.getCount();
+        scale = method.getScale();
+        modifiers = method.getModifiers();
         isInAnc = ancReason != null;
         ancInfo = ancReason;
-
-        if (signature == null) {
-            signature = "";
-        }
-        count = method.getCount();
 
         detectItems(method, items, isInAnc, ancFilters);
 
         List<LineEntry> lineTable = method.getLineTable();
         if (lineTable != null) {
-            if (lineTable.size() > 0) {
-                super.startLine = lineTable.get(0).line;
-            }
             lineCoverage.processLineTable(lineTable);
             for (ItemCoverage item : items) {
                 for (LineEntry le : lineTable) {
@@ -416,7 +411,7 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
                 return new CoverageData(c, 0, 1);
             case BLOCK:
             case BRANCH:
-                if (inAnonymClass && !anonymon && (access & Opcodes.ACC_SYNTHETIC) != 0) {
+                if (inAnonymClass && !anonymon && modifiers.isSynthetic()) {
                     return new CoverageData(0, 0, 0);
                 }
                 CoverageData result = new CoverageData(0, 0, 0);

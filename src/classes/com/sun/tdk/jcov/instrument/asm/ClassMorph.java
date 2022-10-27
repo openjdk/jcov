@@ -22,28 +22,46 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
 import com.sun.tdk.jcov.data.FileFormatException;
+import com.sun.tdk.jcov.instrument.BasicBlock;
+import com.sun.tdk.jcov.instrument.CharacterRangeTable;
+import com.sun.tdk.jcov.instrument.DataBlock;
+import com.sun.tdk.jcov.instrument.DataClass;
+import com.sun.tdk.jcov.instrument.DataField;
+import com.sun.tdk.jcov.instrument.DataMethod;
+import com.sun.tdk.jcov.instrument.DataMethodEntryOnly;
+import com.sun.tdk.jcov.instrument.DataMethodInvoked;
+import com.sun.tdk.jcov.instrument.DataMethodWithBlocks;
+import com.sun.tdk.jcov.instrument.DataPackage;
+import com.sun.tdk.jcov.instrument.DataRoot;
+import com.sun.tdk.jcov.instrument.InstrumentationOptions;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
+import com.sun.tdk.jcov.instrument.XmlNames;
 import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.runtime.Collect;
 import com.sun.tdk.jcov.runtime.FileSaver;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.DebugUtils;
 import com.sun.tdk.jcov.util.Utils;
+import org.objectweb.asm.Attribute;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ModuleVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.util.TraceClassVisitor;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.Adler32;
-import org.objectweb.asm.Attribute;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.util.TraceClassVisitor;
 
 import static java.lang.String.format;
 
@@ -121,8 +139,8 @@ public class ClassMorph {
 
     public boolean shouldTransform(String className) {
         return isTransformable(className)
-                && !isAlreadyTransformed(className)
-                && params.isIncluded(className);
+                && !isAlreadyTransformed(className);
+                //&& params.isIncluded(className);
     }
 
     /**
@@ -179,9 +197,9 @@ public class ClassMorph {
                 if (isAlreadyTransformed(fullname)) {
                     logger.log(Level.INFO, "{0} - skipped (already instrumented)", fullname);
                 }
-                if (!params.isIncluded(fullname)) {
-                    logger.log(Level.INFO, "{0} - skipped (is not included or is excluded explicitly)", fullname);
-                }
+//                if (!params.isIncluded(fullname)) {
+//                    logger.log(Level.INFO, "{0} - skipped (is not included or is excluded explicitly)", fullname);
+//                }
                 //null tells to AbstractUniversalInstrumenter not to overwrite existing data
                 return null;
             }
@@ -220,7 +238,7 @@ public class ClassMorph {
             }
         }
         if (moduleName == null){
-            moduleName = "module "+XmlNames.NO_MODULE;
+            moduleName = "module "+ XmlNames.NO_MODULE;
         }
 
         if (!params.isModuleIncluded(moduleName.substring(7, moduleName.length()))){
@@ -254,7 +272,8 @@ public class ClassMorph {
         ClassVisitor cv = cw;
         cv = new DeferringMethodClassAdapter(cv, k, params);
 
-        cr.accept(cv, new Attribute[]{new CharacterRangeTableAttribute(root.rootId())}, 0);
+        cr.accept(cv,
+                new Attribute[]{new CharacterRangeTableAttribute(new CharacterRangeTable(root.rootId()))}, 0);
 
         if (k.hasModifier(Opcodes.ACC_SYNTHETIC) && !params.isInstrumentSynthetic()) {
             return null;
@@ -276,6 +295,37 @@ public class ClassMorph {
 
             return res;
         }
+    }
+
+    public byte[] clearHashes(byte[] moduleInfo, ClassLoader loader) {
+        ClassReader cr = new ClassReader(moduleInfo);
+        ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, loader);
+        cr.accept( new ClassVisitor(ASMUtils.ASM_API_VERSION, cw) {
+            @Override
+            public void visitAttribute(final Attribute attribute) {
+                if (!attribute.type.equals("ModuleHashes")) {
+                    super.visitAttribute(attribute);
+                }
+            }
+        }, 0);
+        return cw.toByteArray();
+    }
+
+    public byte[] addExports(byte[] moduleInfo, List<String> exports, ClassLoader loader) {
+        ClassReader cr = new ClassReader(moduleInfo);
+        ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, loader);
+        cr.accept( new ClassVisitor(ASMUtils.ASM_API_VERSION, cw) {
+            @Override
+            public ModuleVisitor visitModule(String name, int access, String version) {
+                ModuleVisitor mv = super.visitModule(name, access, version);
+                exports.forEach(e -> {
+                    mv.visitPackage(e);
+                    mv.visitExport(e, 0);
+                });
+                return mv;
+            }
+        }, 0);
+        return cw.toByteArray();
     }
 
     public void setCurrentModuleName(String name){
@@ -586,8 +636,7 @@ public class ClassMorph {
             for (DataPackage pack : root.getPackages()) {
                 for (DataClass clazz : pack.getClasses()) {
                     for (DataMethod meth : clazz.getMethods()) {
-                        if (meth.access(meth.getAccess()).matches(".*abstract.*")
-                                || meth.access(meth.getAccess()).matches(".*native.*")) {
+                        if (meth.getModifiers().isAbstract() || meth.getModifiers().isNative()) {
                             int id = 0;
                             if (meth instanceof DataMethodInvoked) {
                                 id = ((DataMethodInvoked) meth).getId();

@@ -22,8 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.util.Utils;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,7 +73,7 @@ public class StaticInvokeMethodAdapter extends MethodVisitor {
     public StaticInvokeMethodAdapter(MethodVisitor mv, String className,
                                      String methName, int methAccess,
                                      final InstrumentationParams params) {
-        super(Utils.ASM_API_VERSION, mv);
+        super(ASMUtils.ASM_API_VERSION, mv);
         this.className = className;
         this.methName = methName;
         this.methAccess = methAccess;

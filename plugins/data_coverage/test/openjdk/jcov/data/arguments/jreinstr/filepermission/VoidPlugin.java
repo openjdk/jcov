@@ -1,11 +1,11 @@
 package openjdk.jcov.data.arguments.jreinstr.filepermission;
 
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import org.objectweb.asm.MethodVisitor;
 
 import java.nio.file.Path;
 
-public class VoidPlugin implements InstrumentationPlugin {
+public class VoidPlugin implements ASMInstrumentationPlugin {
 
     public VoidPlugin() {
         super();

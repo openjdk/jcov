@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
+import com.sun.tdk.jcov.instrument.DataMethodWithBlocks;
 import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Handle;
@@ -44,7 +45,7 @@ class OffsetRecordingMethodAdapter extends MethodVisitor {
 
     public OffsetRecordingMethodAdapter(final MethodVisitor mv,
             final DataMethodWithBlocks method) {
-        super(Utils.ASM_API_VERSION, mv);
+        super(ASMUtils.ASM_API_VERSION, mv);
         this.currentInstructionIndex = 0;
         this.bcis = new int[60];
         this.method = method;

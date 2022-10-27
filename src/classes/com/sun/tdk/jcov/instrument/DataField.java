@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.instrument.asm.ASMModifiers;
 import com.sun.tdk.jcov.util.NaturalComparator;
 import com.sun.tdk.jcov.data.Scale;
 import com.sun.tdk.jcov.data.ScaleOptions;
@@ -37,7 +38,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.objectweb.asm.Opcodes;
 
 /**
  * Keeps base information about field
@@ -53,11 +53,9 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      */
     private final DataClass parent;
     /**
-     * Field access code
-     *
-     * @see org.objectweb.asm.Opcodes
+     * Container for field access code
      */
-    private final int access;
+    private final Modifiers access;
     /**
      * Field name
      */
@@ -119,7 +117,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
         super(k.rootId);
 
         this.parent = k;
-        this.access = access;
+        this.access = new ASMModifiers(access);
         this.name = name;
         this.vmSig = desc;
         this.signature = signature;
@@ -134,17 +132,17 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
 
             @Override
             protected boolean wasCollectHit() {
-                return CollectDetect.wasInvokeHit(InvokeMethodAdapter.getInvokeID(k.getFullname(), name, desc));
+                return CollectDetect.wasInvokeHit(DataAbstract.getInvokeID(k.getFullname(), name, desc));
             }
 
             @Override
             protected long collectCount() {
-                return CollectDetect.invokeCountFor(InvokeMethodAdapter.getInvokeID(k.getFullname(), name, desc));
+                return CollectDetect.invokeCountFor(DataAbstract.getInvokeID(k.getFullname(), name, desc));
             }
 
             @Override
             protected void setCollectCount(long count) {
-                CollectDetect.setInvokeCountFor(InvokeMethodAdapter.getInvokeID(k.getFullname(), name, desc), count);
+                CollectDetect.setInvokeCountFor(DataAbstract.getInvokeID(k.getFullname(), name, desc), count);
             }
 
         };
@@ -225,8 +223,10 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      * @return the access
      */
     public int getAccess() {
-        return access;
+        return access.access();
     }
+
+    public Modifiers getModifiers() { return access; }
 
     /**
      * @return the name
@@ -260,23 +260,21 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      * Check whether <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      *
      * @see #getAccess()
-     * @see org.objectweb.asm.Opcodes
      * @return true if <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      */
     @Deprecated
     public boolean isPublic() {
-        return (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0;
+        return isPublicAPI();
     }
 
     /**
      * Check whether <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      *
      * @see #getAccess()
-     * @see org.objectweb.asm.Opcodes
      * @return true if <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      */
     public boolean isPublicAPI() {
-        return (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0;
+        return access.isPublic() || access.isProtected();
     }
 
     /**
@@ -284,8 +282,9 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      *
      * @return true if field is private
      */
+    @Deprecated
     public boolean hasPrivateModifier() {
-        return (access & Opcodes.ACC_PRIVATE) != 0;
+        return access.isPrivate();
     }
 
     /**
@@ -293,8 +292,9 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      *
      * @return true if field is public
      */
+    @Deprecated
     public boolean hasPublicModifier() {
-        return (access & Opcodes.ACC_PUBLIC) != 0;
+        return access.isPublic();
     }
 
     /**
@@ -302,8 +302,9 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      *
      * @return true if field is protected
      */
+    @Deprecated
     public boolean hasProtectedModifier() {
-        return (access & Opcodes.ACC_PROTECTED) != 0;
+        return access.isProtected();
     }
 
     /**
@@ -311,19 +312,20 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      *
      * @return true if field is static
      */
+    @Deprecated
     public boolean hasStaticModifier() {
-        return (access & Opcodes.ACC_STATIC) != 0;
+        return access.isStatic();
     }
 
     /**
-     * Checks whether this field has specified modifier (by Opcodes)
+     * Checks whether this field has specified modifier
      *
      * @return true if field has specified modifier
-     * @see Opcodes
      * @see DataField#getAccess()
      */
+    @Deprecated
     public boolean hasModifier(int modifierCode) {
-        return (access & modifierCode) != 0;
+        return access.is(modifierCode);
     }
 
     /**
@@ -363,7 +365,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      * XML Generation. Not supposed to use outside.
      */
     @Override
-    void xmlGen(XmlContext ctx) {
+    public void xmlGen(XmlContext ctx) {
         super.xmlGenBodiless(ctx);
     }
 
@@ -379,7 +381,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
         ctx.attrNormalized(XmlNames.NAME, name);
         ctx.attr(XmlNames.VMSIG, vmSig);
         xmlAccessFlags(ctx, access);
-        ctx.attr(XmlNames.ACCESS, access);
+        ctx.attr(XmlNames.ACCESS, access.access());
         ctx.attr(XmlNames.ID, block.getId());
 
         if (value != null) {
@@ -474,7 +476,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
      * @param access
      * @return fields`s access flags as String array
      */
-    String[] accessFlags(int access) {
+    String[] accessFlags(Modifiers access) {
         String[] as = super.accessFlags(access);
         List<String> lst = new ArrayList();
         for (String s : as) {
@@ -491,7 +493,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
         out.writeUTF(name);
         writeString(out, signature);
         writeString(out, vmSig);
-        out.writeInt(access & ACCESS_MASK); // we don't save ALL the codes in XML, we shouldn't save all codes in net
+        out.writeInt(access.access());
 //        out.write(value); can't - object. Writing only name
         if (value != null) {
             out.writeBoolean(true);
@@ -508,7 +510,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
         name = in.readUTF();
         signature = readString(in);
         vmSig = readString(in);
-        access = in.readInt();
+        access = new ASMModifiers(in.readInt());
         if (in.readBoolean()) {
             value = in.readUTF(); // value
         } else {
@@ -521,17 +523,17 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
 
             @Override
             protected boolean wasCollectHit() {
-                return CollectDetect.wasInvokeHit(InvokeMethodAdapter.getInvokeID(c.getFullname(), name, vmSig));
+                return CollectDetect.wasInvokeHit(DataAbstract.getInvokeID(c.getFullname(), name, vmSig));
             }
 
             @Override
             protected long collectCount() {
-                return CollectDetect.invokeCountFor(InvokeMethodAdapter.getInvokeID(c.getFullname(), name, vmSig));
+                return CollectDetect.invokeCountFor(DataAbstract.getInvokeID(c.getFullname(), name, vmSig));
             }
 
             @Override
             protected void setCollectCount(long count) {
-                CollectDetect.setInvokeCountFor(InvokeMethodAdapter.getInvokeID(c.getFullname(), name, vmSig), count);
+                CollectDetect.setInvokeCountFor(DataAbstract.getInvokeID(c.getFullname(), name, vmSig), count);
             }
         };
     }

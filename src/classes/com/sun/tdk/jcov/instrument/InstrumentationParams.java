@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package com.sun.tdk.jcov.instrument;
 
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.ABSTRACTMODE;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.InstrumentationMode;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.runtime.Collect;
 import com.sun.tdk.jcov.runtime.CollectDetect;
 import com.sun.tdk.jcov.util.Utils;
@@ -71,6 +72,8 @@ public class InstrumentationParams {
     private Pattern[] inner_alls;
     private boolean innerInvocations;
     private InstrumentationPlugin plugin;
+    private String input;
+    private String output;
 
     //TODO replace by a builder!!!
     public InstrumentationParams(boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields,
@@ -199,6 +202,17 @@ public class InstrumentationParams {
         this.plugin = plugin;
     }
 
+    public InstrumentationPlugin filter(InstrumentationPlugin plugin) {
+        //TODO is it possible to optimize to return the original plugin
+        //in case for filtering options are provided?
+        return new InstrumentationPlugin.FilteringPlugin(plugin) {
+            @Override
+            protected boolean filter(String cls) {
+                return isIncluded(cls);
+            }
+        };
+    }
+
     public boolean isDetectInternal() {
         return detectInternal;
     }
@@ -227,9 +241,7 @@ public class InstrumentationParams {
         return instrumentAnonymous;
     }
 
-    public InstrumentationPlugin getInstrumentationPlugin() {
-        return plugin;
-    }
+    public InstrumentationPlugin getInstrumentationPlugin() { return plugin; }
 
 //    public boolean skipNotCoveredClasses() {
 //        return dynamicCollect;
@@ -389,6 +401,16 @@ public class InstrumentationParams {
 
     public InstrumentationParams setInstrumentationPlugin(InstrumentationPlugin plugin) {
         this.plugin = plugin;
+        return this;
+    }
+
+    public InstrumentationParams setInput(String input) {
+        this.input = input;
+        return this;
+    }
+
+    public InstrumentationParams setOutput(String output) {
+        this.output = output;
         return this;
     }
 

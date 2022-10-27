@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package openjdk.jcov.data.arguments.instrument;
 
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import openjdk.jcov.data.arguments.runtime.Collect;
 import openjdk.jcov.data.arguments.runtime.Coverage;
 import openjdk.jcov.data.Env;
@@ -57,7 +57,7 @@ import static org.objectweb.asm.Opcodes.*;
  * An instrumention plugin responsible for adding necessary bytecode instructions to collect and pass argument values to
  * a specified collector.
  */
-public class Plugin implements InstrumentationPlugin {
+public class Plugin implements ASMInstrumentationPlugin {
     /**
      * Classname of a collector class which will be called from every instrumented method.
      */

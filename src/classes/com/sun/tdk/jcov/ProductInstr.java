@@ -26,7 +26,7 @@ package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.constants.MiscConstants;
 import com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter;
-import com.sun.tdk.jcov.instrument.ClassMorph;
+import com.sun.tdk.jcov.instrument.asm.ClassMorph;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.tools.EnvHandler;
@@ -68,7 +68,7 @@ public class ProductInstr extends JCovCMDTool {
     private String[] callerInclude;
     private String[] callerExclude;
 
-    public void instrumentProduct() throws IOException {
+    public void instrumentProduct() throws Exception {
         logger.log(Level.INFO, " - Instrumenting product");
         logger.log(Level.CONFIG, "Product location: ''{0}'', target location: ''{1}''", new Object[]{instrProductDir.getPath(), instrOutputDir.getPath()});
 

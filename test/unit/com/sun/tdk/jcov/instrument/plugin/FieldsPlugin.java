@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package com.sun.tdk.jcov.instrument.plugin;
 
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import com.sun.tdk.jcov.runtime.JCovSaver;
 import org.objectweb.asm.MethodVisitor;
 
@@ -46,7 +46,8 @@ import static org.objectweb.asm.Opcodes.*;
  * This plugin only supports Object and int data types.
  * This class also defines the logic to be used at runtime to save the collected data by printing it into the output.
  */
-public class FieldsPlugin implements InstrumentationPlugin, JCovSaver {
+//TODO
+public class FieldsPlugin implements /*ASMInstrumentationPlugin, */JCovSaver {
 
     public static final Map<String, Set<Object>> values = new HashMap<>();
     public static final String INSTRUMENTATION_COMPLETE = "Instrumentation complete: ";
@@ -88,18 +89,18 @@ public class FieldsPlugin implements InstrumentationPlugin, JCovSaver {
 
     final static AtomicInteger completeCount = new AtomicInteger(0);
 
-    @Override
+//    @Override
     public void instrumentationComplete() throws Exception {
         completeCount.incrementAndGet();
         System.out.println(INSTRUMENTATION_COMPLETE + completeCount);
     }
 
-    @Override
+//    @Override
     public Path runtime() {
         return null;
     }
 
-    @Override
+//    @Override
     public String collectorPackage() {
         return null;
     }

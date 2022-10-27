@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class DataMethodWithBlocks extends DataMethod {
     /**
      *
      */
-    private CharacterRangeTableAttribute characterRangeTable = null;
+    private CharacterRangeTable characterRangeTable = null;
     /**
      * Including blocks
      */
@@ -120,7 +120,7 @@ public class DataMethodWithBlocks extends DataMethod {
      *
      * @param crt
      */
-    public void setCharacterRangeTable(CharacterRangeTableAttribute crt) {
+    public void setCharacterRangeTable(CharacterRangeTable crt) {
         this.characterRangeTable = crt;
     }
 
@@ -129,7 +129,7 @@ public class DataMethodWithBlocks extends DataMethod {
      *
      * @return
      */
-    public CharacterRangeTableAttribute getCharacterRangeTable() {
+    public CharacterRangeTable getCharacterRangeTable() {
         return characterRangeTable;
     }
 

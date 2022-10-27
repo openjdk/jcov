@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
-import com.sun.tdk.jcov.util.Utils;
-import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Label;
 
 /**
- * Class that does nothing but collects runtime annotations
+ * OffsetLabel
  *
- * @author Dmitry Fazunenko
+ * @author Robert Field
  */
-class MethodAnnotationAdapter extends MethodVisitor {
+class OffsetLabel extends Label {
 
-    final DataMethod meth;
+    int originalOffset;
+    boolean realLabel;
 
-    @Override
-    public AnnotationVisitor visitAnnotation(String anno, boolean b) {
-        meth.addAnnotation(anno);
-        return super.visitAnnotation(anno, b);
-    }
-
-    MethodAnnotationAdapter(final MethodVisitor mv,
-            final DataMethod method) {
-        super(Utils.ASM_API_VERSION, mv);
-        this.meth = method;
+    OffsetLabel(int originalOffset) {
+        this.originalOffset = originalOffset;
     }
 }

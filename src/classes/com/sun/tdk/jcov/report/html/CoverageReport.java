@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1582,7 +1582,7 @@ public class CoverageReport implements ReportGenerator {
                 pw.println(" <td class=\"reportText\"><span class=\"text\">" + mname
                         + "</span></td>");
             }
-            String mmodifiers = mcov.getModifiers();
+            String mmodifiers = mcov.getModifiersString();
             pw.println(" <td class=\"reportText\"><span class=\"text\">" + mmodifiers
                     + "</span></td>");
             pw.println(" <td class=\"reportText\"><span class=\"text\">"

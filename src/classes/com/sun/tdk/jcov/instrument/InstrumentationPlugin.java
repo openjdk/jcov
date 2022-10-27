@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,39 +24,118 @@
  */
 package com.sun.tdk.jcov.instrument;
 
-import org.objectweb.asm.MethodVisitor;
-
-import java.nio.file.Path;
+import java.io.OutputStream;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
- * SPI class which allows to do additional instrumentation, in addition to instrumentation performed by JCov by default.
- * @author Alexander (Shura) Ilin.
+ * TODO describe the lifecycle
  */
 public interface InstrumentationPlugin {
-    /**
-     * Supplies a MethodVisitor to perform additional instrumentation.
-     * @return A valid method visitor. If no instrumentation needed, must return <code>visitor</code> argument.
-     */
-    MethodVisitor methodVisitor(int access, String owner, String name, String desc, MethodVisitor visitor);
 
-    /**
-     * Called after all instrumentation is complete.
-     * @throws Exception should some
-     */
-    void instrumentationComplete() throws Exception;
+    void instrument(Collection<String> classes, Function<String, byte[]> loader, BiConsumer<String, byte[]> saver,
+                    InstrumentationParams parameters) throws Exception;
 
-    /**
-     * For the instrumented code to work independently (i.e. without adding additional classes  to the classpath), some
-     * classes can be "implanted" into the instrumented code.
-     * @return Path containing the classes to be implanted. Must be in a form which can be added to Java classpath.
-     */
-    //TODO perhaps this can return a list of classes to be implanted
-    Path runtime() throws Exception;
+    void complete(Supplier<OutputStream> templateStreamSupplier) throws Exception;
 
-    /**
-     * Name of a package which contains code, that will be called from the instrumented
-     * code. Such package may need to be exported from a module.
-     * @return package name
-     */
-    String collectorPackage();
+    //TODO properly relocate the inner classes
+
+    abstract class FilteringPlugin implements InstrumentationPlugin {
+        private final InstrumentationPlugin inner;
+
+        public FilteringPlugin(InstrumentationPlugin inner) {
+            this.inner = inner;
+        }
+
+        protected abstract boolean filter(String cls);
+        @Override
+        public void instrument(Collection<String> classes, Function<String, byte[]> loader,
+                               BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
+            inner.instrument(classes.stream().filter(this::filter).collect(Collectors.toList()),
+                    loader, saver, parameters);
+        }
+
+        @Override
+        public void complete(Supplier<OutputStream> templateStreamSupplier) throws Exception {
+            inner.complete(templateStreamSupplier);
+        }
+    }
+
+    interface ModuleImplant {
+        //TODO qualified exports?
+        List<String> exports();
+        Collection<String> classes();
+        Function<String, byte[]> loader();
+    }
+
+    abstract class ModuleImplantingPlugin implements InstrumentationPlugin {
+
+        public static final String MODULE_INFO_CLASS = "module-info.class";
+
+        public interface ModuleInstrumentationPlugin extends InstrumentationPlugin {
+            String getModuleName(byte[] moduleInfo);
+            byte[] addExports(List<String> exports, byte[] moduleInfo);
+        }
+
+        private final ModuleInstrumentationPlugin inner;
+        private final Function<String, ModuleImplant> implants;
+
+        public ModuleImplantingPlugin(ModuleInstrumentationPlugin inner, Function<String, ModuleImplant> implants) {
+            this.inner = inner;
+            this.implants = implants;
+        }
+
+        @Override
+        public void instrument(Collection<String> classes, Function<String, byte[]> loader,
+                               BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
+            inner.instrument(classes, loader, saver, parameters);
+            String moduleName = inner.getModuleName(loader.apply(MODULE_INFO_CLASS));
+            if(moduleName != null) {
+                ModuleImplant implant = implants.apply(moduleName);
+                if(implant != null) {
+                    saver.accept(MODULE_INFO_CLASS, loader.apply(MODULE_INFO_CLASS));
+                    for(String c : implant.classes()) saver.accept(c, implant.loader().apply(c));
+                }
+            }
+        }
+
+        @Override
+        public void complete(Supplier<OutputStream> template) throws Exception {
+            inner.complete(template);
+        }
+    }
+
+    class ImplantingPlugin implements InstrumentationPlugin {
+        private final Collection<String> implant;
+        private final Function<String, byte[]> implantLoader;
+        private final InstrumentationPlugin inner;
+
+        //TODO similar to ModuleImplantingPlugin have different implants for different locations somehow?
+        public ImplantingPlugin(InstrumentationPlugin inner,
+                                Collection<String> implant, Function<String, byte[]> loader) {
+            this.implant = implant;
+            this.implantLoader = loader;
+            this.inner = inner;
+        }
+
+        @Override
+        public void instrument(Collection<String> classes, Function<String, byte[]> loader,
+                               BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
+            inner.instrument(classes, loader, saver, parameters);
+            implant.forEach(c -> saver.accept(c, implantLoader.apply(c)));
+        }
+
+        @Override
+        public void complete(Supplier<OutputStream> templateStreamSupplier) throws Exception {
+            inner.complete(templateStreamSupplier);
+        }
+
+        protected InstrumentationPlugin inner() {
+            return inner;
+        }
+    }
 }

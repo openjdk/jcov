@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter;
-import com.sun.tdk.jcov.instrument.ClassMorph;
+import com.sun.tdk.jcov.instrument.asm.ClassMorph;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.InstrumentationMode;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
@@ -34,10 +34,8 @@ import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.logging.Level;
-import java.util.*;
 
 /**
  * <p> Template generation. </p> <p> JCov Template file should be used to merge
@@ -126,7 +124,7 @@ public class TmplGen extends JCovCMDTool {
         return true;
     }
 
-    public void generateAndSave(String[] files) throws IOException {
+    public void generateAndSave(String[] files) throws Exception {
         setDefaultInstrumenter();
         for (String root : files) {
             if (root.endsWith(".jimage")){
@@ -196,7 +194,7 @@ public class TmplGen extends JCovCMDTool {
         }
     }
 
-    public void finishWork() {
+    public void finishWork() throws Exception {
         if (instrumenter == null) {
             throw new IllegalStateException("Instrumenter is not ready");
         }
@@ -206,25 +204,27 @@ public class TmplGen extends JCovCMDTool {
 
     public void setDefaultInstrumenter() {
         if (instrumenter == null) {
-            instrumenter = new AbstractUniversalInstrumenter(true, true) {
-                ClassMorph morph = new ClassMorph(
-                        new InstrumentationParams(instrumentNative, instrumentField, instrumentAbstract, include, exclude, m_include, m_exclude, mode)
-                        .setInstrumentAnonymous(instrumentAnonymous)
-                        .setInstrumentSynthetic(instrumentSynthetic), template);
-
-                protected byte[] instrument(byte[] classData, int classLen) throws IOException {
-//                    byte[] res = Arrays.copyOf(classData, classLen);
-                    byte[] res = new byte[classLen];
-                    System.arraycopy(classData, 0, res, 0, classLen);
-                    morph.setCurrentModuleName(currentModule);
-                    morph.morph(res, null, flushPath); // jdk1.5 support
-                    return res;
-                }
-
-                public void finishWork() {
-                    morph.saveData(template, InstrumentationOptions.MERGE.MERGE);
-                }
-            };
+            //TODO
+            instrumenter = null;
+//            instrumenter = new AbstractUniversalInstrumenter(true, true, plugin) {
+//                ClassMorph morph = new ClassMorph(
+//                        new InstrumentationParams(instrumentNative, instrumentField, instrumentAbstract, include, exclude, m_include, m_exclude, mode)
+//                        .setInstrumentAnonymous(instrumentAnonymous)
+//                        .setInstrumentSynthetic(instrumentSynthetic), template);
+//
+//                protected byte[] instrument(byte[] classData, int classLen) throws IOException {
+////                    byte[] res = Arrays.copyOf(classData, classLen);
+//                    byte[] res = new byte[classLen];
+//                    System.arraycopy(classData, 0, res, 0, classLen);
+//                    morph.setCurrentModuleName(currentModule);
+//                    morph.morph(res, null, flushPath); // jdk1.5 support
+//                    return res;
+//                }
+//
+//                public void finishWork() {
+//                    morph.saveData(template, InstrumentationOptions.MERGE.MERGE);
+//                }
+//            };
         }
     }
 

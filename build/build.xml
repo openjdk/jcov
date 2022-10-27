@@ -341,6 +341,9 @@ MILESTONE="${build.milestone}"
                classpath="${testngjar}:${build.dir}/jcov.jar"
                destdir="${result.dir}/test/classes">
         </javac>
+        <copy todir="${result.dir}/test/classes">
+            <fileset dir="${test.src.dir}" includes="**/*.xml"/>
+        </copy>
         <taskdef classname="org.testng.TestNGAntTask" classpath="${testngjar}" name="testng"/>
         <testng failureProperty="tests.failed" listeners="org.testng.reporters.VerboseReporter" outputdir="${result.dir}/test/result" suitename="jcov" testname="TestNG tests" workingDir="${result.dir}/test/work" verbose="2">
                 <classfileset dir="${result.dir}/test/classes" includes="**/*Test.class" />

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.instrument.asm.ASMModifiers;
 import com.sun.tdk.jcov.util.NaturalComparator;
 import com.sun.tdk.jcov.data.Scale;
 import com.sun.tdk.jcov.util.Utils;
@@ -32,7 +33,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.objectweb.asm.Opcodes;
 
 /**
  * Parent for all method data classes. Keeps base information about method
@@ -49,11 +49,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      */
     protected final DataClass parent;
     /**
-     * Method access code
-     *
-     * @see org.objectweb.asm.Opcodes
+     * Container for method access code
      */
-    protected final int access;
+    protected final Modifiers access;
     /**
      * Method name
      */
@@ -103,7 +101,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         super(k.rootId);
 
         this.parent = k;
-        this.access = access;
+        this.access = new ASMModifiers(access);
         this.name = name;
         this.vmSig = desc;
         this.signature = signature;
@@ -117,13 +115,6 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * created object to <b>k</b> DataClass. Do not use this constructor in
      * iterators.
      *
-     * @param k
-     * @param access
-     * @param name
-     * @param desc
-     * @param signature
-     * @param exceptions
-     * @param differentiateMethods
      */
     protected DataMethod(DataMethod other) {
         super(other.rootId);
@@ -190,13 +181,13 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
 
     /**
      * Get methods access code
-     *
-     * @see org.objectweb.asm.Opcodes
      * @return methods access code
      */
     public int getAccess() {
-        return access;
+        return access.access();
     }
+
+    public Modifiers getModifiers() { return access; }
 
     /**
      * Get this method`s access flags as String array
@@ -211,34 +202,32 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * Check whether <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      *
      * @see #getAccess()
-     * @see org.objectweb.asm.Opcodes
      * @return true if <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      */
     @Deprecated
     public boolean isPublic() {
-        return (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0;
+        return isPublicAPI();
     }
 
     /**
      * Check whether <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      *
      * @see #getAccess()
-     * @see org.objectweb.asm.Opcodes
      * @return true if <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      */
     public boolean isPublicAPI() {
-        return (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0;
+        return access.isPublic() || access.isProtected();
     }
 
     /**
      * Check whether <b>access</b> field has ACC_ABSTRACT flag
      *
      * @see #getAccess()
-     * @see org.objectweb.asm.Opcodes
      * @return true if <b>access</b> field has ACC_ABSTRACT flag
      */
+    @Deprecated
     public boolean isAbstract() {
-        return (access & Opcodes.ACC_ABSTRACT) != 0;
+        return access.isAbstract();
     }
 
     /**
@@ -246,8 +235,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      *
      * @return true if method is private
      */
+    @Deprecated
     public boolean hasPrivateModifier() {
-        return (access & Opcodes.ACC_PRIVATE) != 0;
+        return access.isPrivate();
     }
 
     /**
@@ -255,8 +245,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      *
      * @return true if method is public
      */
+    @Deprecated
     public boolean hasPublicModifier() {
-        return (access & Opcodes.ACC_PUBLIC) != 0;
+        return access.isPublic();
     }
 
     /**
@@ -264,8 +255,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      *
      * @return true if method is protected
      */
+    @Deprecated
     public boolean hasProtectedModifier() {
-        return (access & Opcodes.ACC_PROTECTED) != 0;
+        return access.isProtected();
     }
 
     /**
@@ -273,8 +265,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      *
      * @return true if method is abstract
      */
+    @Deprecated
     public boolean hasAbstractModifier() {
-        return (access & Opcodes.ACC_ABSTRACT) != 0;
+        return access.isAbstract();
     }
 
     /**
@@ -282,8 +275,9 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      *
      * @return true if method is static
      */
+    @Deprecated
     public boolean hasStaticModifier() {
-        return (access & Opcodes.ACC_STATIC) != 0;
+        return access.isStatic();
     }
 
     /**
@@ -291,19 +285,20 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      *
      * @return true if method is native
      */
+    @Deprecated
     public boolean hasNativeModifier() {
-        return (access & Opcodes.ACC_NATIVE) != 0;
+        return access.isNative();
     }
 
     /**
-     * Checks whether this method has specified modifier (by Opcodes)
+     * Checks whether this method has specified modifier
      *
      * @return true if method has specified modifier
-     * @see Opcodes
      * @see DataMethod#getAccess()
      */
+    @Deprecated
     public boolean hasModifier(int modifierCode) {
-        return (access & modifierCode) != 0;
+        return access.is(modifierCode);
     }
 
     /**
@@ -409,8 +404,8 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * XML Generation. Not supposed to use outside.
      */
     @Override
-    void xmlGen(XmlContext ctx) {
-        if (ctx.showAbstract || (access & Opcodes.ACC_ABSTRACT) == 0) {
+    public void xmlGen(XmlContext ctx) {
+        if (ctx.showAbstract || !access.isAbstract()) {
             super.xmlGen(ctx);
         }
     }
@@ -424,7 +419,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         ctx.attr(XmlNames.VMSIG, vmSig);
 
         xmlAccessFlags(ctx, access);
-        ctx.attr(XmlNames.ACCESS, access);
+        ctx.attr(XmlNames.ACCESS, access.access());
 
         if (!differentiateMethods) {
             if (name.equals("<init>")) {
@@ -535,7 +530,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * @return method`s access flags as String array
      */
     @Override
-    String[] accessFlags(int access) {
+    String[] accessFlags(Modifiers access) {
         String[] as = super.accessFlags(access);
         List<String> lst = new ArrayList();
         for (String s : as) {
@@ -583,7 +578,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         out.writeUTF(name);
         writeString(out, vmSig);
         writeString(out, signature);
-        out.writeInt(access & ACCESS_MASK); // we don't save ALL the codes in XML, we shouldn't save all codes in net
+        out.writeInt(access.access());
         out.writeBoolean(differentiateMethods);
         writeStrings(out, exceptions);
         if (lineTable != null) {
@@ -603,7 +598,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         name = in.readUTF();
         vmSig = readString(in);
         signature = readString(in);
-        access = in.readInt();
+        access = new ASMModifiers(in.readInt());
         differentiateMethods = in.readBoolean();
         exceptions = readStrings(in);
         int len = in.readShort();

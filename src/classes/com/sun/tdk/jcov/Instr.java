@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,29 @@
 package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter;
-import com.sun.tdk.jcov.instrument.ClassMorph;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ClassMorph;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.runtime.FileSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.sun.tdk.jcov.instrument.InstrumentationOptions.*;
 import static com.sun.tdk.jcov.util.Utils.CheckOptions.*;
@@ -84,11 +93,18 @@ public class Instr extends JCovCMDTool {
     private ClassMorph morph;
     private ClassLoader cl = null;
     private static final Logger logger;
-    private InstrumentationPlugin plugin;
+    private InstrumentationPlugin plugin = new ASMInstrumentationPlugin();
+    private InstrumentationParams params;
 
     static {
         Utils.initLogger();
         logger = Logger.getLogger(Instr.class.getName());
+    }
+
+    private boolean needToFixJavaBase = false;
+
+    public void fixJavaBase() {
+        needToFixJavaBase = true;
     }
 
     /**
@@ -173,6 +189,27 @@ public class Instr extends JCovCMDTool {
     public void instrumentFile(String file, File outDir, String includeRTJar, String moduleName) throws IOException {
         if (morph != null){
             morph.setCurrentModuleName(moduleName);
+            if(needToFixJavaBase && "java.base".equals(moduleName)) {
+                File moduleInfo = new File(file + File.separator +  "module-info.class");
+                if(!moduleInfo.exists()) throw new IllegalStateException(moduleInfo + " does not exist!");
+                try(FileInputStream fi = new FileInputStream(moduleInfo)) {
+                    byte[] noHashes = morph.clearHashes(fi.readAllBytes(), cl);
+                    List<String> packages = new ArrayList<>();
+                    packages.add("com/sun/tdk/jcov/runtime");
+//                    if(plugin != null) {
+//                        String pluginRuntimePackage = plugin.collectorPackage();
+//                        if (pluginRuntimePackage != null) {
+//                            pluginRuntimePackage = pluginRuntimePackage.replace('.', '/');
+//                            packages.add(pluginRuntimePackage);
+//                        }
+//                    }
+                    byte[] withExports = morph.addExports(noHashes, packages, cl);
+                    try (FileOutputStream fo = new FileOutputStream(((outDir == null) ? file : outDir) +
+                            File.separator +  "module-info.class")) {
+                        fo.write(withExports);
+                    }
+                }
+            }
             instrumentFile(new File(file), outDir, includeRTJar);
         }
     }
@@ -204,10 +241,33 @@ public class Instr extends JCovCMDTool {
      * @param outDir can be null. Initial file will be overwritten in such case.
      * @param implantRT
      */
-    public void instrumentFiles(String[] files, File outDir, String implantRT) throws IOException {
+    public void instrumentFiles(String[] files, File outDir, String implantRT) throws Exception {
+        //TODO rename
         setDefaultInstrumenter();
         for (String file : files) {
-            instrumenter.instrument(new File(file), outDir, implantRT, recurse);
+            Path in = Path.of(file);
+            Path out = (outDir != null) ? outDir.toPath() : in;
+            List<String> classes = Files.find(in, Integer.MAX_VALUE,
+                            (f, a) -> f.getFileName().toString().endsWith(".class"))
+                    .map(f -> in.relativize(f))
+                    .map(Path::toString)
+                    .map(s -> s.substring(0, s.length() - ".class".length()))
+                    .collect(Collectors.toList());
+            params.isIncluded("UserCode");
+            plugin.instrument(classes, f -> {
+//            params.filter(plugin).instrument(classes, f -> {
+                try {
+                    return Files.readAllBytes(in.resolve(f + ".class"));
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }, (c, d) -> {
+                try {
+                    Files.write(out.resolve(c + ".class"), d);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }, params);
         }
     }
 
@@ -236,9 +296,8 @@ public class Instr extends JCovCMDTool {
      * Set default instrumenter
      */
     private void setDefaultInstrumenter() {
-
-        if (morph == null) {
-            InstrumentationParams params = new InstrumentationParams(innerinvocations,
+        if(params == null) {
+            params = new InstrumentationParams(innerinvocations,
                     false,
                     false,
                     gennative,
@@ -260,6 +319,8 @@ public class Instr extends JCovCMDTool {
                     .setInnerIncludes(innerInclude)
                     .setInnerExcludes(innerExclude)
                     .setInstrumentationPlugin(plugin);
+        }
+        if (morph == null) {
             if (subsequentInstr) {
                 morph = new ClassMorph(params, template);
             } else {
@@ -280,7 +341,7 @@ public class Instr extends JCovCMDTool {
                     }
                 }
 
-                public void processClassFileInModules(Path filePath, File outDir){
+                 public void processClassFileInModules(Path filePath, File outDir){
                     if (morph != null){
                         if (filePath != null){
                             String mpath = filePath.toAbsolutePath().toString();
@@ -293,8 +354,8 @@ public class Instr extends JCovCMDTool {
                         super.processClassFileInModules(filePath, outDir);
                     }
                 }
-
             };
+            instrumenter.setParams(params);
         }
     }
 
@@ -303,9 +364,9 @@ public class Instr extends JCovCMDTool {
      *
      * @param instrumenter instrumenter used to instrument data
      */
-    public void setInstrumenter(AbstractUniversalInstrumenter instrumenter) {
-        this.instrumenter = instrumenter;
-    }
+//    public void setInstrumenter(AbstractUniversalInstrumenter instrumenter) {
+//        this.instrumenter = instrumenter;
+//    }
 
     /**
      * Finish instrumentation and write template. If template already exists -
@@ -313,11 +374,11 @@ public class Instr extends JCovCMDTool {
      * created with
      */
     public void finishWork() throws Exception {
-        if (instrumenter != null) {
-            instrumenter.finishWork();
+//        if (instrumenter != null) {
+//            instrumenter.finishWork();
             // destroy instrumenter & morph?
-        }
-        if(plugin != null) plugin.instrumentationComplete();
+//        }
+//        if(plugin != null) plugin.instrumentationComplete();
     }
 
     /**
@@ -327,14 +388,21 @@ public class Instr extends JCovCMDTool {
      * @param outTemplate template path
      */
     public void finishWork(String outTemplate) throws Exception {
-        if (instrumenter != null) {
-            if (subsequentInstr) {
-                morph.saveData(outTemplate, MERGE.MERGE); // template should be initialized
-            } else {
-                morph.saveData(outTemplate, null, MERGE.OVERWRITE); // template should be initialized
+//        if (instrumenter != null) {
+//            if (subsequentInstr) {
+//                morph.saveData(outTemplate, MERGE.MERGE); // template should be initialized
+//            } else {
+//                morph.saveData(outTemplate, null, MERGE.OVERWRITE); // template should be initialized
+//            }
+//        }
+//        if(plugin != null) plugin.instrumentationComplete();
+        plugin.complete(() -> {
+            try {
+                return Files.newOutputStream(Path.of(template));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-        }
-        if(plugin != null) plugin.instrumentationComplete();
+        });
     }
 
     /**
@@ -704,4 +772,5 @@ public class Instr extends JCovCMDTool {
             new OptionDescr("recursive", "", OptionDescr.VAL_NONE,
                     "Recurse through specified directories instrumenting everything inside. " +
                             "With -flush option it will be able to instrument duplicate classes");
+
 }

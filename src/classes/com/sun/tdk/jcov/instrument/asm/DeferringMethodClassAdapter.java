@@ -22,8 +22,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
+import com.sun.tdk.jcov.instrument.DataClass;
+import com.sun.tdk.jcov.instrument.DataField;
+import com.sun.tdk.jcov.instrument.DataMethod;
+import com.sun.tdk.jcov.instrument.DataMethodEntryOnly;
+import com.sun.tdk.jcov.instrument.DataMethodInvoked;
+import com.sun.tdk.jcov.instrument.DataMethodWithBlocks;
+import com.sun.tdk.jcov.instrument.InstrumentationOptions;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
@@ -31,12 +39,10 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import static java.lang.String.format;
 import static org.objectweb.asm.Opcodes.*;
 
 import org.objectweb.asm.tree.MethodNode;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -51,7 +57,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
     private static final Logger logger = Logger.getLogger("com.sun.tdk.jcov");
 
     public DeferringMethodClassAdapter(final ClassVisitor cv, DataClass dataClass, InstrumentationParams params) {
-        super(Utils.ASM_API_VERSION, cv);
+        super(ASMUtils.ASM_API_VERSION, cv);
         this.dataClass = dataClass;
         this.params = params;
     }
@@ -64,7 +70,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
             final String signature,
             final String superName,
             final String[] interfaces) {
-        dataClass.setInfo(access, signature, superName, interfaces);
+        dataClass.setInfo(new ASMModifiers(access), signature, superName, interfaces);
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
@@ -188,7 +194,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         if ("<clinit>".equals(methodName) &&
                 !params.isDynamicCollect() &&
                 (dataClass.getPackageName().startsWith("java/lang/"))) {
-            mv = new MethodVisitor(Utils.ASM_API_VERSION, mv) {
+            mv = new MethodVisitor(ASMUtils.ASM_API_VERSION, mv) {
                 public void visitCode() {
                     mv.visitMethodInsn(INVOKESTATIC,
                             "com/sun/tdk/jcov/runtime/Collect", "init", "()V",
@@ -230,7 +236,7 @@ class DeferringMethodClassAdapter extends ClassVisitor {
         if (params.isDataSaveFilterAccept(dataClass.getFullname(), methodName, false)) {
             mv = new SavePointsMethodAdapter(mv, false);
         }
-        mv = new MethodVisitor(Utils.ASM_API_VERSION, mv) {
+        mv = new MethodVisitor(ASMUtils.ASM_API_VERSION, mv) {
             @Override
             public void visitLocalVariable(String arg0, String arg1, String arg2, Label arg3, Label arg4, int arg5) {
                 //super.visitLocalVariable(arg0, arg1, arg2, arg3, arg4, arg5);
@@ -242,9 +248,9 @@ class DeferringMethodClassAdapter extends ClassVisitor {
             mv = new StaticInvokeMethodAdapter(mv, dataClass.getFullname(), methodName, access, params);
         }
 
-        InstrumentationPlugin plugin = params.getInstrumentationPlugin();
-        if (plugin != null)
-            mv = plugin.methodVisitor(access, dataClass.getFullname(), methodName, desc, mv);
+        ASMInstrumentationPlugin plugin = (ASMInstrumentationPlugin) params.getInstrumentationPlugin();
+//        if (plugin != null)
+//            mv = plugin.methodVisitor(access, dataClass.getFullname(), methodName, desc, mv);
 
         return mv;
     }

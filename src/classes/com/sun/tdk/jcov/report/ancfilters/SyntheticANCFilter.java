@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import com.sun.tdk.jcov.instrument.DataBlock;
 import com.sun.tdk.jcov.instrument.DataClass;
 import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.report.AncFilter;
-import org.objectweb.asm.Opcodes;
 
 /**
  * @author Alexey Fedorchenko
@@ -43,7 +42,7 @@ public class SyntheticANCFilter implements AncFilter {
     @Override
     public boolean accept(DataClass clz, DataMethod m) {
 
-        if ((m.getAccess() & Opcodes.ACC_SYNTHETIC) != 0){
+        if (m.getModifiers().isSynthetic()){
             return true;
         }
 

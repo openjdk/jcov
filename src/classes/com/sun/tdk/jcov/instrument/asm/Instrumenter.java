@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.asm;
 
+import com.sun.tdk.jcov.instrument.DataBlock;
+import com.sun.tdk.jcov.instrument.SimpleBasicBlock;
 import org.objectweb.asm.tree.*;
 
 import org.objectweb.asm.MethodVisitor;
@@ -59,11 +61,11 @@ class Instrumenter {
         return il;
     }
 
-    static InsnList instrumentation(DataBlock block, boolean detectInternal) {
+    public static InsnList instrumentation(DataBlock block, boolean detectInternal) {
         return instrumentation(block.getId(), detectInternal);
     }
 
-    static InsnList instrumentation(SimpleBasicBlock block, boolean detectInternal) {
+    public static InsnList instrumentation(SimpleBasicBlock block, boolean detectInternal) {
         return instrumentation(block.getId(), detectInternal);
     }
 

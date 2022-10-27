@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,21 +110,21 @@ public class DataMethodInvoked extends DataMethod {
 
             @Override
             protected boolean wasCollectHit() {
-                return CollectDetect.wasInvokeHit(InvokeMethodAdapter.getInvokeID(k.getFullname(), name, desc));
+                return CollectDetect.wasInvokeHit(DataAbstract.getInvokeID(k.getFullname(), name, desc));
             }
 
             @Override
             protected long collectCount() {
-                return CollectDetect.invokeCountFor(InvokeMethodAdapter.getInvokeID(k.getFullname(), name, desc));
+                return CollectDetect.invokeCountFor(DataAbstract.getInvokeID(k.getFullname(), name, desc));
             }
 
             @Override
             protected void setCollectCount(long count) {
-                CollectDetect.setInvokeCountFor(InvokeMethodAdapter.getInvokeID(k.getFullname(), name, desc), count);
+                CollectDetect.setInvokeCountFor(DataAbstract.getInvokeID(k.getFullname(), name, desc), count);
             }
 
             @Override
-            void xmlAttrs(XmlContext ctx) {
+            protected void xmlAttrs(XmlContext ctx) {
                 ctx.attr(XmlNames.ID, getId());
                 ctx.attr(XmlNames.COUNT, getCount());
                 printScale(ctx);
@@ -188,7 +188,7 @@ public class DataMethodInvoked extends DataMethod {
     }
 
     @Override
-    void xmlGen(XmlContext ctx) {
+    public void xmlGen(XmlContext ctx) {
         super.xmlGenBodiless(ctx);
     }
 
@@ -261,21 +261,21 @@ public class DataMethodInvoked extends DataMethod {
 
             @Override
             protected boolean wasCollectHit() {
-                return CollectDetect.wasInvokeHit(InvokeMethodAdapter.getInvokeID(parent.getFullname(), name, vmSig));
+                return CollectDetect.wasInvokeHit(DataAbstract.getInvokeID(parent.getFullname(), name, vmSig));
             }
 
             @Override
             protected long collectCount() {
-                return CollectDetect.invokeCountFor(InvokeMethodAdapter.getInvokeID(parent.getFullname(), name, vmSig));
+                return CollectDetect.invokeCountFor(DataAbstract.getInvokeID(parent.getFullname(), name, vmSig));
             }
 
             @Override
             protected void setCollectCount(long count) {
-                CollectDetect.setInvokeCountFor(InvokeMethodAdapter.getInvokeID(parent.getFullname(), name, vmSig), count);
+                CollectDetect.setInvokeCountFor(DataAbstract.getInvokeID(parent.getFullname(), name, vmSig), count);
             }
 
             @Override
-            void xmlAttrs(XmlContext ctx) {
+            protected void xmlAttrs(XmlContext ctx) {
                 ctx.attr(XmlNames.ID, getId());
                 ctx.attr(XmlNames.COUNT, getCount());
                 printScale(ctx);

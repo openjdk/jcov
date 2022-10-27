@@ -27,7 +27,6 @@ package com.sun.tdk.jcov.util;
 import com.sun.tdk.jcov.runtime.PropertyFinder;
 import com.sun.tdk.jcov.tools.JCovTool.EnvHandlingException;
 import com.sun.tdk.jcov.tools.LoggingFormatter;
-import org.objectweb.asm.Opcodes;
 
 import java.io.*;
 import java.lang.reflect.Array;
@@ -56,11 +55,6 @@ import static java.lang.String.format;
  * This class implements miscellaneous utilities, necessary for Jcov
  */
 public final class Utils {
-
-    /**
-     * The ASM API version that should be used by jcov.
-     */
-    public static final int ASM_API_VERSION = Opcodes.ASM9;
 
     private static Handler loggerHandler = null;
     private final static int ASCII_CHARS_TOTAL = 128;

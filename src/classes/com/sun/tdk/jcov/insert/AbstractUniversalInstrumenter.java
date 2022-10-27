@@ -24,7 +24,10 @@
  */
 package com.sun.tdk.jcov.insert;
 
-import com.sun.tdk.jcov.instrument.OverriddenClassWriter;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.OverriddenClassWriter;
 import com.sun.tdk.jcov.util.Utils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -34,13 +37,16 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -52,6 +58,10 @@ import static com.sun.tdk.jcov.util.Utils.FILE_TYPE.*;
 import static com.sun.tdk.jcov.util.Utils.isClassFile;
 
 /**
+ * The class is resposible to deal with class files and hierarchies of files, such as directories, jars, zips, modules.
+ * The actual logic of bytecode instrumentation is left for subclasses of this class.
+ * @see #instrument(byte[], int)
+ * @see #finishWork()
  * @author Dmitry Fazunenko
  * @author Alexey Fedorchenko
  */
@@ -63,6 +73,9 @@ public abstract class AbstractUniversalInstrumenter {
     private int iClassCount = 0; // counter of successfully instrumented classes
 
     private static final Logger logger;
+
+    private InstrumentationPlugin plugin = new ASMInstrumentationPlugin();
+    private InstrumentationParams params;
 
     static {
         Utils.initLogger();
@@ -96,6 +109,10 @@ public abstract class AbstractUniversalInstrumenter {
     public AbstractUniversalInstrumenter(boolean overwrite, boolean readOnly) {
         this.overwrite = overwrite;
         this.readOnly = readOnly;
+    }
+
+    public void setParams(InstrumentationParams params) {
+        this.params = params;
     }
 
     /**
@@ -557,9 +574,9 @@ public abstract class AbstractUniversalInstrumenter {
     public void instrument(File instrumentingPath, File destinationPath,
                            String rtPath, ArrayList<String> rtClassDirTargets,
                            boolean recursive) throws IOException {
-        fileCount = 0;
-        classCount = 0;
-        iClassCount = 0;
+//        fileCount = 0;
+//        classCount = 0;
+//        iClassCount = 0;
 
         if (!instrumentingPath.exists()) {
             logger.log(Level.WARNING, "Path ''{0}'' doesn''t exist - skipped", instrumentingPath);
@@ -570,28 +587,53 @@ public abstract class AbstractUniversalInstrumenter {
             if (destinationPath == null) {
                 destinationPath = instrumentingPath;
             }
-            if (recursive) {
-
-                Utils.addToClasspath(instrumentingPath);
-
-                logger.log(Level.FINE, "Scanning directory ''{0}''...", instrumentingPath);
-                File[] entries = instrumentingPath.listFiles();
-                Arrays.sort(entries);
-                for (int i = 0; i < entries.length; i++) {
-                    destinationPath.mkdir();
-                    instrument(entries[i], new File(destinationPath, entries[i].getName()), rtPath, rtClassDirTargets, recursive);
-                }
-            } else {
-                logger.log(Level.INFO, "Instrumenting directory ''{0}''...", instrumentingPath);
-                processClassDir(instrumentingPath, destinationPath);
-                if (rtPath != null) {
-                    if (destinationPath != null) {
-                        unjarRT(rtPath, destinationPath);
-                    } else {
-                        unjarRT(rtPath, instrumentingPath);
+            Path in = Path.of(instrumentingPath.getAbsolutePath());
+            Path out = Path.of(destinationPath.getAbsolutePath());
+            List<String> classes = Files.find(in, Integer.MAX_VALUE,
+                            (f, a) -> f.getFileName().toString().endsWith(".class"))
+                    .map(f -> in.relativize(f))
+                    .map(Path::toString)
+                    .collect(Collectors.toList());
+            try {
+                plugin.instrument(classes, f -> {
+                    try {
+                        return Files.readAllBytes(in.resolve(f));
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
                     }
-                }
+                }, (c, d) -> {
+                    try {
+                        Files.write(out.resolve(c), d);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }, params);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
+            //TODO what about recursive?
+//            if (recursive) {
+//
+//                Utils.addToClasspath(instrumentingPath);
+//
+//                logger.log(Level.FINE, "Scanning directory ''{0}''...", instrumentingPath);
+//                File[] entries = instrumentingPath.listFiles();
+//                Arrays.sort(entries);
+//                for (int i = 0; i < entries.length; i++) {
+//                    destinationPath.mkdir();
+//                    instrument(entries[i], new File(destinationPath, entries[i].getName()), rtPath, rtClassDirTargets, recursive);
+//                }
+//            } else {
+//                logger.log(Level.INFO, "Instrumenting directory ''{0}''...", instrumentingPath);
+//                processClassDir(instrumentingPath, destinationPath);
+//                if (rtPath != null) {
+//                    if (destinationPath != null) {
+//                        unjarRT(rtPath, destinationPath);
+//                    } else {
+//                        unjarRT(rtPath, instrumentingPath);
+//                    }
+//                }
+//            }
         } else if ( FILE_TYPE.hasExtension(instrumentingPath.getName(), JAR, ZIP, WAR) ) {
             // initially instrument(jar, toJar) meant create instrumented "toJar/jar". But in recursive mode it should be just "toJar".
             if (rtClassDirTargets == null || rtClassDirTargets.contains(instrumentingPath.getPath())) {

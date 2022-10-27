@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,6 +52,8 @@ public class Test {
     public void instrument() throws IOException, InterruptedException {
         Files.deleteIfExists(jcov_template);
         Files.deleteIfExists(template);
+        String runtime = Arrays.stream(System.getProperty("java.class.path").split(File.pathSeparator))
+                .filter(s -> s.endsWith("jcov_file_saver.jar")).findAny().get();
         int status = new JREInstr()
                 .clearEnv()
                 .setEnv(Map.of(
@@ -58,7 +61,7 @@ public class Test {
                         METHOD_FILTER, PermissionMethodFilter.class.getName(),
                         SERIALIZER, Serializer.class.getName()))
                 .pluginClass(Plugin.class.getName())
-                .jcovRuntime(System.getProperty("jcov.file.saver.jar"))
+                .jcovRuntime(runtime)
                 .jcovTemplate(jcov_template.toString())
                 .instrument(jre.toString());
         assertEquals(status, 0);

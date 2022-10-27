@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,37 +24,56 @@
  */
 package com.sun.tdk.jcov.instrument;
 
-import com.sun.tdk.jcov.util.Utils;
-import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.Attribute;
-import org.objectweb.asm.FieldVisitor;
+public interface Modifiers {
+    boolean isPublic();
 
-/**
- * Field visitor collecting runtime annotations
- *
- * @author Dmitry Fazunenko
- */
-class FieldAnnotationVisitor extends FieldVisitor {
+    boolean isPrivate();
 
-    final DataField field;
-    final FieldVisitor fv;
+    boolean isProtected();
 
-    FieldAnnotationVisitor(final FieldVisitor fv, final DataField field) {
-        super(Utils.ASM_API_VERSION, fv);
-        this.fv = fv;
-        this.field = field;
-    }
+    boolean isAbstract();
 
-    public void visitAttribute(Attribute arg0) {
-        fv.visitAttribute(arg0);
-    }
+    boolean isFinal();
 
-    public void visitEnd() {
-        fv.visitEnd();
-    }
+    boolean isSynthetic();
 
-    public AnnotationVisitor visitAnnotation(String anno, boolean b) {
-        field.addAnnotation(anno);
-        return fv.visitAnnotation(anno, b);
-    }
+    boolean isStatic();
+
+    boolean isInterface();
+
+    boolean isSuper();
+
+    boolean isNative();
+
+    boolean isDeprecated();
+
+    boolean isSynchronized();
+
+    boolean isVolatile();
+
+    boolean isBridge();
+
+    boolean isVarargs();
+
+    boolean isTransient();
+
+    boolean isStrict();
+
+    boolean isAnnotation();
+
+    boolean isEnum();
+
+    int access();
+
+    /**
+     * This method is only a part of the contract to support deprecated methods.
+     * @param code
+     * @return
+     * @see DataClass#hasModifier(int)
+     * @see DataField#hasModifier(int)
+     * @see DataMethod#hasModifier(int)
+     */
+    @Deprecated
+    boolean is(int code);
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.RuntimeUtils;
 import com.sun.tdk.jcov.util.Utils;
 import com.sun.tdk.jcov.util.Utils.Pair;
-import org.objectweb.asm.Opcodes;
 
 import java.io.*;
 import java.net.*;
@@ -356,7 +355,7 @@ class Server extends Thread {
      * receives data from there
      * @param template template file
      * @param host host to connect in 'once' mode
-     * @param saveAtReceive true = save data when it's coming from Client
+     * @param saveAtRecieve true = save data when it's coming from Client
      * @param genscale allows to generate scales without outtestlist
      * @throws BindException
      * @throws IOException
@@ -696,7 +695,7 @@ class Server extends Thread {
      * Server stores clients data and merges it in memory. Real saving will
      * occur as saveData() method calls. Sets dataSaved to false
      *
-     * @param data received clients data to handle
+     * @param root received clients data to handle
      * @param client client received the data (used for logging)
      * @see #saveData()
      */
@@ -830,7 +829,7 @@ class Server extends Thread {
                         for (DataPackage dp : dataRoot.getPackages()) {
                             for (DataClass dc : dp.getClasses()) {
                                 for (DataMethod dm : dc.getMethods()) {
-                                    if ((dm.isAbstract() || (dm.getAccess() & Opcodes.ACC_NATIVE) != 0)
+                                    if ((dm.getModifiers().isAbstract() || dm.getModifiers().isNative())
                                             && data.length > dm.getSlot() && dm.getCount() < data[dm.getSlot()]) {
                                         dm.setCount(data[dm.getSlot()]);
                                     }
