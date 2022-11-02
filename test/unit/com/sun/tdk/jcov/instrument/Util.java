@@ -40,8 +40,12 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 public class Util {
     private final Path outputDir;
@@ -165,5 +169,34 @@ public class Util {
                     return FileVisitResult.CONTINUE;
                 }
             });
+    }
+    public static void jar(Path dir, Path dest, Predicate<Path> filter) throws IOException {
+        try(ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(dest))) {
+            Files.find(dir, Integer.MAX_VALUE, (p, a) -> true).forEach(p -> {
+                try {
+                    if(Files.isRegularFile(p) && filter.test(p)) {
+                        out.putNextEntry(new ZipEntry(dir.relativize(p).toString()));
+                        out.write(Files.readAllBytes(p));
+                        out.closeEntry();
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        }
+    }
+    public static void unjar(Path src, Path dest) throws IOException {
+        ZipFile zip = new ZipFile(src.toFile());
+        zip.stream().forEach(e -> {
+            try {
+                Path p = dest.resolve(e.getName());
+                Files.createDirectories(p.getParent());
+                try(OutputStream out = Files.newOutputStream(p)) {
+                    out.write(zip.getInputStream(e).readAllBytes());
+                }
+            } catch (IOException exception) {
+                throw new UncheckedIOException(exception);
+            }
+        });
     }
 }

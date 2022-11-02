@@ -163,6 +163,7 @@ public abstract class JCovCMDTool extends JCovTool {
         try {
             return run();
         } catch (Exception e) {
+            e.printStackTrace();
             if( ! e.getMessage().isEmpty()  ) {
                 System.err.println(e.getMessage());
             }
