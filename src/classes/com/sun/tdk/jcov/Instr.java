@@ -29,7 +29,6 @@ import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import com.sun.tdk.jcov.instrument.asm.ClassMorph;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
-import com.sun.tdk.jcov.runtime.FileSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
@@ -39,15 +38,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.sun.tdk.jcov.instrument.InstrumentationOptions.*;
 import static com.sun.tdk.jcov.util.Utils.CheckOptions.*;
@@ -126,7 +128,7 @@ public class Instr extends JCovCMDTool {
      * @throws IOException
      * @see #setTemplate(java.lang.String)
      */
-    public void instrumentAll(File[] files, File outDir, String includeRTJar) throws IOException {
+    public void instrumentAll(File[] files, File outDir, String includeRTJar) throws Exception {
         instrumentFiles(files, outDir, includeRTJar);
         instrumenter.finishWork();
     }
@@ -143,7 +145,7 @@ public class Instr extends JCovCMDTool {
      * #setInstrumenter(com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter)
      * @see #setDefaultInstrumenter()
      */
-    public void instrumentAll(File[] files, File outDir) throws IOException {
+    public void instrumentAll(File[] files, File outDir) throws Exception {
         instrumentAll(files, outDir, null);
     }
 
@@ -186,6 +188,7 @@ public class Instr extends JCovCMDTool {
         instrumentFile(new File(file), outDir, includeRTJar);
     }
 
+    @Deprecated
     public void instrumentFile(String file, File outDir, String includeRTJar, String moduleName) throws IOException {
         if (morph != null){
             morph.setCurrentModuleName(moduleName);
@@ -224,11 +227,9 @@ public class Instr extends JCovCMDTool {
      * @param outDir can be null. Initial file will be overwritten in such case.
      * @param implantRT
      */
-    public void instrumentFiles(File[] files, File outDir, String implantRT) throws IOException {
-        setDefaultInstrumenter();
-        for (File file : files) {
-            instrumenter.instrument(file, outDir, implantRT, recurse);
-        }
+    public void instrumentFiles(File[] files, File outDir, String implantRT) throws Exception {
+        instrumentFiles(Stream.of(files).map(File::toString).collect(Collectors.toList()).toArray(new String[0]),
+                outDir, implantRT);
     }
 
     /**
@@ -247,27 +248,30 @@ public class Instr extends JCovCMDTool {
         for (String file : files) {
             Path in = Path.of(file);
             Path out = (outDir != null) ? outDir.toPath() : in;
-            List<String> classes = Files.find(in, Integer.MAX_VALUE,
-                            (f, a) -> f.getFileName().toString().endsWith(".class"))
-                    .map(f -> in.relativize(f))
-                    .map(Path::toString)
-                    .map(s -> s.substring(0, s.length() - ".class".length()))
-                    .collect(Collectors.toList());
-            params.isIncluded("UserCode");
-            plugin.instrument(classes, f -> {
-//            params.filter(plugin).instrument(classes, f -> {
-                try {
-                    return Files.readAllBytes(in.resolve(f + ".class"));
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }, (c, d) -> {
-                try {
-                    Files.write(out.resolve(c + ".class"), d);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }, params);
+            InstrumentationPlugin.ClassHierarchyReader reader;
+            BiConsumer<String, byte[]> writer;
+            if (Files.isRegularFile(in) && file.endsWith(".class")) {
+                reader = new InstrumentationPlugin.SingleClassReader(in);
+                writer = (c, b) -> {
+                    try(OutputStream outputStream = Files.newOutputStream(out)) {
+                        outputStream.write(b);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                };
+            } else if (Files.isRegularFile(in) && file.endsWith(".jar")) {
+                reader = new InstrumentationPlugin.JarFileReader(in);
+                writer = new InstrumentationPlugin.ClassHierarchyJarWriter(out);
+            } else if (Files.isDirectory(in)) {
+                reader = new InstrumentationPlugin.ClassHierarchyFileSystemReader(in);
+                writer = new InstrumentationPlugin.ClassHierarchyFileSystemWriter(out);
+            }
+            else throw new IllegalStateException("Unknown input kind: " + file);
+            if(implantRT != null) {
+                InstrumentationPlugin.ClassHierarchyReader implantReader = new InstrumentationPlugin.JarFileReader(implantRT);
+                plugin = new InstrumentationPlugin.ImplantingPlugin(plugin, implantReader.getClasses(), implantReader.getLoader());
+            }
+            plugin.instrument(reader.getClasses(), reader.getLoader(), writer, params);
         }
     }
 

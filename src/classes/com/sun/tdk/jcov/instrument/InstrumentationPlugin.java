@@ -24,7 +24,14 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -138,4 +145,136 @@ public interface InstrumentationPlugin {
             return inner;
         }
     }
+
+    interface ClassHierarchyReader {
+        Collection<String> getClasses() throws Exception;
+        Function<String, byte[]> getLoader() throws Exception;
+    }
+
+    class ClassHierarchyFileSystemReader implements ClassHierarchyReader {
+
+        private final FileSystem fs;
+        private final Path root;
+
+        public ClassHierarchyFileSystemReader(FileSystem fs, Path root) {
+            this.fs = fs;
+            this.root = root;
+        }
+
+        public ClassHierarchyFileSystemReader(Path root) {
+            this(FileSystems.getDefault(), root);
+        }
+
+        public ClassHierarchyFileSystemReader(FileSystem fs) {
+            this(fs, fs.getRootDirectories().iterator().next());
+        }
+
+        @Override
+        public Collection<String> getClasses() throws IOException {
+            return Files.find(root, Integer.MAX_VALUE,
+                            (f, a) -> f.toString().endsWith(".class"))
+                    .map(f -> root.relativize(f))
+                    .map(Path::toString)
+                    .map(s -> s.substring(0, s.length() - ".class".length()))
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public Function<String, byte[]> getLoader() {
+            return f -> {
+                try {
+                    return Files.readAllBytes(root.resolve(f + ".class"));
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            };
+        }
+    }
+
+    class SingleClassReader implements ClassHierarchyReader {
+
+        private final Path source;
+
+        public SingleClassReader(Path source) {
+            if(!source.toString().endsWith("class")) throw new IllegalArgumentException("Must be a class file: " + source);
+            this.source = source;
+        }
+
+        @Override
+        public Collection<String> getClasses() throws IOException {
+            return List.of(source.toString().substring(0, source.toString().length() - ".class".length()));
+        }
+
+        @Override
+        public Function<String, byte[]> getLoader() {
+            return f -> {
+                try {
+                    return Files.readAllBytes(source);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            };
+        }
+    }
+
+    class ClassHierarchyFileSystemWriter implements BiConsumer<String, byte[]> {
+        private final FileSystem fs;
+        private final Path target;
+
+        public ClassHierarchyFileSystemWriter(FileSystem fs, Path target) {
+            this.fs = fs;
+            this.target = target;
+        }
+
+        public ClassHierarchyFileSystemWriter(Path target) {
+            this(FileSystems.getDefault(), target);
+        }
+
+        public ClassHierarchyFileSystemWriter(FileSystem fs) {
+            this(fs, fs.getRootDirectories().iterator().next());
+        }
+
+        @Override
+        public void accept(String s, byte[] bytes) {
+            try {
+                Files.write(target.resolve(s + ".class"), bytes);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    //TODO inherit ClassHierarchyFileSystemWriter
+    class ClassHierarchyJarWriter implements BiConsumer<String, byte[]> {
+        private final Path path;
+
+        public ClassHierarchyJarWriter(String rt) throws IOException {
+            this(Paths.get(rt));
+        }
+
+        public ClassHierarchyJarWriter(Path path) throws IOException {
+            this.path = path;
+        }
+
+        @Override
+        public void accept(String s, byte[] bytes) {
+            try (FileSystem fs = FileSystems.newFileSystem(path, null)) {
+                try(OutputStream out = Files.newOutputStream(fs.getPath(s + ".class"))) {
+                    out.write(bytes);
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    class JarFileReader extends ClassHierarchyFileSystemReader {
+        public JarFileReader(String jar) throws IOException {
+            this(Paths.get(jar));
+        }
+        public JarFileReader(Path jar) throws IOException {
+            super(FileSystems.newFileSystem(jar, null));
+        }
+    }
+
 }
