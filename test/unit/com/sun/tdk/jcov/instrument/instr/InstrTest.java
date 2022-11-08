@@ -33,8 +33,10 @@ import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.runtime.Collect;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
@@ -43,6 +45,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class InstrTest {
@@ -61,10 +64,13 @@ public class InstrTest {
         test_dir = data_dir.resolve("instr_test");
         test_zip = data_dir.resolve("instr_test.jar");
         System.out.println("test dir = " + test_dir);
-        Util.rmRF(test_dir);
         template = test_dir.resolve("template.lst");
     }
-    @Test
+    @BeforeMethod
+    public void rm() throws IOException {
+        Util.rmRF(test_dir);
+    }
+    //@Test
     public void instrumentClass() throws IOException, InterruptedException, FileFormatException,
             ClassNotFoundException, InvocationTargetException, NoSuchMethodException,
             IllegalAccessException, InstantiationException {
@@ -92,7 +98,7 @@ public class InstrTest {
         run(test_dir);
     }
     @Test
-    public void instrumentZip() throws IOException, InterruptedException, FileFormatException,
+    public void instrumentJar() throws IOException, InterruptedException, FileFormatException,
             ClassNotFoundException, InvocationTargetException, NoSuchMethodException,
             IllegalAccessException, InstantiationException {
         Path classes = test_dir.resolve("classes");
@@ -116,6 +122,7 @@ public class InstrTest {
             InvocationTargetException, NoSuchMethodException, IllegalAccessException, InstantiationException {
         new Util(test_dir).copyBytecode(UserCode.class.getName());
         new Util(implant_dir).copyBytecode(InstrTest.class.getName());
+        Files.write(implant_dir.resolve("some.properties"), "some.property=value\n".getBytes());
         Util.jar(implant_dir, implant_jar, p -> true);
         List<String> params = new ArrayList<>();
         params.add("-t");
@@ -128,7 +135,9 @@ public class InstrTest {
         new Instr().run(params.toArray(new String[0]));
         testInstrumentation();
         assertTrue(Files.exists(test_dir.
-                resolve(InstrTest.class.getName().replace('.', '/') + ".class")));
+                resolve(InstrTest.class.getName().replace('.', File.separatorChar) + ".class")));
+        assertTrue(Files.exists(test_dir.resolve("some.properties")));
+        assertFalse(Files.exists(test_dir.resolve("META-INF").resolve("MANIFEST.MF")));
         run(test_dir);
     }
     private void testInstrumentation() throws FileFormatException {

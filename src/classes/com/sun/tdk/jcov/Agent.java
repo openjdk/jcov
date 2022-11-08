@@ -40,6 +40,7 @@ import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
 import java.io.*;
 import java.lang.instrument.*;
+import java.lang.instrument.Instrumentation;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.Charset;

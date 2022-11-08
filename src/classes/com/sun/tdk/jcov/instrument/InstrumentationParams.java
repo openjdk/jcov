@@ -26,7 +26,6 @@ package com.sun.tdk.jcov.instrument;
 
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.ABSTRACTMODE;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.InstrumentationMode;
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.runtime.Collect;
 import com.sun.tdk.jcov.runtime.CollectDetect;
 import com.sun.tdk.jcov.util.Utils;
@@ -36,7 +35,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -205,12 +203,7 @@ public class InstrumentationParams {
     public InstrumentationPlugin filter(InstrumentationPlugin plugin) {
         //TODO is it possible to optimize to return the original plugin
         //in case for filtering options are provided?
-        return new InstrumentationPlugin.FilteringPlugin(plugin) {
-            @Override
-            protected boolean filter(String cls) {
-                return isIncluded(cls);
-            }
-        };
+        return new InstrumentationPlugin.FilteringPlugin(plugin, this::isIncluded);
     }
 
     public boolean isDetectInternal() {

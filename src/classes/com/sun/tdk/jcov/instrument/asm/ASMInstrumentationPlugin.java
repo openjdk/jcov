@@ -25,21 +25,21 @@
 package com.sun.tdk.jcov.instrument.asm;
 
 import com.sun.tdk.jcov.instrument.DataRoot;
-import com.sun.tdk.jcov.instrument.InstrumentationOptions;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.instrument.XmlContext;
-import com.sun.tdk.jcov.runtime.FileSaver;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * SPI class which allows to do additional instrumentation, in addition to instrumentation performed by JCov by default.
@@ -72,11 +72,15 @@ public class ASMInstrumentationPlugin implements InstrumentationPlugin {
     }
 
     @Override
-    public void complete(Supplier<OutputStream> templateStreamSupplier) throws IOException {
-        try (XmlContext ctx = new XmlContext(templateStreamSupplier.get(), data.getParams())) {
-            //TODO
-            //ctx.setSkipNotCoveredClasses(agentdata);
-            data.xmlGen(ctx);
-        }
+    public Map<String, Consumer<OutputStream>> complete() {
+        return Map.of(TEMPLATE_ARTIFACT, out -> {
+            try (XmlContext ctx = new XmlContext(out, data.getParams())) {
+                //TODO
+                //ctx.setSkipNotCoveredClasses(agentdata);
+                data.xmlGen(ctx);
+            } catch (FileNotFoundException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
     }
 }

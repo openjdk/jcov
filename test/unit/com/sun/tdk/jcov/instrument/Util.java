@@ -183,6 +183,8 @@ public class Util {
                     throw new UncheckedIOException(e);
                 }
             });
+            out.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
+            out.closeEntry();
         }
     }
     public static void unjar(Path src, Path dest) throws IOException {
