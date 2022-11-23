@@ -28,7 +28,10 @@ import com.sun.tdk.jcov.Instr;
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.instrument.DataRoot;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.instrument.Util;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.runtime.Collect;
 import org.testng.annotations.AfterClass;
@@ -58,7 +61,7 @@ public class InstrTest {
     @BeforeClass
     public void clean() throws IOException {
         System.setProperty("jcov.selftest", "true");
-        Path data_dir = Paths.get(System.getProperty("user.dir"));
+        Path data_dir = Files.createTempDirectory("instr_test");
         implant_dir = data_dir.resolve("instr_implant");
         implant_jar = data_dir.resolve("instr_implant.jar");
         test_dir = data_dir.resolve("instr_test");
@@ -70,7 +73,7 @@ public class InstrTest {
     public void rm() throws IOException {
         Util.rmRF(test_dir);
     }
-    //@Test
+//    @Test
     public void instrumentClass() throws IOException, InterruptedException, FileFormatException,
             ClassNotFoundException, InvocationTargetException, NoSuchMethodException,
             IllegalAccessException, InstantiationException {
@@ -139,6 +142,32 @@ public class InstrTest {
         assertTrue(Files.exists(test_dir.resolve("some.properties")));
         assertFalse(Files.exists(test_dir.resolve("META-INF").resolve("MANIFEST.MF")));
         run(test_dir);
+    }
+    @Test
+    public void moduleTest() throws Exception {
+        new Util(test_dir).copyBytecode(UserCode.class.getName());
+        Util.genModuleInfo(test_dir, "test", List.of(), List.of());
+        new Util(implant_dir).copyBytecode(InstrTest.class.getName());
+        Files.write(implant_dir.resolve("some.properties"), "some.property=value\n".getBytes());
+        Util.jar(implant_dir, implant_jar, p -> true);
+        Instr instr = new Instr();
+        instr.instrumentFiles(new String[] {test_dir.toString()}, null, implant_jar.toString(), true,
+                List.of(InstrTest.class.getPackageName()));
+        instr.setTemplate(template.toString());
+        instr.finishWork(template.toString());
+        testInstrumentation();
+        assertTrue(Files.exists(test_dir.
+                resolve(InstrTest.class.getName().replace('.', File.separatorChar) + ".class")));
+        assertTrue(Files.exists(test_dir.resolve("some.properties")));
+        assertFalse(Files.exists(test_dir.resolve("META-INF").resolve("MANIFEST.MF")));
+        run(test_dir);
+//        InstrumentationPlugin.FileInstrumentationPlugin pl =
+//                new InstrumentationPlugin.FileInstrumentationPlugin(new ASMInstrumentationPlugin());
+//        pl.instrument(test_dir, test_dir,
+//                        new InstrumentationParams());
+//        Instrumentation.ModuleInstrumentation i = new Instrumentation.
+//                ModuleInstrumentation(new ASMInstrumentationPlugin(), (m, r) -> null);
+//        i.instrument(test_dir, test_dir, new InstrumentationParams());
     }
     private void testInstrumentation() throws FileFormatException {
         DataRoot data = Reader.readXML(template.toString());

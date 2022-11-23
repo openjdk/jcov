@@ -36,6 +36,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -77,22 +79,31 @@ public class JREInstr extends JCovCMDTool {
      */
     public static class StaticJREInstrClassLoader extends URLClassLoader {
 
+        private final ClassLoader backup;
+
         StaticJREInstrClassLoader(URL[] urls) {
+            this(urls, null);
+        }
+
+        StaticJREInstrClassLoader(URL[] urls, ClassLoader backup) {
             super(urls);
+            this.backup = backup;
+        }
+
+        private InputStream backup(String s) {
+            return (backup != null) ? backup.getResourceAsStream(s) : super.getResourceAsStream(s);
         }
 
         @Override
         public InputStream getResourceAsStream(String s) {
-            InputStream in = null;
-            try {
-                in = findResource(s).openStream();
-            } catch (IOException ignore) {
-                //nothing to do
-            }
-            if (in != null) {
-                return in;
-            }
-            return super.getResourceAsStream(s);
+            URL resource = findResource(s);
+            if(resource != null) {
+                try {
+                    return resource.openStream();
+                } catch (IOException e) {
+                    return backup(s);
+                }
+            } else return backup(s);
         }
     }
 
@@ -101,11 +112,6 @@ public class JREInstr extends JCovCMDTool {
         final String[] toInstr = new String[]{toInstrument.getAbsolutePath()};
         Utils.addToClasspath(toInstr);
         instr.startWorking();
-
-        StaticJREInstrClassLoader cl = new StaticJREInstrClassLoader(new URL[]{toInstrument.toURI().toURL()});
-        instr.setClassLoader(cl);
-
-        instr.fixJavaBase();
 
         if (toInstrument.getName().equals("jmods")) {
             logger.log(Level.INFO, "working with jmods");
@@ -122,14 +128,21 @@ public class JREInstr extends JCovCMDTool {
             }
             urls.add(toInstrument.toURI().toURL());
 
-            cl = new StaticJREInstrClassLoader(urls.toArray(new URL[0]));
-            instr.setClassLoader(cl);
+            ClassLoader cl = new StaticJREInstrClassLoader(urls.toArray(new URL[0]));
 
             try {
                 for (File mod : getListFiles(jmodsTemp)) {
                     if (mod != null && mod.isDirectory()) {
-                        File modClasses = new File(mod, "classes");
-                        instr.instrumentFile(modClasses.getAbsolutePath(), null, null, mod.getName());
+                        String moduleName = mod.getName();
+                        if (isModuleIncluded(moduleName)) {
+                            logger.log(Level.INFO, "Instrumenting " + moduleName);
+                            File modClasses = new File(mod, "classes");
+                            instr.setClassLoader(new StaticJREInstrClassLoader(new URL[]{modClasses.toURI().toURL()}, cl));
+                            boolean isJavaBase = mod.getName().equals("java.base");
+                            instr.instrumentFiles(new String[]{modClasses.getAbsolutePath()}, null,
+                                    isJavaBase ? implant.getAbsolutePath() : null,
+                                    isJavaBase, isJavaBase ? List.of("com/sun/tdk/jcov/runtime") : List.of());
+                        }
                         createJMod(mod, jdk, implant.getAbsolutePath(), null);
                     }
                 }
@@ -163,73 +176,13 @@ public class JREInstr extends JCovCMDTool {
                     logger.log(Level.SEVERE, "failed to link modules. Please, run jlink for " + jmodsTemp + " temp jmod dir manually");
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 logger.log(Level.SEVERE, "exception while creating mods, e = " + e);
             }
         } else if (toInstrument.getAbsolutePath().endsWith("bootmodules.jimage")) {
             throw new RuntimeException("This functionality has not yet been implemented");
-//            ArrayList<File> jdkImages = new ArrayList<>();
-//            jdkImages.add(toInstrument);
-//            if (addJimages != null) {
-//                Collections.addAll(jdkImages, addJimages);
-//            }
-//
-//            for (File jimageInstr : jdkImages) {
-//                String tempDirName = jimageInstr.getName().substring(0, jimageInstr.getName().indexOf(".jimage"));
-//
-//                expandJimage(jimageInstr, tempDirName);
-//
-//                File dirtoInstrument = new File(jimageInstr.getParent(), tempDirName);
-////                still need it
-//                Utils.addToClasspath(new String[]{dirtoInstrument.getAbsolutePath()});
-//                for (File file : getListFiles(dirtoInstrument)) {
-//                    if (file.isDirectory()) {
-//                        Utils.addToClasspath(new String[]{file.getAbsolutePath()});
-//                    }
-//                }
-//
-//                if (jimageInstr.equals(toInstrument)) {
-//                    for (File mod : getListFiles(dirtoInstrument)) {
-//                        if (mod != null && mod.isDirectory()) {
-//
-//                            if ("java.base".equals(mod.getName())) {
-//                                instr.instrumentFile(mod.getAbsolutePath(), null, implant.getAbsolutePath(), mod.getName());
-//                            } else {
-//                                instr.instrumentFile(mod.getAbsolutePath(), null, null, mod.getName());
-//                            }
-//                        }
-//                    }
-//                } else {
-//                    for (File mod : getListFiles(dirtoInstrument)) {
-//                        if (mod != null && mod.isDirectory()) {
-//                            instr.instrumentFile(mod.getAbsolutePath(), null, null, mod.getName());
-//                        }
-//                    }
-//                }
-//                createJimage(dirtoInstrument, jimageInstr.getAbsolutePath() + "i");
-
-//            }
-//            for (File jimageInstr : jdkImages) {
-//
-//                String tempDirName = jimageInstr.getName().substring(0, jimageInstr.getName().indexOf(".jimage"));
-//                File dirtoInstrument = new File(jimageInstr.getParent(), tempDirName);
-//                if (!Utils.deleteDirectory(dirtoInstrument)) {
-//                    logger.log(Level.SEVERE, "please, delete " + tempDirName + " jimage dir manually");
-//                }
-//
-//                Utils.copyFile(jimageInstr, new File(jimageInstr.getParent(), jimageInstr.getName() + ".bak"));
-//
-//                if (!jimageInstr.delete()) {
-//                    logger.log(Level.SEVERE, "please, delete original jimage manually: " + jimageInstr);
-//                } else {
-//                    Utils.copyFile(new File(jimageInstr.getAbsolutePath() + "i"), jimageInstr);
-//                    new File(jimageInstr.getAbsolutePath() + "i").delete();
-//                }
-//
-//            }
-
         } else {
             throw new RuntimeException("This functionality has not yet been implemented");
-//            instr.instrumentFile(toInstrument.getAbsolutePath(), null, implant.getAbsolutePath());
         }
 
         ArrayList<String> srcs = null;
@@ -261,7 +214,7 @@ public class JREInstr extends JCovCMDTool {
     private boolean doCommand(String command, File where, String msg) throws IOException, InterruptedException {
         Objects.requireNonNull(command);
         Objects.requireNonNull(msg);
-        boolean success;
+        boolean success = false;
         StringBuilder sb = new StringBuilder(msg + command);
         ProcessBuilder pb = new ProcessBuilder(command.split("\\s+")).directory(where).redirectErrorStream(true);
         Process p = null;
@@ -277,6 +230,8 @@ public class JREInstr extends JCovCMDTool {
             if (!success) {
                 logger.log(Level.SEVERE, sb.toString());
             }
+        } catch (Throwable e) {
+            e.printStackTrace();
         } finally {
             if (p != null) {
                 p.destroy();
@@ -330,6 +285,10 @@ public class JREInstr extends JCovCMDTool {
         return new File(jmodDir.getParentFile(), "instr_jimage_dir");
     }
 
+    private boolean isModuleIncluded(String moduleName) {
+        return Arrays.stream(instr.getMInclude()).anyMatch(i -> moduleName.matches(i)) &&
+               Arrays.stream(instr.getMExclude()).noneMatch(i -> moduleName.matches(i));
+    }
     private void createJMod(File jmodDir, File jdk, String rt_path, String pluginPath) {
         try {
             File modsDir = jmodDir.getParentFile();
@@ -372,6 +331,7 @@ public class JREInstr extends JCovCMDTool {
             command.append(" " + jmodDir.getName() + ".jmod");
             doCommand(command.toString(),modsDir,"wrong command for create jmod: ");
         } catch (Exception e) {
+            e.printStackTrace();
             logger.log(Level.SEVERE, "exception in process(create jmod)", e);
         }
     }

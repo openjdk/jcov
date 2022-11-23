@@ -54,6 +54,8 @@ public class JREInstrTest {
 
     Path jre;
     Path userCode;
+    Path template;
+    Path result;
 
     static void createUserCode(Path location, Class code) throws IOException {
         String fileName = code.getName().replace('.', '/') + ".class";
@@ -78,6 +80,12 @@ public class JREInstrTest {
         jre = Util.copyJRE(Paths.get(testJRE));
         userCode = Paths.get("user_code");
         createUserCode(userCode, Code.class);
+        System.out.println("JRE: " + testJRE);
+        template = Path.of(System.getProperty("user.dir")).resolve("template.xml");
+        result = Path.of(System.getProperty("user.dir")).resolve("result.xml");
+        Files.deleteIfExists(template);
+        Files.deleteIfExists(result);
+        System.out.println("Template: " + template);
     }
 
     @Test
@@ -88,10 +96,17 @@ public class JREInstrTest {
         String[] params = new String[] {
                 "-implantrt", runtime,
                 "-im", "java.base",
+                "-im", "java.desktop",
                 jre.toString()};
         System.out.println("Running JREInstr with " + Arrays.stream(params).collect(Collectors.joining(" ")));
         long start = System.currentTimeMillis();
         assertEquals(new JREInstr().run(params), 0);
+        assertEquals(Files.readAllLines(template)
+                .stream()
+                .filter(s -> s.trim().startsWith("<package"))
+                .filter(s -> !s.contains("moduleName=\"java.base\""))
+                .filter(s -> !s.contains("moduleName=\"java.desktop\""))
+                .count(), 0);
         //track instrumentation time for the TODO in copyJRE
         System.out.println("Took " + (System.currentTimeMillis() - start) + " to instrument.");
     }
@@ -124,7 +139,8 @@ public class JREInstrTest {
     public void tearDown() throws IOException {
         if(jre != null && Files.exists(jre)) Util.rmRF(jre);
         if(userCode != null && Files.exists(userCode)) Util.rmRF(userCode);
-        Files.deleteIfExists(Paths.get("result.xml"));
+        Files.deleteIfExists(template);
+        Files.deleteIfExists(result);
     }
 
 }

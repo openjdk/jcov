@@ -28,18 +28,21 @@ import com.sun.tdk.jcov.instrument.DataRoot;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.instrument.XmlContext;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ModuleVisitor;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * SPI class which allows to do additional instrumentation, in addition to instrumentation performed by JCov by default.
@@ -48,27 +51,25 @@ import java.util.function.Function;
 public class ASMInstrumentationPlugin implements InstrumentationPlugin {
 
     private final DataRoot data = new DataRoot();
-    //TODO prehaps support qualified exports
-    private List<String> exports = new ArrayList<>();
+    private String moduleName;
 
     @Override
-    public void instrument(Collection<String> classes, Function<String, byte[]> loader,
-                           BiConsumer<String, byte[]> saver, InstrumentationParams parameters) {
+    public void instrument(Collection<String> resources, ClassLoader loader,
+                           BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws IOException {
         //TODO are paremeters used in serialization only?
         //for now we have to assume that the same parameters are used for every call
         data.setParams(parameters);
         ClassMorph morph = new ClassMorph(null, data, parameters);
-        classes.forEach(cls -> {
-            try {
-                //TODO nulls
-                byte[] instrumented = morph.morph(loader.apply(cls), null, null);
-                //TODO shoul never be null
-                if(instrumented != null) saver.accept(cls, instrumented);
-            } catch (IOException e) {
-                //todo should this even be thrown?
-                throw new UncheckedIOException(e);
-            }
-        });
+        morph.setCurrentModuleName(moduleName);
+        for(String r : resources) {
+            byte[] content = loader.getResourceAsStream(r).readAllBytes();
+            if(isClass(r)) {
+                byte[] instrumented = morph.morph(content, loader, null);
+                //TODO should never be null
+                if(instrumented != null) saver.accept(r, instrumented);
+            } else saver.accept(r, content);
+        }
+        moduleName = null;
     }
 
     @Override
@@ -82,5 +83,37 @@ public class ASMInstrumentationPlugin implements InstrumentationPlugin {
                 throw new UncheckedIOException(e);
             }
         });
+    }
+
+    private String getModuleName(byte[] moduleInfo) {
+        AtomicReference<String> moduleName = new AtomicReference<>(null);
+        ClassReader cr = new ClassReader(moduleInfo);
+        ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, getClass().getClassLoader());
+        cr.accept( new ClassVisitor(ASMUtils.ASM_API_VERSION, cw) {
+            @Override
+            public ModuleVisitor visitModule(String name, int access, String version) {
+                moduleName.set(name);
+                return null;
+            }
+        }, 0);
+        return moduleName.get();
+    }
+
+    private byte[] addExports(List<String> exports, byte[] moduleInfo, ClassLoader loader) {
+        return ClassMorph.addExports(moduleInfo, exports, loader);
+    }
+
+    private byte[] clearHashes(byte[] moduleInfo, ClassLoader loader) {
+        return ClassMorph.clearHashes(moduleInfo, loader);
+    }
+
+    @Override
+    public void instrumentModuleInfo(ClassLoader loader, BiConsumer<String, byte[]> saver, List<String> expports,
+                                     boolean clearHashes, InstrumentationParams parameters) throws IOException {
+        byte[] mi = loader.getResourceAsStream(MODULE_INFO_CLASS).readAllBytes();
+        moduleName = getModuleName(mi);
+        if(expports != null && !expports.isEmpty()) mi = addExports(expports, mi, loader);
+        if(clearHashes) mi = clearHashes(mi, loader);
+        saver.accept(MODULE_INFO_CLASS, mi);
     }
 }

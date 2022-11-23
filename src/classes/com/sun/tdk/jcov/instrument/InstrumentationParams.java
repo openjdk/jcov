@@ -74,6 +74,13 @@ public class InstrumentationParams {
     private String output;
 
     //TODO replace by a builder!!!
+
+
+    public InstrumentationParams() {
+        this(false, false, false, false, ABSTRACTMODE.NONE,
+                new String[0], new String[0], new String[0], new String[0], InstrumentationMode.BLOCK);
+    }
+
     public InstrumentationParams(boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields,
                                  boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes,
                                  String[] excludes, String[] callerIncludes, String[] callerExcludes,

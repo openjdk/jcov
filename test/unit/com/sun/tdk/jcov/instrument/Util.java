@@ -24,6 +24,11 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -39,10 +44,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -183,7 +190,7 @@ public class Util {
                     throw new UncheckedIOException(e);
                 }
             });
-            out.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
+//            out.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
             out.closeEntry();
         }
     }
@@ -200,5 +207,31 @@ public class Util {
                 throw new UncheckedIOException(exception);
             }
         });
+    }
+    public static void javac(List<Path> classes) {
+        JavaCompiler jc = ToolProvider.getSystemJavaCompiler();
+        StandardJavaFileManager fm = jc.getStandardFileManager(null, null, null);
+        Iterable<? extends JavaFileObject> cu =
+                fm.getJavaFileObjectsFromFiles(classes.stream().map(Path::toFile).collect(Collectors.toList()));
+        jc.getTask(null, fm, null, null, null, cu).call();
+//        List<String> command = new ArrayList<>();
+//        command.add(System.getProperty("java.home") + File.separator + "bin" + File.separator + )
+    }
+    public static void genModuleInfo(Path toDir, String name,
+                                  List<String> requires,
+                                  List<String> exports) throws IOException {
+        Path mi = toDir.resolve("module-info.java");
+        try(BufferedWriter out = Files.newBufferedWriter(mi)) {
+            out.write("module " + name + " {");out.newLine();
+            for(String r : requires) {
+                out.write("requires " + r + ";"); out.newLine();
+            }
+            for(String e: exports) {
+                out.write("exports " + e + ";"); out.newLine();
+            }
+            out.write("}"); out.newLine();
+        }
+        javac(List.of(mi));
+        Files.delete(mi);
     }
 }

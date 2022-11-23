@@ -25,7 +25,6 @@
 package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter;
-import com.sun.tdk.jcov.instrument.asm.ClassMorph;
 import com.sun.tdk.jcov.instrument.asm.ClassMorph2;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
@@ -147,7 +146,7 @@ public class Instr2 extends JCovCMDTool {
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FIELD,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SYNTHETIC,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_ANONYM,
-                    ClassMorph.DSC_FLUSH_CLASSES
+                    InstrumentationOptions.DSC_FLUSH_CLASSES
                 }, this);
     }
 
@@ -217,7 +216,7 @@ public class Instr2 extends JCovCMDTool {
         include = InstrumentationOptions.handleInclude(envHandler);
         exclude = InstrumentationOptions.handleExclude(envHandler);
 
-        flushPath = envHandler.getValue(ClassMorph.DSC_FLUSH_CLASSES);
+        flushPath = envHandler.getValue(InstrumentationOptions.DSC_FLUSH_CLASSES);
         if ("none".equals(flushPath)) {
             flushPath = null;
         }

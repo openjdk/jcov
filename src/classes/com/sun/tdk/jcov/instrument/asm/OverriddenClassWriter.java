@@ -330,6 +330,7 @@ public class OverriddenClassWriter extends ClassWriter {
                 return in;
             }
         } catch (Throwable ignore) {
+            ignore.printStackTrace();
         }
 
         // trying to get class with custom extension(s) mentioned in "jcov.clext" system property

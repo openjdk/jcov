@@ -594,23 +594,23 @@ public abstract class AbstractUniversalInstrumenter {
                     .map(f -> in.relativize(f))
                     .map(Path::toString)
                     .collect(Collectors.toList());
-            try {
-                plugin.instrument(classes, f -> {
-                    try {
-                        return Files.readAllBytes(in.resolve(f));
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                }, (c, d) -> {
-                    try {
-                        Files.write(out.resolve(c), d);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                }, params);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+//            try {
+//                plugin.instrument(classes, f -> {
+//                    try {
+//                        return Files.readAllBytes(in.resolve(f));
+//                    } catch (IOException e) {
+//                        throw new UncheckedIOException(e);
+//                    }
+//                }, (c, d) -> {
+//                    try {
+//                        Files.write(out.resolve(c), d);
+//                    } catch (IOException e) {
+//                        throw new UncheckedIOException(e);
+//                    }
+//                }, params);
+//            } catch (Exception e) {
+//                throw new RuntimeException(e);
+//            }
             //TODO what about recursive?
 //            if (recursive) {
 //

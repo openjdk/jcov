@@ -634,7 +634,7 @@ public class Agent extends JCovTool {
                     // Data save points
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SAVE_BEGIN,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SAVE_AT_END,
-                    ClassMorph.DSC_FLUSH_CLASSES,
+                    InstrumentationOptions.DSC_FLUSH_CLASSES,
                     DSC_GRABBER,
                     DSC_PORT_GRABBER,
                     DSC_HOST_GRABBER,
@@ -743,7 +743,7 @@ public class Agent extends JCovTool {
         saveBegin = opts.getValues(InstrumentationOptions.DSC_SAVE_BEGIN);
         saveEnd = opts.getValues(InstrumentationOptions.DSC_SAVE_AT_END);
 
-        flushPath = opts.getValue(ClassMorph.DSC_FLUSH_CLASSES);
+        flushPath = opts.getValue(InstrumentationOptions.DSC_FLUSH_CLASSES);
         if ("none".equals(flushPath)) {
             flushPath = null;
         }

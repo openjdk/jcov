@@ -59,6 +59,7 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.Adler32;
@@ -297,7 +298,7 @@ public class ClassMorph {
         }
     }
 
-    public byte[] clearHashes(byte[] moduleInfo, ClassLoader loader) {
+    public static byte[] clearHashes(byte[] moduleInfo, ClassLoader loader) {
         ClassReader cr = new ClassReader(moduleInfo);
         ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, loader);
         cr.accept( new ClassVisitor(ASMUtils.ASM_API_VERSION, cw) {
@@ -311,7 +312,21 @@ public class ClassMorph {
         return cw.toByteArray();
     }
 
-    public byte[] addExports(byte[] moduleInfo, List<String> exports, ClassLoader loader) {
+    public static String getModuleName(byte[] moduleInfo) {
+        AtomicReference<String> moduleName = new AtomicReference<>(null);
+        ClassReader cr = new ClassReader(moduleInfo);
+        ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, ClassMorph.class.getClassLoader());
+        cr.accept( new ClassVisitor(ASMUtils.ASM_API_VERSION, cw) {
+            @Override
+            public ModuleVisitor visitModule(String name, int access, String version) {
+                moduleName.set(name);
+                return null;
+            }
+        }, 0);
+        return moduleName.get();
+    }
+
+    public static byte[] addExports(byte[] moduleInfo, List<String> exports, ClassLoader loader) {
         ClassReader cr = new ClassReader(moduleInfo);
         ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, loader);
         cr.accept( new ClassVisitor(ASMUtils.ASM_API_VERSION, cw) {
@@ -708,11 +723,6 @@ public class ClassMorph {
         FileSaver fileSaver = FileSaver.getFileSaver(root, outputTemplateFile, initialTemplatePath, merge, true, false);
         fileSaver.saveResults();
     }
-    public final static OptionDescr DSC_FLUSH_CLASSES =
-            new OptionDescr("flush", null, "flush instrumented classes",
-                    OptionDescr.VAL_SINGLE, null, "Specify path to directory, where to store instrumented classes.\n"
-                    + "Directory should exist. Classes will be saved in respect to their package hierarchy.\n"
-                    + "Default value is \"none\". Pushing it means you don't want to flush classes.", "none");
 
     private boolean isPreVMLoadClass(String fullname) {
         // classes (actually only certain packages needed) which are loaded before

@@ -159,6 +159,11 @@ public class InstrumentationOptions {
     public final static OptionDescr DSC_INSTR_PLUGIN =
             new OptionDescr("instr_plugin", new String[0], "Instrumentation plugin", OptionDescr.VAL_SINGLE,
                     "Defines instrumentation to be performed additionaly to already performed by JCov");
+    public final static OptionDescr DSC_FLUSH_CLASSES =
+            new OptionDescr("flush", null, "flush instrumented classes",
+                    OptionDescr.VAL_SINGLE, null, "Specify path to directory, where to store instrumented classes.\n"
+                    + "Directory should exist. Classes will be saved in respect to their package hierarchy.\n"
+                    + "Default value is \"none\". Pushing it means you don't want to flush classes.", "none");
 
     public static enum ABSTRACTMODE {
 

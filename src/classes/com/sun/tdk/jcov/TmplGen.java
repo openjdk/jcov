@@ -25,10 +25,8 @@
 package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter;
-import com.sun.tdk.jcov.instrument.asm.ClassMorph;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.InstrumentationMode;
-import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
@@ -248,7 +246,7 @@ public class TmplGen extends JCovCMDTool {
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FIELD,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_SYNTHETIC,
                     com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_ANONYM,
-                    ClassMorph.DSC_FLUSH_CLASSES,}, this);
+                    InstrumentationOptions.DSC_FLUSH_CLASSES,}, this);
     }
 
     @Override
@@ -264,7 +262,7 @@ public class TmplGen extends JCovCMDTool {
 
         Utils.addToClasspath(files);
 
-        flushPath = opts.getValue(ClassMorph.DSC_FLUSH_CLASSES);
+        flushPath = opts.getValue(InstrumentationOptions.DSC_FLUSH_CLASSES);
         if ("none".equals(flushPath)) {
             flushPath = null;
         }
