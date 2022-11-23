@@ -37,6 +37,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -48,10 +49,11 @@ import java.util.function.Consumer;
  * SPI class which allows to do additional instrumentation, in addition to instrumentation performed by JCov by default.
  * @author Alexander (Shura) Ilin.
  */
-public class ASMInstrumentationPlugin implements InstrumentationPlugin {
+public class ASMInstrumentationPlugin implements InstrumentationPlugin,
+        InstrumentationPlugin.ModuleInstrumentationPlugin {
 
     private final DataRoot data = new DataRoot();
-    private String moduleName;
+//    private String moduleName;
 
     @Override
     public void instrument(Collection<String> resources, ClassLoader loader,
@@ -59,6 +61,8 @@ public class ASMInstrumentationPlugin implements InstrumentationPlugin {
         //TODO are paremeters used in serialization only?
         //for now we have to assume that the same parameters are used for every call
         data.setParams(parameters);
+        URL miURL = loader.getResource(MODULE_INFO_CLASS);
+        String moduleName = (miURL == null) ? null : getModuleName(miURL.openStream().readAllBytes());
         ClassMorph morph = new ClassMorph(null, data, parameters);
         morph.setCurrentModuleName(moduleName);
         for(String r : resources) {
@@ -99,21 +103,23 @@ public class ASMInstrumentationPlugin implements InstrumentationPlugin {
         return moduleName.get();
     }
 
-    private byte[] addExports(List<String> exports, byte[] moduleInfo, ClassLoader loader) {
+    @Override
+    public byte[] addExports(List<String> exports, byte[] moduleInfo, ClassLoader loader) {
         return ClassMorph.addExports(moduleInfo, exports, loader);
     }
 
-    private byte[] clearHashes(byte[] moduleInfo, ClassLoader loader) {
+    @Override
+    public byte[] clearHashes(byte[] moduleInfo, ClassLoader loader) {
         return ClassMorph.clearHashes(moduleInfo, loader);
     }
 
-    @Override
-    public void instrumentModuleInfo(ClassLoader loader, BiConsumer<String, byte[]> saver, List<String> expports,
-                                     boolean clearHashes, InstrumentationParams parameters) throws IOException {
-        byte[] mi = loader.getResourceAsStream(MODULE_INFO_CLASS).readAllBytes();
-        moduleName = getModuleName(mi);
-        if(expports != null && !expports.isEmpty()) mi = addExports(expports, mi, loader);
-        if(clearHashes) mi = clearHashes(mi, loader);
-        saver.accept(MODULE_INFO_CLASS, mi);
-    }
+//    @Override
+//    public void instrumentModuleInfo(ClassLoader loader, BiConsumer<String, byte[]> saver, List<String> expports,
+//                                     boolean clearHashes, InstrumentationParams parameters) throws IOException {
+//        byte[] mi = loader.getResourceAsStream(MODULE_INFO_CLASS).readAllBytes();
+//        moduleName = getModuleName(mi);
+//        if(expports != null && !expports.isEmpty()) mi = addExports(expports, mi, loader);
+//        if(clearHashes) mi = clearHashes(mi, loader);
+//        saver.accept(MODULE_INFO_CLASS, mi);
+//    }
 }

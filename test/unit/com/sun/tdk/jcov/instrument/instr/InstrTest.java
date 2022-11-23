@@ -159,6 +159,7 @@ public class InstrTest {
         assertTrue(Files.exists(test_dir.
                 resolve(InstrTest.class.getName().replace('.', File.separatorChar) + ".class")));
         assertTrue(Files.exists(test_dir.resolve("some.properties")));
+        assertTrue(Files.exists(test_dir.resolve("module-info.class")));
         assertFalse(Files.exists(test_dir.resolve("META-INF").resolve("MANIFEST.MF")));
         run(test_dir);
 //        InstrumentationPlugin.FileInstrumentationPlugin pl =

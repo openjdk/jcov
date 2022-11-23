@@ -24,8 +24,11 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.instrument.asm.ClassMorph;
+
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
@@ -68,9 +71,9 @@ public interface InstrumentationPlugin {
                     BiConsumer<String, byte[]> saver,
                     InstrumentationParams parameters) throws Exception;
 
-    void instrumentModuleInfo(ClassLoader loader, BiConsumer<String, byte[]> saver,
-                              List<String> expports, boolean clearHashes,
-                              InstrumentationParams parameters) throws Exception;
+//    void instrumentModuleInfo(ClassLoader loader, BiConsumer<String, byte[]> saver,
+//                              List<String> expports, boolean clearHashes,
+//                              InstrumentationParams parameters) throws Exception;
 
     /**
      * Completes the instrumentation proccess and returns a map of instrumentation artifacts.
@@ -89,6 +92,11 @@ public interface InstrumentationPlugin {
 //        else throw new RuntimeException(getClass().getName() + " is not a " + cls.getName());
 //    }
     //TODO properly relocate the inner classes
+
+    interface ModuleInstrumentationPlugin {
+        byte[] addExports(List<String> exports, byte[] moduleInfo, ClassLoader loader);
+        byte[] clearHashes(byte[] moduleInfo, ClassLoader loader);
+    }
 
     abstract class ProxyInstrumentationPlugin implements InstrumentationPlugin {
         private final InstrumentationPlugin inner;
@@ -135,12 +143,6 @@ public interface InstrumentationPlugin {
                 }
             });
         }
-
-        @Override
-        public void instrumentModuleInfo(ClassLoader loader, BiConsumer<String, byte[]> saver,
-                                         List<String> expports, boolean clearHashes, InstrumentationParams parameters) throws Exception {
-            getInner().instrumentModuleInfo(loader, saver, expports, clearHashes, parameters);
-        }
     }
 
     interface Source extends Closeable {
@@ -164,26 +166,75 @@ public interface InstrumentationPlugin {
             getInner().instrument(classes, loader, saver, parameters);
             for(String r : source.resources()) saver.accept(r, source.loader().getResourceAsStream(r).readAllBytes());
         }
+    }
+
+    class OverridingClassLoader extends URLClassLoader {
+
+        private final ClassLoader backup;
+
+        public OverridingClassLoader(URL[] urls, ClassLoader backup) {
+            super(urls);
+            this.backup = backup;
+        }
 
         @Override
-        public void instrumentModuleInfo(ClassLoader loader, BiConsumer<String, byte[]> saver,
-                                         List<String> expports, boolean clearHashes, InstrumentationParams parameters) throws Exception {
-            getInner().instrumentModuleInfo(loader, saver, expports, clearHashes, parameters);
+        public URL getResource(String name) {
+            //first try to find local resource, from teh current module
+            URL resource = findResource(name);
+            //if none, try other modules
+            if (resource == null) resource = backup.getResource(name);
+            //that should not happen during normal use
+            //if happens, refer to super, nothing else we can do
+            if (resource == null) resource = super.getResource(name);
+            return resource;
         }
     }
 
-    class PluginImpl {
+    class FilesystemInstrumentation {
         private final InstrumentationPlugin inner;
 
-        public PluginImpl(InstrumentationPlugin inner) {
+        public FilesystemInstrumentation(InstrumentationPlugin inner) {
             this.inner = inner;
+        }
+
+        public Collection<String> resources(Path root) throws Exception {
+            if(Files.isDirectory(root))
+                return Files.find(root, Integer.MAX_VALUE, (f, a) -> Files.isRegularFile(f))
+                        .map(r -> root.relativize(r).toString())
+                        .collect(Collectors.toList());
+            else
+                try (JarFile jar = new JarFile(root.toFile())) {
+                    return jar.stream().filter(f -> !f.isDirectory())
+                            .map(ZipEntry::getName).collect(Collectors.toList());
+                }
+        }
+
+        public final void instrument(Path source, ClassLoader loader, BiConsumer<String, byte[]> destination,
+                                     InstrumentationParams parameters) throws Exception {
+            URL[] urls =  new URL[] {source.toUri().toURL()};
+            inner.instrument(resources(source),
+                    new OverridingClassLoader(urls, loader),
+                    destination, parameters);
+        }
+    }
+
+    class ModuleInstrumentation {
+        private final InstrumentationPlugin inner;
+        private final ModuleInstrumentationPlugin mip;
+
+        public ModuleInstrumentation(InstrumentationPlugin inner, ModuleInstrumentationPlugin mip) {
+            this.inner = inner;
+            this.mip = mip;
         }
 
         public final void instrument(Source source, BiConsumer<String, byte[]> destination,
                                      List<String> exports, boolean clearHashes,
                                      InstrumentationParams parameters) throws Exception {
-            inner.instrumentModuleInfo(source.loader(), destination, exports, clearHashes, parameters);
             inner.instrument(source.resources(), source.loader(), destination, parameters);
+            byte[] moduleInfo = source.loader().getResourceAsStream(MODULE_INFO_CLASS).readAllBytes();
+            if (exports != null && !exports.isEmpty()) moduleInfo = mip.addExports(exports, moduleInfo, source.loader());
+            if (clearHashes) moduleInfo = mip.clearHashes(moduleInfo, source.loader());
+            destination.accept(MODULE_INFO_CLASS, moduleInfo);
         }
     }
 

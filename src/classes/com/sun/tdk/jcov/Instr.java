@@ -243,7 +243,8 @@ public class Instr extends JCovCMDTool {
                     out = outPath;
                 } else throw new IllegalStateException("Unknown input kind: " + file);
                 try (in) {
-                    new InstrumentationPlugin.PluginImpl(singleFilePlugin).instrument(in, (n, c) -> {
+                    new InstrumentationPlugin.ModuleInstrumentation(singleFilePlugin,
+                            (InstrumentationPlugin.ModuleInstrumentationPlugin) plugin).instrument(in, (n, c) -> {
                         try {
                             Path f = out.resolve(n);
                             Files.createDirectories(f.getParent());

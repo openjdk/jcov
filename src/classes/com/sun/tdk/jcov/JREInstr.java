@@ -90,20 +90,24 @@ public class JREInstr extends JCovCMDTool {
             this.backup = backup;
         }
 
-        private InputStream backup(String s) {
-            return (backup != null) ? backup.getResourceAsStream(s) : super.getResourceAsStream(s);
+        @Override
+        public URL getResource(String name) {
+            //first try to find local resource, from teh current module
+            URL resource = findResource(name);
+            //if none, try other modules
+            if (resource == null && backup != null) resource = backup.getResource(name);
+            //if none, refer to super
+            if (resource == null) resource = super.getResource(name);
+            return resource;
         }
 
         @Override
         public InputStream getResourceAsStream(String s) {
-            URL resource = findResource(s);
-            if(resource != null) {
-                try {
-                    return resource.openStream();
-                } catch (IOException e) {
-                    return backup(s);
-                }
-            } else return backup(s);
+            try {
+                return getResource(s).openStream();
+            } catch (IOException e) {
+                return super.getResourceAsStream(s);
+            }
         }
     }
 
