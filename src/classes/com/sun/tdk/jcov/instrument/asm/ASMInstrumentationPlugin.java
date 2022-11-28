@@ -73,7 +73,7 @@ public class ASMInstrumentationPlugin implements InstrumentationPlugin,
                 if(instrumented != null) saver.accept(r, instrumented);
             } else saver.accept(r, content);
         }
-        moduleName = null;
+//        moduleName = null;
     }
 
     @Override
@@ -89,7 +89,8 @@ public class ASMInstrumentationPlugin implements InstrumentationPlugin,
         });
     }
 
-    private String getModuleName(byte[] moduleInfo) {
+    @Override
+    public String getModuleName(byte[] moduleInfo) {
         AtomicReference<String> moduleName = new AtomicReference<>(null);
         ClassReader cr = new ClassReader(moduleInfo);
         ClassWriter cw = new OverriddenClassWriter(cr, ClassWriter.COMPUTE_FRAMES, getClass().getClassLoader());

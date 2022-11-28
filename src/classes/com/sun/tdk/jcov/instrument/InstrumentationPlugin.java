@@ -24,11 +24,8 @@
  */
 package com.sun.tdk.jcov.instrument;
 
-import com.sun.tdk.jcov.instrument.asm.ClassMorph;
-
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
@@ -94,6 +91,7 @@ public interface InstrumentationPlugin {
     //TODO properly relocate the inner classes
 
     interface ModuleInstrumentationPlugin {
+        String getModuleName(byte[] moduleInfo);
         byte[] addExports(List<String> exports, byte[] moduleInfo, ClassLoader loader);
         byte[] clearHashes(byte[] moduleInfo, ClassLoader loader);
     }
@@ -172,6 +170,10 @@ public interface InstrumentationPlugin {
 
         private final ClassLoader backup;
 
+        public OverridingClassLoader(Path root, ClassLoader backup) throws MalformedURLException {
+            this(new URL[] {root.toUri().toURL()}, backup);
+        }
+
         public OverridingClassLoader(URL[] urls, ClassLoader backup) {
             super(urls);
             this.backup = backup;
@@ -181,6 +183,8 @@ public interface InstrumentationPlugin {
         public URL getResource(String name) {
             //first try to find local resource, from teh current module
             URL resource = findResource(name);
+            //for module-info it does not make sense to look in other classloaders
+            if(name.equals(MODULE_INFO_CLASS)) return resource;
             //if none, try other modules
             if (resource == null) resource = backup.getResource(name);
             //that should not happen during normal use
@@ -197,7 +201,7 @@ public interface InstrumentationPlugin {
             this.inner = inner;
         }
 
-        public Collection<String> resources(Path root) throws Exception {
+        public Collection<String> resources(Path root) throws IOException {
             if(Files.isDirectory(root))
                 return Files.find(root, Integer.MAX_VALUE, (f, a) -> Files.isRegularFile(f))
                         .map(r -> root.relativize(r).toString())
@@ -209,32 +213,37 @@ public interface InstrumentationPlugin {
                 }
         }
 
-        public final void instrument(Path source, ClassLoader loader, BiConsumer<String, byte[]> destination,
+        public void instrument(Path source, ClassLoader loader, BiConsumer<String, byte[]> destination,
                                      InstrumentationParams parameters) throws Exception {
-            URL[] urls =  new URL[] {source.toUri().toURL()};
             inner.instrument(resources(source),
-                    new OverridingClassLoader(urls, loader),
+                    new OverridingClassLoader(source, loader),
                     destination, parameters);
         }
     }
 
-    class ModuleInstrumentation {
-        private final InstrumentationPlugin inner;
-        private final ModuleInstrumentationPlugin mip;
+    class ModuleInstrumentation extends FilesystemInstrumentation {
+        private final ModuleInstrumentationPlugin modulePlugin;
 
-        public ModuleInstrumentation(InstrumentationPlugin inner, ModuleInstrumentationPlugin mip) {
-            this.inner = inner;
-            this.mip = mip;
+        public ModuleInstrumentation(InstrumentationPlugin inner, ModuleInstrumentationPlugin modulePlugin) {
+            super(inner);
+            this.modulePlugin = modulePlugin;
         }
 
-        public final void instrument(Source source, BiConsumer<String, byte[]> destination,
-                                     List<String> exports, boolean clearHashes,
-                                     InstrumentationParams parameters) throws Exception {
-            inner.instrument(source.resources(), source.loader(), destination, parameters);
-            byte[] moduleInfo = source.loader().getResourceAsStream(MODULE_INFO_CLASS).readAllBytes();
-            if (exports != null && !exports.isEmpty()) moduleInfo = mip.addExports(exports, moduleInfo, source.loader());
-            if (clearHashes) moduleInfo = mip.clearHashes(moduleInfo, source.loader());
+        public ModuleInstrumentationPlugin getModulePluign() {
+            return modulePlugin;
+        }
+
+        public void proccessModule(byte[] moduleInfo, ClassLoader loader, BiConsumer<String, byte[]> destination) throws Exception {
             destination.accept(MODULE_INFO_CLASS, moduleInfo);
+        }
+
+        @Override
+        public void instrument(Path source, ClassLoader loader,
+                               BiConsumer<String, byte[]> destination, InstrumentationParams parameters) throws Exception {
+            super.instrument(source, loader, destination, parameters);
+            ClassLoader overriding = new OverridingClassLoader(source, loader);
+            byte[] moduleInfo = overriding.getResourceAsStream(MODULE_INFO_CLASS).readAllBytes();
+            proccessModule(moduleInfo, overriding, destination);
         }
     }
 

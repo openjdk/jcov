@@ -41,12 +41,15 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.sun.tdk.jcov.instrument.InstrumentationOptions.*;
+import static com.sun.tdk.jcov.instrument.InstrumentationPlugin.MODULE_INFO_CLASS;
 import static com.sun.tdk.jcov.instrument.InstrumentationPlugin.TEMPLATE_ARTIFACT;
 import static com.sun.tdk.jcov.util.Utils.CheckOptions.*;
 
@@ -204,11 +207,6 @@ public class Instr extends JCovCMDTool {
      * @param implantRT
      */
     public void instrumentFiles(String[] files, File outDir, String implantRT) throws Exception {
-        instrumentFiles(files, outDir, implantRT, false, List.of());
-    }
-
-    public void instrumentFiles(String[] files, File outDir, String implantRT, boolean clearHashes,
-                                List<String> addExports) throws Exception {
         setup();
         InstrumentationPlugin commonPlugin = plugin;
         InstrumentationPlugin.Source source;
@@ -217,8 +215,9 @@ public class Instr extends JCovCMDTool {
             commonPlugin = new InstrumentationPlugin.ImplantingPlugin(plugin, source);
         }
 
+        InstrumentationPlugin.FilesystemInstrumentation fi =
+                new InstrumentationPlugin.FilesystemInstrumentation(commonPlugin);
         for (String file : files) {
-            InstrumentationPlugin singleFilePlugin = commonPlugin;
             InstrumentationPlugin.PathSource in;
             Path out;
             FileSystem outFS = null;
@@ -243,8 +242,8 @@ public class Instr extends JCovCMDTool {
                     out = outPath;
                 } else throw new IllegalStateException("Unknown input kind: " + file);
                 try (in) {
-                    new InstrumentationPlugin.ModuleInstrumentation(singleFilePlugin,
-                            (InstrumentationPlugin.ModuleInstrumentationPlugin) plugin).instrument(in, (n, c) -> {
+                    fi.instrument(inPath, cl,
+                            (n, c) -> {
                         try {
                             Path f = out.resolve(n);
                             Files.createDirectories(f.getParent());
@@ -252,7 +251,7 @@ public class Instr extends JCovCMDTool {
                         } catch (IOException e) {
                             throw new UncheckedIOException(e);
                         }
-                    }, addExports, clearHashes, params);
+                    }, params);
                 } finally {
                     if(outFS != null) outFS.close();
                 }
@@ -397,9 +396,9 @@ public class Instr extends JCovCMDTool {
         this.genAbstract = genAbstract;
     }
 
-    public String[] getExclude() {
-        return exclude;
-    }
+    public InstrumentationParams getParams() { return params; }
+
+    public String[] getExclude() { return exclude; }
 
     public void setExclude(String[] exclude) {
         this.exclude = exclude;

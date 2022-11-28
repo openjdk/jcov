@@ -25,6 +25,8 @@
 package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
@@ -32,17 +34,22 @@ import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
 
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.sun.tdk.jcov.instrument.InstrumentationPlugin.MODULE_INFO_CLASS;
 import static com.sun.tdk.jcov.util.Utils.CheckOptions.*;
 import static com.sun.tdk.jcov.util.Utils.getListFiles;
 
@@ -79,7 +86,7 @@ public class JREInstr extends JCovCMDTool {
      */
     public static class StaticJREInstrClassLoader extends URLClassLoader {
 
-        private final ClassLoader backup;
+//        private final ClassLoader backup;
 
         StaticJREInstrClassLoader(URL[] urls) {
             this(urls, null);
@@ -87,7 +94,7 @@ public class JREInstr extends JCovCMDTool {
 
         StaticJREInstrClassLoader(URL[] urls, ClassLoader backup) {
             super(urls);
-            this.backup = backup;
+//            this.backup = backup;
         }
 
         @Override
@@ -95,20 +102,19 @@ public class JREInstr extends JCovCMDTool {
             //first try to find local resource, from teh current module
             URL resource = findResource(name);
             //if none, try other modules
-            if (resource == null && backup != null) resource = backup.getResource(name);
+//            if (resource == null && backup != null) resource = backup.getResource(name);
             //if none, refer to super
-            if (resource == null) resource = super.getResource(name);
-            return resource;
+            return super.getResource(name);
         }
-
-        @Override
-        public InputStream getResourceAsStream(String s) {
-            try {
-                return getResource(s).openStream();
-            } catch (IOException e) {
-                return super.getResourceAsStream(s);
-            }
-        }
+//
+//        @Override
+//        public InputStream getResourceAsStream(String s) {
+//            try {
+//                return getResource(s).openStream();
+//            } catch (IOException e) {
+//                return super.getResourceAsStream(s);
+//            }
+//        }
     }
 
     @Override
@@ -134,6 +140,32 @@ public class JREInstr extends JCovCMDTool {
 
             ClassLoader cl = new StaticJREInstrClassLoader(urls.toArray(new URL[0]));
 
+            //TODO filtering
+            InstrumentationPlugin.ModuleInstrumentation mi = new InstrumentationPlugin.ModuleInstrumentation(
+                    instr.getPlugin(), (InstrumentationPlugin.ModuleInstrumentationPlugin) instr.getPlugin()) {
+                public void proccessModule(byte[] moduleInfo, ClassLoader loader,
+                                           BiConsumer<String, byte[]> destination) throws Exception {
+                    InstrumentationPlugin.ModuleInstrumentationPlugin mip = getModulePluign();
+                    if(mip.getModuleName(moduleInfo).equals("java.base")) {
+                        moduleInfo = mip.addExports(List.of("com/sun/tdk/jcov/runtime"), moduleInfo, loader);
+                        moduleInfo = mip.clearHashes(moduleInfo, loader);
+                        InstrumentationPlugin.PathSource implantSource =
+                                new InstrumentationPlugin.PathSource(implant.toPath());
+                        for (String resource : implantSource.resources()) {
+                            destination.accept(resource, implantSource.loader().getResourceAsStream(resource).readAllBytes());
+                        }
+                    }
+                    destination.accept(MODULE_INFO_CLASS, moduleInfo);
+                }
+
+                @Override
+                public void instrument(Path source, ClassLoader loader, BiConsumer<String, byte[]> destination,
+                                       InstrumentationParams parameters) throws Exception {
+                    super.instrument(source, loader, destination, parameters);
+
+                }
+            };
+
             try {
                 for (File mod : getListFiles(jmodsTemp)) {
                     if (mod != null && mod.isDirectory()) {
@@ -142,10 +174,20 @@ public class JREInstr extends JCovCMDTool {
                             logger.log(Level.INFO, "Instrumenting " + moduleName);
                             File modClasses = new File(mod, "classes");
                             instr.setClassLoader(new StaticJREInstrClassLoader(new URL[]{modClasses.toURI().toURL()}, cl));
-                            boolean isJavaBase = mod.getName().equals("java.base");
-                            instr.instrumentFiles(new String[]{modClasses.getAbsolutePath()}, null,
-                                    isJavaBase ? implant.getAbsolutePath() : null,
-                                    isJavaBase, isJavaBase ? List.of("com/sun/tdk/jcov/runtime") : List.of());
+                            mi.instrument(modClasses.toPath(), cl, (n, c) -> {
+                                try {
+                                    Path f = modClasses.toPath().resolve(n);
+                                    Files.createDirectories(f.getParent());
+                                    Files.write(f, c);
+                                } catch (IOException e) {
+                                    throw new UncheckedIOException(e);
+                                }
+                            }, instr.getParams());
+
+//                            boolean isJavaBase = mod.getName().equals("java.base");
+//                            instr.instrumentFiles(new String[]{modClasses.getAbsolutePath()}, null,
+//                                    isJavaBase ? implant.getAbsolutePath() : null,
+//                                    isJavaBase, isJavaBase ? List.of("com/sun/tdk/jcov/runtime") : List.of());
                         }
                         createJMod(mod, jdk, implant.getAbsolutePath(), null);
                     }

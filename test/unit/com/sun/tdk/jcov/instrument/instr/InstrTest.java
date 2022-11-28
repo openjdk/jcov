@@ -151,8 +151,7 @@ public class InstrTest {
         Files.write(implant_dir.resolve("some.properties"), "some.property=value\n".getBytes());
         Util.jar(implant_dir, implant_jar, p -> true);
         Instr instr = new Instr();
-        instr.instrumentFiles(new String[] {test_dir.toString()}, null, implant_jar.toString(), true,
-                List.of(InstrTest.class.getPackageName()));
+        instr.instrumentFiles(new String[] {test_dir.toString()}, null, implant_jar.toString());
         instr.setTemplate(template.toString());
         instr.finishWork(template.toString());
         testInstrumentation();
@@ -162,13 +161,6 @@ public class InstrTest {
         assertTrue(Files.exists(test_dir.resolve("module-info.class")));
         assertFalse(Files.exists(test_dir.resolve("META-INF").resolve("MANIFEST.MF")));
         run(test_dir);
-//        InstrumentationPlugin.FileInstrumentationPlugin pl =
-//                new InstrumentationPlugin.FileInstrumentationPlugin(new ASMInstrumentationPlugin());
-//        pl.instrument(test_dir, test_dir,
-//                        new InstrumentationParams());
-//        Instrumentation.ModuleInstrumentation i = new Instrumentation.
-//                ModuleInstrumentation(new ASMInstrumentationPlugin(), (m, r) -> null);
-//        i.instrument(test_dir, test_dir, new InstrumentationParams());
     }
     private void testInstrumentation() throws FileFormatException {
         DataRoot data = Reader.readXML(template.toString());
