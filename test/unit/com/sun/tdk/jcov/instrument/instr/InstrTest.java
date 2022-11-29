@@ -28,10 +28,7 @@ import com.sun.tdk.jcov.Instr;
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.instrument.DataRoot;
-import com.sun.tdk.jcov.instrument.InstrumentationParams;
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.instrument.Util;
-import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.runtime.Collect;
 import org.testng.annotations.AfterClass;
@@ -44,7 +41,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,7 +63,7 @@ public class InstrTest {
         test_dir = data_dir.resolve("instr_test");
         test_zip = data_dir.resolve("instr_test.jar");
         System.out.println("test dir = " + test_dir);
-        template = test_dir.resolve("template.lst");
+        template = test_dir.resolve("template.xml");
     }
     @BeforeMethod
     public void rm() throws IOException {

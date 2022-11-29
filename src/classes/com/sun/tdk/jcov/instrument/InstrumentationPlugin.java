@@ -31,6 +31,8 @@ import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -68,10 +70,6 @@ public interface InstrumentationPlugin {
                     BiConsumer<String, byte[]> saver,
                     InstrumentationParams parameters) throws Exception;
 
-//    void instrumentModuleInfo(ClassLoader loader, BiConsumer<String, byte[]> saver,
-//                              List<String> expports, boolean clearHashes,
-//                              InstrumentationParams parameters) throws Exception;
-
     /**
      * Completes the instrumentation proccess and returns a map of instrumentation artifacts.
      * @see #TEMPLATE_ARTIFACT
@@ -82,12 +80,10 @@ public interface InstrumentationPlugin {
      */
     Map<String, Consumer<OutputStream>> complete() throws Exception;
 
-    default boolean isClass(String resource) {return resource.endsWith(CLASS_EXTENTION) && !resource.endsWith(MODULE_INFO_CLASS);}
+    default boolean isClass(String resource) {
+        return resource.endsWith(CLASS_EXTENTION) && !resource.endsWith(MODULE_INFO_CLASS);
+    }
 
-//    default <T extends InstrumentationPlugin> T cast(Class<T> cls) {
-//        if (cls.isInstance(this)) return cls.cast(this);
-//        else throw new RuntimeException(getClass().getName() + " is not a " + cls.getName());
-//    }
     //TODO properly relocate the inner classes
 
     interface ModuleInstrumentationPlugin {
@@ -106,12 +102,6 @@ public interface InstrumentationPlugin {
         public InstrumentationPlugin getInner() {
             return inner;
         }
-
-//        @Override
-//        public <T extends InstrumentationPlugin> T cast(Class<T> cls) {
-//            if (cls.isInstance(this)) return cls.cast(this);
-//            else return inner.cast(cls);
-//        }
 
         @Override
         public final Map<String, Consumer<OutputStream>> complete() throws Exception {
@@ -166,12 +156,22 @@ public interface InstrumentationPlugin {
         }
     }
 
+    //TODO better be private
     class OverridingClassLoader extends URLClassLoader {
+
+        private static URL[] toURL(Path root) {
+            try {
+                return new URL[] {root.toUri().toURL()};
+            } catch (MalformedURLException e) {
+                //should not happen since getting teh URL legally
+                throw new RuntimeException(e);
+            }
+        }
 
         private final ClassLoader backup;
 
-        public OverridingClassLoader(Path root, ClassLoader backup) throws MalformedURLException {
-            this(new URL[] {root.toUri().toURL()}, backup);
+        public OverridingClassLoader(Path root, ClassLoader backup) {
+            this(toURL(root), backup);
         }
 
         public OverridingClassLoader(URL[] urls, ClassLoader backup) {
@@ -194,34 +194,32 @@ public interface InstrumentationPlugin {
         }
     }
 
-    class FilesystemInstrumentation {
+    interface Destination extends Closeable {
+        BiConsumer<String, byte[]> saver();
+    }
+
+    /**
+     * A utility class which works with a given plugin in turms of file hierarchies.
+     */
+    class Instrumentation {
         private final InstrumentationPlugin inner;
 
-        public FilesystemInstrumentation(InstrumentationPlugin inner) {
+        public Instrumentation(InstrumentationPlugin inner) {
             this.inner = inner;
         }
 
-        public Collection<String> resources(Path root) throws IOException {
-            if(Files.isDirectory(root))
-                return Files.find(root, Integer.MAX_VALUE, (f, a) -> Files.isRegularFile(f))
-                        .map(r -> root.relativize(r).toString())
-                        .collect(Collectors.toList());
-            else
-                try (JarFile jar = new JarFile(root.toFile())) {
-                    return jar.stream().filter(f -> !f.isDirectory())
-                            .map(ZipEntry::getName).collect(Collectors.toList());
-                }
-        }
-
-        public void instrument(Path source, ClassLoader loader, BiConsumer<String, byte[]> destination,
+        public void instrument(Source source, Destination destination,
                                      InstrumentationParams parameters) throws Exception {
-            inner.instrument(resources(source),
-                    new OverridingClassLoader(source, loader),
-                    destination, parameters);
+            inner.instrument(source.resources(), source.loader(),
+                    destination.saver(), parameters);
         }
     }
 
-    class ModuleInstrumentation extends FilesystemInstrumentation {
+    /**
+     * Helps to instrument modules.
+     * @see #Instrumentation
+     */
+    class ModuleInstrumentation extends Instrumentation {
         private final ModuleInstrumentationPlugin modulePlugin;
 
         public ModuleInstrumentation(InstrumentationPlugin inner, ModuleInstrumentationPlugin modulePlugin) {
@@ -233,17 +231,24 @@ public interface InstrumentationPlugin {
             return modulePlugin;
         }
 
-        public void proccessModule(byte[] moduleInfo, ClassLoader loader, BiConsumer<String, byte[]> destination) throws Exception {
-            destination.accept(MODULE_INFO_CLASS, moduleInfo);
+        /**
+         * Take any required action needed to instrument a module. This implementation does not do anything.
+         * @param moduleInfo
+         * @param loader
+         * @param destination
+         * @throws Exception
+         * @see ModuleInstrumentationPlugin
+         */
+        protected void proccessModule(byte[] moduleInfo, ClassLoader loader, BiConsumer<String, byte[]> destination)
+                throws Exception {
         }
 
         @Override
-        public void instrument(Path source, ClassLoader loader,
-                               BiConsumer<String, byte[]> destination, InstrumentationParams parameters) throws Exception {
-            super.instrument(source, loader, destination, parameters);
-            ClassLoader overriding = new OverridingClassLoader(source, loader);
-            byte[] moduleInfo = overriding.getResourceAsStream(MODULE_INFO_CLASS).readAllBytes();
-            proccessModule(moduleInfo, overriding, destination);
+        public void instrument(Source source, Destination destination,
+                               InstrumentationParams parameters) throws Exception {
+            super.instrument(source, destination, parameters);
+            byte[] moduleInfo = source.loader().getResourceAsStream(MODULE_INFO_CLASS).readAllBytes();
+            proccessModule(moduleInfo, source.loader(), destination.saver());
         }
     }
 
@@ -252,12 +257,9 @@ public interface InstrumentationPlugin {
         private final ClassLoader loader;
         private final Path root;
 
-        public PathSource(ClassLoader loader, Path root) {
-            this.loader = loader;
+        public PathSource(ClassLoader backup, Path root) {
+            this.loader = new OverridingClassLoader(root, backup);
             this.root = root;
-        }
-        public PathSource(Path root) throws MalformedURLException {
-            this(new URLClassLoader(new URL[]{root.toUri().toURL()}), root);
         }
 
         @Override
@@ -291,6 +293,36 @@ public interface InstrumentationPlugin {
                     return jar.stream().map(ZipEntry::getName).anyMatch(MODULE_INFO_CLASS::equals);
                 }
             }
+        }
+    }
+
+    class PathDestination implements Destination, Closeable {
+        private final Path root;
+        private final FileSystem fs;
+        private final BiConsumer<String, byte[]> saver;
+
+        public PathDestination(Path root) throws IOException {
+            fs = Files.isDirectory(root) ? null : FileSystems.newFileSystem(root, null);
+            this.root = Files.isDirectory(root) ? root : fs.getPath("/");
+            saver = (s, bytes) -> {
+                try {
+                    Path f = PathDestination.this.root.resolve(s);
+                    Files.createDirectories(f.getParent());
+                    Files.write(f, bytes);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            };
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (fs != null) fs.close();
+        }
+
+        @Override
+        public BiConsumer<String, byte[]> saver() {
+            return saver;
         }
     }
 }

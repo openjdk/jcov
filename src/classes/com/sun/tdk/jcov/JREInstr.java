@@ -25,7 +25,6 @@
 package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
-import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
@@ -33,13 +32,16 @@ import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
 
-import java.io.*;
-import java.net.MalformedURLException;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -81,42 +83,6 @@ public class JREInstr extends JCovCMDTool {
         logger = Logger.getLogger(Instr.class.getName());
     }
 
-    /**
-     * tries to find class in the specified jars
-     */
-    public static class StaticJREInstrClassLoader extends URLClassLoader {
-
-//        private final ClassLoader backup;
-
-        StaticJREInstrClassLoader(URL[] urls) {
-            this(urls, null);
-        }
-
-        StaticJREInstrClassLoader(URL[] urls, ClassLoader backup) {
-            super(urls);
-//            this.backup = backup;
-        }
-
-        @Override
-        public URL getResource(String name) {
-            //first try to find local resource, from teh current module
-            URL resource = findResource(name);
-            //if none, try other modules
-//            if (resource == null && backup != null) resource = backup.getResource(name);
-            //if none, refer to super
-            return super.getResource(name);
-        }
-//
-//        @Override
-//        public InputStream getResourceAsStream(String s) {
-//            try {
-//                return getResource(s).openStream();
-//            } catch (IOException e) {
-//                return super.getResourceAsStream(s);
-//            }
-//        }
-    }
-
     @Override
     protected int run() throws Exception {
         final String[] toInstr = new String[]{toInstrument.getAbsolutePath()};
@@ -138,7 +104,9 @@ public class JREInstr extends JCovCMDTool {
             }
             urls.add(toInstrument.toURI().toURL());
 
-            ClassLoader cl = new StaticJREInstrClassLoader(urls.toArray(new URL[0]));
+            ClassLoader cl = new InstrumentationPlugin.OverridingClassLoader(urls.toArray(new URL[0]),
+                    ClassLoader.getSystemClassLoader());
+            instr.setClassLoader(cl);
 
             //TODO filtering
             InstrumentationPlugin.ModuleInstrumentation mi = new InstrumentationPlugin.ModuleInstrumentation(
@@ -150,19 +118,12 @@ public class JREInstr extends JCovCMDTool {
                         moduleInfo = mip.addExports(List.of("com/sun/tdk/jcov/runtime"), moduleInfo, loader);
                         moduleInfo = mip.clearHashes(moduleInfo, loader);
                         InstrumentationPlugin.PathSource implantSource =
-                                new InstrumentationPlugin.PathSource(implant.toPath());
+                                new InstrumentationPlugin.PathSource(cl, implant.toPath());
                         for (String resource : implantSource.resources()) {
                             destination.accept(resource, implantSource.loader().getResourceAsStream(resource).readAllBytes());
                         }
                     }
                     destination.accept(MODULE_INFO_CLASS, moduleInfo);
-                }
-
-                @Override
-                public void instrument(Path source, ClassLoader loader, BiConsumer<String, byte[]> destination,
-                                       InstrumentationParams parameters) throws Exception {
-                    super.instrument(source, loader, destination, parameters);
-
                 }
             };
 
@@ -173,21 +134,8 @@ public class JREInstr extends JCovCMDTool {
                         if (isModuleIncluded(moduleName)) {
                             logger.log(Level.INFO, "Instrumenting " + moduleName);
                             File modClasses = new File(mod, "classes");
-                            instr.setClassLoader(new StaticJREInstrClassLoader(new URL[]{modClasses.toURI().toURL()}, cl));
-                            mi.instrument(modClasses.toPath(), cl, (n, c) -> {
-                                try {
-                                    Path f = modClasses.toPath().resolve(n);
-                                    Files.createDirectories(f.getParent());
-                                    Files.write(f, c);
-                                } catch (IOException e) {
-                                    throw new UncheckedIOException(e);
-                                }
-                            }, instr.getParams());
-
-//                            boolean isJavaBase = mod.getName().equals("java.base");
-//                            instr.instrumentFiles(new String[]{modClasses.getAbsolutePath()}, null,
-//                                    isJavaBase ? implant.getAbsolutePath() : null,
-//                                    isJavaBase, isJavaBase ? List.of("com/sun/tdk/jcov/runtime") : List.of());
+                            mi.instrument(new InstrumentationPlugin.PathSource(cl, modClasses.toPath()),
+                                    new InstrumentationPlugin.PathDestination(modClasses.toPath()), instr.getParams());
                         }
                         createJMod(mod, jdk, implant.getAbsolutePath(), null);
                     }

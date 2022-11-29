@@ -40,16 +40,12 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.sun.tdk.jcov.instrument.InstrumentationOptions.*;
-import static com.sun.tdk.jcov.instrument.InstrumentationPlugin.MODULE_INFO_CLASS;
 import static com.sun.tdk.jcov.instrument.InstrumentationPlugin.TEMPLATE_ARTIFACT;
 import static com.sun.tdk.jcov.util.Utils.CheckOptions.*;
 
@@ -208,53 +204,43 @@ public class Instr extends JCovCMDTool {
      */
     public void instrumentFiles(String[] files, File outDir, String implantRT) throws Exception {
         setup();
-        InstrumentationPlugin commonPlugin = plugin;
+        InstrumentationPlugin aPLugin = plugin;
         InstrumentationPlugin.Source source;
         if (implantRT != null) {
-            source = new InstrumentationPlugin.PathSource(Path.of(implantRT));
-            commonPlugin = new InstrumentationPlugin.ImplantingPlugin(plugin, source);
+            source = new InstrumentationPlugin.PathSource(ClassLoader.getSystemClassLoader(), Path.of(implantRT));
+            aPLugin = new InstrumentationPlugin.ImplantingPlugin(plugin, source);
         }
 
-        InstrumentationPlugin.FilesystemInstrumentation fi =
-                new InstrumentationPlugin.FilesystemInstrumentation(commonPlugin);
+        InstrumentationPlugin.Instrumentation fi =
+                new InstrumentationPlugin.Instrumentation(aPLugin);
         for (String file : files) {
             InstrumentationPlugin.PathSource in;
-            Path out;
-            FileSystem outFS = null;
+//            FileSystem outFS = null;
             Path inPath = Path.of(file);
-                if (Files.isDirectory(inPath) || file.endsWith(".jar") || file.endsWith(".jmod")) {
-                    in = new InstrumentationPlugin.PathSource(cl, inPath);
-                } else if (Files.isRegularFile(inPath) && file.endsWith(".class")) {
-                    //not implemented yet
-                    //TODO implement by directly calling the plugin
-                    //TODO deprecate in documentation: instead of providing specific files, ask the user to provide
-                    //a class hierarchy root and filters
-                    throw new RuntimeException();
-                } else throw new IllegalStateException("Unknown input kind: " + file);
-                Path outPath  = (outDir != null) ? outDir.toPath().resolve(inPath.getFileName()) : inPath;
-                if (Files.isRegularFile(outPath) && outPath.toString().endsWith(".class")) {
-                    //not implemented yet
-                    throw new RuntimeException();
-                } else if (Files.isRegularFile(outPath) && outPath.toString().endsWith(".jar")) {
-                    outFS = FileSystems.newFileSystem(outPath, null);
-                    out = outFS.getPath("/");
-                } else if (Files.isDirectory(outPath)) {
-                    out = outPath;
-                } else throw new IllegalStateException("Unknown input kind: " + file);
-                try (in) {
-                    fi.instrument(inPath, cl,
-                            (n, c) -> {
-                        try {
-                            Path f = out.resolve(n);
-                            Files.createDirectories(f.getParent());
-                            Files.write(f, c);
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    }, params);
-                } finally {
-                    if(outFS != null) outFS.close();
-                }
+            if (Files.isDirectory(inPath) || file.endsWith(".jar") || file.endsWith(".jmod")) {
+                in = new InstrumentationPlugin.PathSource(cl, inPath);
+            } else if (Files.isRegularFile(inPath) && file.endsWith(".class")) {
+                //TODO implement by directly calling the plugin
+                //TODO deprecate in documentation: instead of providing specific files, ask the user to provide
+                //a class hierarchy root and filters
+                throw new RuntimeException();
+            } else throw new IllegalStateException("Unknown input kind: " + file);
+            InstrumentationPlugin.Destination out;
+            Path outPath = (outDir != null) ? outDir.toPath().resolve(inPath.getFileName()) : inPath;
+            if (Files.isDirectory(outPath) ||
+                    outPath.toString().endsWith(".jar") ||
+                    outPath.toString().endsWith(".jmod")) {
+                out = new InstrumentationPlugin.PathDestination(outPath);
+            } else if (Files.isRegularFile(outPath) && outPath.toString().endsWith(".class")) {
+                //TODO as above
+                throw new RuntimeException();
+            } else throw new IllegalStateException("Unknown output kind: " + file);
+            try (in) {
+                fi.instrument(in, out, params);
+            } finally {
+                in.close();
+                out.close();
+            }
         }
     }
 
