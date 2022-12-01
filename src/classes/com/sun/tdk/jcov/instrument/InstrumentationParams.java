@@ -358,6 +358,68 @@ public class InstrumentationParams {
         return callerExcludes;
     }
 
+    public ABSTRACTMODE getInstrumentAbstract() {
+        return instrumentAbstract;
+    }
+
+    public String[] getSavesBegin() {
+        return savesBegin;
+    }
+
+    public String[] getSavesEnd() {
+        return savesEnd;
+    }
+
+    public InstrumentationParams setSavesBegin(String[] savesBegin) {
+        this.savesBegin = savesBegin;
+        return this;
+    }
+
+    public InstrumentationParams setSavesEnd(String[] savesEnd) {
+        this.savesEnd = savesEnd;
+        return this;
+    }
+
+    public InstrumentationParams setMode(InstrumentationMode mode) {
+        this.mode = mode;
+        return this;
+    }
+
+    public InstrumentationParams setCallerInclude(String callerInclude) {
+        this.callerInclude = callerInclude;
+        return this;
+    }
+
+    public InstrumentationParams setCallerExclude(String callerExclude) {
+        this.callerExclude = callerExclude;
+        return this;
+    }
+
+    public InstrumentationParams setCallerIncludes(String[] callerIncludes) {
+        this.callerIncludes = callerIncludes;
+        return this;
+    }
+
+    public InstrumentationParams setCallerExcludes(String[] callerExcludes) {
+        this.callerExcludes = callerExcludes;
+        return this;
+    }
+
+    public InstrumentationParams setInstrumentFields(boolean instrumentFields) {
+        this.instrumentFields = instrumentFields;
+        return this;
+    }
+
+    public InstrumentationParams setInstrumentNative(boolean instrumentNative) {
+        this.instrumentNative = instrumentNative;
+        return this;
+    }
+
+    public InstrumentationParams setInstrumentAbstract(ABSTRACTMODE instrumentAbstract) {
+        this.instrumentAbstract = instrumentAbstract;
+        return this;
+    }
+
     public static InstrumentationParams setMode(InstrumentationParams params, InstrumentationMode mode) {
         return new InstrumentationParams(params.dynamicCollect, params.instrumentNative, params.instrumentFields, params.detectInternal, params.instrumentAbstract, params.includes, params.excludes, params.callerIncludes, params.callerExcludes, mode, params.savesBegin, params.savesEnd);
     }

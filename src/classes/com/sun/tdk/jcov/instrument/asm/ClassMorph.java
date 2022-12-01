@@ -141,7 +141,7 @@ public class ClassMorph {
     public boolean shouldTransform(String className) {
         return isTransformable(className)
                 && !isAlreadyTransformed(className);
-                //&& params.isIncluded(className);
+//                && params.isIncluded(className);
     }
 
     /**

@@ -25,7 +25,9 @@
 package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
@@ -39,9 +41,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,9 +56,15 @@ import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.sun.tdk.jcov.Instr.DSC_INCLUDE_RT;
+import static com.sun.tdk.jcov.Instr.DSC_VERBOSE;
+import static com.sun.tdk.jcov.instrument.InstrumentationOptions.*;
+import static com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INSTR_PLUGIN;
 import static com.sun.tdk.jcov.instrument.InstrumentationPlugin.MODULE_INFO_CLASS;
+import static com.sun.tdk.jcov.instrument.InstrumentationPlugin.TEMPLATE_ARTIFACT;
 import static com.sun.tdk.jcov.util.Utils.CheckOptions.*;
 import static com.sun.tdk.jcov.util.Utils.getListFiles;
+import static com.sun.tdk.jcov.util.Utils.isClassFile;
 
 /**
  * <p> A tool to statically instrument JRE. </p> <p> There are 2 coverage
@@ -68,7 +79,7 @@ import static com.sun.tdk.jcov.util.Utils.getListFiles;
  */
 public class JREInstr extends JCovCMDTool {
 
-    private Instr instr;
+//    private Instr instr;
     private File toInstrument;
     private File[] addJars;
     private File[] addJimages;
@@ -77,17 +88,24 @@ public class JREInstr extends JCovCMDTool {
     private static final Logger logger;
     private String host = null;
     private Integer port = null;
+    private InstrumentationPlugin plugin = new ASMInstrumentationPlugin();
+    private InstrumentationParams params;
+    private String template = "template.xml";
+    private String[] m_excludes;
+    private String[] m_includes;
+    private String include_rt;
 
     static {
         Utils.initLogger();
         logger = Logger.getLogger(Instr.class.getName());
     }
 
+
+
     @Override
     protected int run() throws Exception {
         final String[] toInstr = new String[]{toInstrument.getAbsolutePath()};
         Utils.addToClasspath(toInstr);
-        instr.startWorking();
 
         if (toInstrument.getName().equals("jmods")) {
             logger.log(Level.INFO, "working with jmods");
@@ -106,11 +124,10 @@ public class JREInstr extends JCovCMDTool {
 
             ClassLoader cl = new InstrumentationPlugin.OverridingClassLoader(urls.toArray(new URL[0]),
                     ClassLoader.getSystemClassLoader());
-            instr.setClassLoader(cl);
 
-            //TODO filtering
             InstrumentationPlugin.ModuleInstrumentation mi = new InstrumentationPlugin.ModuleInstrumentation(
-                    instr.getPlugin(), (InstrumentationPlugin.ModuleInstrumentationPlugin) instr.getPlugin()) {
+                    new InstrumentationPlugin.FilteringPlugin(plugin, InstrumentationPlugin.classNameFilter(params)),
+                    (InstrumentationPlugin.ModuleInstrumentationPlugin) plugin) {
                 public void proccessModule(byte[] moduleInfo, ClassLoader loader,
                                            BiConsumer<String, byte[]> destination) throws Exception {
                     InstrumentationPlugin.ModuleInstrumentationPlugin mip = getModulePluign();
@@ -135,7 +152,7 @@ public class JREInstr extends JCovCMDTool {
                             logger.log(Level.INFO, "Instrumenting " + moduleName);
                             File modClasses = new File(mod, "classes");
                             mi.instrument(new InstrumentationPlugin.PathSource(cl, modClasses.toPath()),
-                                    new InstrumentationPlugin.PathDestination(modClasses.toPath()), instr.getParams());
+                                    new InstrumentationPlugin.PathDestination(modClasses.toPath()), params);
                         }
                         createJMod(mod, jdk, implant.getAbsolutePath(), null);
                     }
@@ -179,28 +196,30 @@ public class JREInstr extends JCovCMDTool {
             throw new RuntimeException("This functionality has not yet been implemented");
         }
 
-        ArrayList<String> srcs = null;
-        if (addJars != null) {
-            srcs = new ArrayList<>();
-            for (File addJar : addJars) {
-                srcs.add(addJar.getAbsolutePath());
-            }
-        }
+        //TODO this is defunc as of JDK 9, is it?
+//        ArrayList<String> srcs = null;
+//        if (addJars != null) {
+//            srcs = new ArrayList<>();
+//            for (File addJar : addJars) {
+//                srcs.add(addJar.getAbsolutePath());
+//            }
+//        }
+//
+//        if (srcs != null) {
+//            Utils.addToClasspath(srcs.toArray(new String[0]));
+//            instr.instrumentFiles(srcs.toArray(new String[0]), null, null);
+//        }
 
-        if (srcs != null) {
-            Utils.addToClasspath(srcs.toArray(new String[0]));
-            instr.instrumentFiles(srcs.toArray(new String[0]), null, null);
-        }
+        //TODO
+//        if (addTests != null) {
+//            ArrayList<String> tests = new ArrayList<>();
+//            for (File addTest : addTests) {
+//                tests.add(addTest.getAbsolutePath());
+//            }
+//            instr.instrumentTests(tests.toArray(new String[0]), null, null);
+//        }
 
-        if (addTests != null) {
-            ArrayList<String> tests = new ArrayList<>();
-            for (File addTest : addTests) {
-                tests.add(addTest.getAbsolutePath());
-            }
-            instr.instrumentTests(tests.toArray(new String[0]), null, null);
-        }
-
-        instr.finishWork();
+        plugin.complete().get(TEMPLATE_ARTIFACT).accept(Files.newOutputStream(Path.of(template)));
 
         return SUCCESS_EXIT_CODE;
     }
@@ -280,8 +299,8 @@ public class JREInstr extends JCovCMDTool {
     }
 
     private boolean isModuleIncluded(String moduleName) {
-        return Arrays.stream(instr.getMInclude()).anyMatch(i -> moduleName.matches(i)) &&
-               Arrays.stream(instr.getMExclude()).noneMatch(i -> moduleName.matches(i));
+        return (m_includes.length == 0 || Arrays.stream(m_includes).anyMatch(i -> moduleName.matches(i))) &&
+               Arrays.stream(m_excludes).noneMatch(i -> moduleName.matches(i));
     }
     private void createJMod(File jmodDir, File jdk, String rt_path, String pluginPath) {
         try {
@@ -354,13 +373,13 @@ public class JREInstr extends JCovCMDTool {
 
     @Override
     protected EnvHandler defineHandler() {
-        Instr.DSC_INCLUDE_RT.usage = "To run instrumented JRE you should implant JCov runtime library both into rt.jar " +
+        DSC_INCLUDE_RT.usage = "To run instrumented JRE you should implant JCov runtime library both into rt.jar " +
                 "and into 'lib/endorsed' directory.\nWhen instrumenting whole JRE dir with jreinstr tool - " +
                 "these 2 actions will be done automatically.";
 
         return new EnvHandler(new OptionDescr[]{
-                Instr.DSC_INCLUDE_RT,
-                Instr.DSC_VERBOSE,
+                DSC_INCLUDE_RT,
+                DSC_VERBOSE,
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_TYPE,
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE,
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE_LIST,
@@ -394,7 +413,8 @@ public class JREInstr extends JCovCMDTool {
 
     @Override
     protected int handleEnv(EnvHandler envHandler) throws EnvHandlingException {
-        instr = new Instr();
+
+        params = new InstrumentationParams();
 
         String[] tail = envHandler.getTail();
         if (tail == null || tail.length == 0) {
@@ -404,11 +424,11 @@ public class JREInstr extends JCovCMDTool {
             logger.log(Level.WARNING, "Only first argument ({0}) will be used", tail[0]);
         }
 
-        if (!envHandler.isSet(Instr.DSC_INCLUDE_RT)) {
+        if (!envHandler.isSet(DSC_INCLUDE_RT)) {
             throw new EnvHandlingException("Runtime should be always implanted when instrumenting rt.jar (e.g. '-rt jcov_j2se_rt.jar')");
         }
 
-        implant = new File(envHandler.getValue(Instr.DSC_INCLUDE_RT));
+        implant = new File(envHandler.getValue(DSC_INCLUDE_RT));
         Utils.checkFile(implant, "JCovRT library jarfile", FILE_ISFILE, FILE_EXISTS, FILE_CANREAD);
 
         if (envHandler.isSet(DCS_ADD_JAR)) {
@@ -562,7 +582,7 @@ public class JREInstr extends JCovCMDTool {
 
             String template = envHandler.getValue(InstrumentationOptions.DSC_TEMPLATE);
             if (template != null) {
-                instr.setTemplate(template);
+                setTemplate(template);
             }
 
             File mods = new File(f.getParentFile(), "jmods");
@@ -654,8 +674,8 @@ public class JREInstr extends JCovCMDTool {
         String[] includes = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleInclude(envHandler);
         Utils.Pattern pats[] = Utils.concatFilters(includes, excludes);
 
-        String[] m_excludes = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleMExclude(envHandler);
-        String[] m_includes = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleMInclude(envHandler);
+        m_excludes = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleMExclude(envHandler);
+        m_includes = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleMInclude(envHandler);
 
         String[] callerInclude = envHandler.getValues(InstrumentationOptions.DSC_CALLER_INCLUDE);
         String[] callerExclude = envHandler.getValues(InstrumentationOptions.DSC_CALLER_EXCLUDE);
@@ -683,21 +703,74 @@ public class JREInstr extends JCovCMDTool {
             }
         }
 
-        int ret = instr.handleEnv(envHandler);
-        instr.setSave_end(new String[]{"java/lang/Shutdown.runHooks"});
-        instr.setInclude(includes);
-        instr.setExclude(excludes);
+        if (envHandler.isSet(DSC_VERBOSE)) {
+            logger.setLevel(Level.INFO);
+        }
 
-        instr.setMInclude(m_includes);
-        instr.setMExclude(m_excludes);
+        //TODO do these work for JREInstr?
+//        save_beg = opts.getValues(DSC_SAVE_BEGIN);
 
-        instr.setCallerInclude(callerInclude);
-        instr.setCallerExclude(callerExclude);
+        String abstractValue = envHandler.getValue(DSC_ABSTRACT);
+        if (abstractValue.equals("off")) {
+            params.setInstrumentAbstract(ABSTRACTMODE.NONE);
+        } else if (abstractValue.equals("on")) {
+            params.setInstrumentAbstract(ABSTRACTMODE.DIRECT);
+        } else {
+            throw new EnvHandlingException("'" + DSC_ABSTRACT.name +
+                    "' parameter value error: expected 'on' or 'off'; found: '" + abstractValue + "'");
+        }
 
-        instr.setInnerInclude(innerInclude);
-        instr.setInnerExclude(innerExclude);
+        String nativeValue = envHandler.getValue(DSC_NATIVE);
+        if (nativeValue.equals("on")) {
+            params.setInstrumentNative(true);
+        } else if (nativeValue.equals("off")) {
+            params.setInstrumentNative(false);
+        } else {
+            throw new EnvHandlingException("'" + DSC_NATIVE.name +
+                    "' parameter value error: expected 'on' or 'off'; found: '" + nativeValue + "'");
+        }
 
-        return ret;
+        String fieldValue = envHandler.getValue(DSC_FIELD);
+        if (fieldValue.equals("on")) {
+            params.setInstrumentFields(true);
+        } else if (fieldValue.equals("off")) {
+            params.setInstrumentFields(false);
+        } else {
+            // can't happen - check is in EnvHandler
+            throw new EnvHandlingException("'" + DSC_FIELD.name +
+                    "' parameter value error: expected 'on' or 'off'; found: '" + fieldValue + "'");
+        }
+
+        params.setInstrumentAnonymous(envHandler.getValue(DSC_ANONYM).equals("on"));
+
+        params.setInstrumentSynthetic(envHandler.getValue(DSC_SYNTHETIC).equals("on"));
+
+        params.setInnerInvocations(envHandler.getValue(DSC_INNERINVOCATION).equals("off"));
+
+        params.setCallerIncludes(callerInclude);
+        params.setCallerExcludes(callerExclude);
+
+        params.setMode(InstrumentationMode.fromString(envHandler.getValue(DSC_TYPE)));
+
+        template = envHandler.getValue(DSC_TEMPLATE);
+        Utils.checkFileNotNull(template, "template filename", FILE_NOTISDIR, FILE_PARENTEXISTS);
+
+        include_rt = envHandler.getValue(DSC_INCLUDE_RT);
+        Utils.checkFileCanBeNull(include_rt, "JCovRT library jarfile", FILE_EXISTS, FILE_ISFILE, FILE_CANREAD);
+
+        params.setSavesEnd(new String[]{"java/lang/Shutdown.runHooks"});
+
+        params.setIncludes(includes);
+        params.setExcludes(excludes);
+
+        params.setInnerIncludes(innerInclude);
+        params.setInnerExcludes(innerExclude);
+
+        return SUCCESS_EXIT_CODE;
+    }
+
+    private void setTemplate(String template) {
+        this.template = template;
     }
 
     private void createPropertyFile(File dir){

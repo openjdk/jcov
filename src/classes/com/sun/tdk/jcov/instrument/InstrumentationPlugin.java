@@ -24,6 +24,8 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.util.Utils;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,6 +37,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +47,8 @@ import java.util.function.Predicate;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
+
+import static com.sun.tdk.jcov.util.Utils.isClassFile;
 
 /**
  * TODO describe the lifecycle
@@ -120,9 +125,14 @@ public interface InstrumentationPlugin {
         @Override
         public void instrument(Collection<String> resources, ClassLoader loader,
                                BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
-            getInner().instrument(resources.stream().filter(filter).collect(Collectors.toList()),
-                    loader, saver, parameters);
-            resources.stream().filter(filter.negate()).forEach(c -> {
+            List<String> accepted = new ArrayList<>();
+            List<String> rejected = new ArrayList<>();
+            resources.forEach(r -> {
+                if (filter.test(r)) accepted.add(r);
+                else rejected.add(r);
+            });
+            getInner().instrument(accepted, loader, saver, parameters);
+            rejected.forEach(c -> {
                 try {
                     saver.accept(c,
                             loader.getResourceAsStream(c).readAllBytes());
@@ -131,6 +141,15 @@ public interface InstrumentationPlugin {
                 }
             });
         }
+    }
+
+    static Predicate<String> classNameFilter(InstrumentationParams params) {
+        return r -> {
+            if (isClassFile(r))
+                return params.isIncluded(r.substring(0,
+                        r.length() - Utils.FILE_TYPE.CLASS.name().length() - 1));
+            else return true;
+        };
     }
 
     interface Source extends Closeable {

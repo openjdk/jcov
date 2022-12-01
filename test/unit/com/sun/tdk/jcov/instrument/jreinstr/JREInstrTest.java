@@ -43,6 +43,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -97,15 +98,22 @@ public class JREInstrTest {
                 "-implantrt", runtime,
                 "-im", "java.base",
                 "-im", "java.desktop",
+                "-exclude", LocalDateTime.class.getName(),
                 jre.toString()};
         System.out.println("Running JREInstr with " + Arrays.stream(params).collect(Collectors.joining(" ")));
         long start = System.currentTimeMillis();
         assertEquals(new JREInstr().run(params), 0);
+        //no other modules but java.base and java.desktopm
         assertEquals(Files.readAllLines(template)
                 .stream()
                 .filter(s -> s.trim().startsWith("<package"))
                 .filter(s -> !s.contains("moduleName=\"java.base\""))
                 .filter(s -> !s.contains("moduleName=\"java.desktop\""))
+                .count(), 0);
+        //no java.time.LocalDateTime
+        assertEquals(Files.readAllLines(template)
+                .stream()
+                .filter(s -> s.trim().startsWith("<class name=\"LocalDateTime\""))
                 .count(), 0);
         //track instrumentation time for the TODO in copyJRE
         System.out.println("Took " + (System.currentTimeMillis() - start) + " to instrument.");

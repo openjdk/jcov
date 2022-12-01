@@ -26,7 +26,9 @@ package com.sun.tdk.jcov.instrument.instr;
 
 import com.sun.tdk.jcov.Instr;
 import com.sun.tdk.jcov.data.FileFormatException;
+import com.sun.tdk.jcov.instrument.DataClass;
 import com.sun.tdk.jcov.instrument.DataMethod;
+import com.sun.tdk.jcov.instrument.DataPackage;
 import com.sun.tdk.jcov.instrument.DataRoot;
 import com.sun.tdk.jcov.instrument.Util;
 import com.sun.tdk.jcov.io.Reader;
@@ -89,7 +91,7 @@ public class InstrTest {
         params.add("-t");
         params.add(template.toString());
         params.add("-i");
-        params.add("UserCode");
+        params.add(UserCode.class.getName());
         new Util(test_dir).copyBytecode(UserCode.class.getName(), InstrTest.class.getName());
         params.add(test_dir.toString());
         new Instr().run(params.toArray(new String[0]));
@@ -109,7 +111,7 @@ public class InstrTest {
         params.add("-t");
         params.add(template.toString());
         params.add("-i");
-        params.add("UserCode");
+        params.add(UserCode.class.getName());
         params.add(test_zip.toString());
         new Instr().run(params.toArray(new String[0]));
         Util.unjar(test_zip, classes);
@@ -128,8 +130,6 @@ public class InstrTest {
         params.add(template.toString());
         params.add("-implantrt");
         params.add(implant_jar.toString());
-        params.add("-i");
-        params.add("UserCode");
         params.add(test_dir.toString());
         new Instr().run(params.toArray(new String[0]));
         testInstrumentation();
@@ -160,12 +160,16 @@ public class InstrTest {
     }
     private void testInstrumentation() throws FileFormatException {
         DataRoot data = Reader.readXML(template.toString());
-        DataMethod dm =
-                data.getPackages().stream().filter(p -> p.getName().equals("com/sun/tdk/jcov/instrument/instr")).findAny().get()
+        DataPackage dp =
+                data.getPackages().stream()
+                        .filter(p -> p.getName().equals("com/sun/tdk/jcov/instrument/instr")).findAny().get();
+        DataMethod dm = dp
                         .getClasses().stream().filter(c -> c.getName().equals("UserCode")).findAny().get()
                         .getMethods().stream().filter(m -> m.getName().equals("main")).findAny().get();
         method_slot = dm.getSlot();
         assertTrue(method_slot > 0);
+        assertFalse(dp
+                .getClasses().stream().filter(c -> c.getName().equals("InstrTest")).findAny().isPresent());
     }
 
     public void run(Path test_dir) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,

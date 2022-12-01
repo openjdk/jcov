@@ -86,8 +86,6 @@ public class Instr extends JCovCMDTool {
     private boolean subsequentInstr = false;
     private boolean recurse;
     private InstrumentationMode mode = InstrumentationMode.BRANCH;
-//    private AbstractUniversalInstrumenter instrumenter;
-//    private ClassMorph morph;
     private ClassLoader cl = ClassLoader.getSystemClassLoader();
     private static final Logger logger;
     //TODO do need both?
@@ -204,15 +202,16 @@ public class Instr extends JCovCMDTool {
      */
     public void instrumentFiles(String[] files, File outDir, String implantRT) throws Exception {
         setup();
-        InstrumentationPlugin aPLugin = plugin;
+        InstrumentationPlugin aPlugin = plugin;
         InstrumentationPlugin.Source source;
         if (implantRT != null) {
             source = new InstrumentationPlugin.PathSource(ClassLoader.getSystemClassLoader(), Path.of(implantRT));
-            aPLugin = new InstrumentationPlugin.ImplantingPlugin(plugin, source);
+            aPlugin = new InstrumentationPlugin.ImplantingPlugin(plugin, source);
         }
+        aPlugin = new InstrumentationPlugin.FilteringPlugin(aPlugin, InstrumentationPlugin.classNameFilter(params));
 
         InstrumentationPlugin.Instrumentation fi =
-                new InstrumentationPlugin.Instrumentation(aPLugin);
+                new InstrumentationPlugin.Instrumentation(aPlugin);
         for (String file : files) {
             InstrumentationPlugin.PathSource in;
 //            FileSystem outFS = null;
