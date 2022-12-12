@@ -41,9 +41,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,12 +57,10 @@ import java.util.logging.Logger;
 import static com.sun.tdk.jcov.Instr.DSC_INCLUDE_RT;
 import static com.sun.tdk.jcov.Instr.DSC_VERBOSE;
 import static com.sun.tdk.jcov.instrument.InstrumentationOptions.*;
-import static com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INSTR_PLUGIN;
 import static com.sun.tdk.jcov.instrument.InstrumentationPlugin.MODULE_INFO_CLASS;
 import static com.sun.tdk.jcov.instrument.InstrumentationPlugin.TEMPLATE_ARTIFACT;
 import static com.sun.tdk.jcov.util.Utils.CheckOptions.*;
 import static com.sun.tdk.jcov.util.Utils.getListFiles;
-import static com.sun.tdk.jcov.util.Utils.isClassFile;
 
 /**
  * <p> A tool to statically instrument JRE. </p> <p> There are 2 coverage
@@ -196,7 +192,7 @@ public class JREInstr extends JCovCMDTool {
             throw new RuntimeException("This functionality has not yet been implemented");
         }
 
-        //TODO this is defunc as of JDK 9, is it?
+        //see a comment in handleEnv(EnvHandler)
 //        ArrayList<String> srcs = null;
 //        if (addJars != null) {
 //            srcs = new ArrayList<>();
@@ -209,8 +205,6 @@ public class JREInstr extends JCovCMDTool {
 //            Utils.addToClasspath(srcs.toArray(new String[0]));
 //            instr.instrumentFiles(srcs.toArray(new String[0]), null, null);
 //        }
-
-        //TODO
 //        if (addTests != null) {
 //            ArrayList<String> tests = new ArrayList<>();
 //            for (File addTest : addTests) {
@@ -403,9 +397,10 @@ public class JREInstr extends JCovCMDTool {
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INSTR_PLUGIN,
                 Instr.DSC_SUBSEQUENT,
                 DSC_JAVAC_HACK,
-                DCS_ADD_JAR,
-                DCS_ADD_JIMAGE,
-                DCS_ADD_TESTS,
+                //See comment in handleEnv(EnvHandler)
+//                DCS_ADD_JAR,
+//                DCS_ADD_JIMAGE,
+//                DCS_ADD_TESTS,
                 DSC_HOST,
                 DSC_PORT
         }, this);
@@ -431,45 +426,51 @@ public class JREInstr extends JCovCMDTool {
         implant = new File(envHandler.getValue(DSC_INCLUDE_RT));
         Utils.checkFile(implant, "JCovRT library jarfile", FILE_ISFILE, FILE_EXISTS, FILE_CANREAD);
 
+        //It is currently unclear if there are solid usecases for instrumenting any additional bytecode together
+        //with the JDK. That applies to additional jars, sources and also test. If anything else need to be
+        //instrumented, a separate instrumentation call could be used.
         if (envHandler.isSet(DCS_ADD_JAR)) {
-            String[] jars = envHandler.getValues(DCS_ADD_JAR);
-            addJars = new File[jars.length];
-            for (int i = 0; i < addJars.length; ++i) {
-                addJars[i] = new File(jars[i]);
-                if (!addJars[i].exists()) {
-                    throw new EnvHandlingException("Additional jar " + jars[i] + " doesn't exist");
-                }
-                if (!addJars[i].canRead()) {
-                    throw new EnvHandlingException("Can't read additional jar " + jars[i]);
-                }
-            }
+            throw new UnsupportedOperationException("Instrumenting additional code together with JDK is not supported.");
+//            String[] jars = envHandler.getValues(DCS_ADD_JAR);
+//            addJars = new File[jars.length];
+//            for (int i = 0; i < addJars.length; ++i) {
+//                addJars[i] = new File(jars[i]);
+//                if (!addJars[i].exists()) {
+//                    throw new EnvHandlingException("Additional jar " + jars[i] + " doesn't exist");
+//                }
+//                if (!addJars[i].canRead()) {
+//                    throw new EnvHandlingException("Can't read additional jar " + jars[i]);
+//                }
+//            }
         }
         if (envHandler.isSet(DCS_ADD_JIMAGE)) {
-            String[] images = envHandler.getValues(DCS_ADD_JIMAGE);
-            addJimages = new File[images.length];
-            for (int i = 0; i < addJimages.length; ++i) {
-                addJimages[i] = new File(images[i]);
-                if (!addJimages[i].exists()) {
-                    throw new EnvHandlingException("Additional jimage " + images[i] + " doesn't exist");
-                }
-                if (!addJimages[i].canRead()) {
-                    throw new EnvHandlingException("Can't read additional jimage " + images[i]);
-                }
-            }
+            throw new UnsupportedOperationException("Instrumenting additional code together with JDK is not supported.");
+//            String[] images = envHandler.getValues(DCS_ADD_JIMAGE);
+//            addJimages = new File[images.length];
+//            for (int i = 0; i < addJimages.length; ++i) {
+//                addJimages[i] = new File(images[i]);
+//                if (!addJimages[i].exists()) {
+//                    throw new EnvHandlingException("Additional jimage " + images[i] + " doesn't exist");
+//                }
+//                if (!addJimages[i].canRead()) {
+//                    throw new EnvHandlingException("Can't read additional jimage " + images[i]);
+//                }
+//            }
         }
 
         if (envHandler.isSet(DCS_ADD_TESTS)) {
-            String[] files = envHandler.getValues(DCS_ADD_TESTS);
-            addTests = new File[files.length];
-            for (int i = 0; i < addTests.length; ++i) {
-                addTests[i] = new File(files[i]);
-                if (!addTests[i].exists()) {
-                    throw new EnvHandlingException("Test file " + files[i] + " doesn't exist");
-                }
-                if (!addTests[i].canRead()) {
-                    throw new EnvHandlingException("Can't read test file " + files[i]);
-                }
-            }
+            throw new UnsupportedOperationException("Instrumenting additional code together with JDK is not supported.");
+//            String[] files = envHandler.getValues(DCS_ADD_TESTS);
+//            addTests = new File[files.length];
+//            for (int i = 0; i < addTests.length; ++i) {
+//                addTests[i] = new File(files[i]);
+//                if (!addTests[i].exists()) {
+//                    throw new EnvHandlingException("Test file " + files[i] + " doesn't exist");
+//                }
+//                if (!addTests[i].canRead()) {
+//                    throw new EnvHandlingException("Can't read test file " + files[i]);
+//                }
+//            }
         }
 
         File f = new File(tail[0]);
@@ -707,8 +708,8 @@ public class JREInstr extends JCovCMDTool {
             logger.setLevel(Level.INFO);
         }
 
-        //TODO do these work for JREInstr?
-//        save_beg = opts.getValues(DSC_SAVE_BEGIN);
+        params.setSavesBegin(envHandler.getValues(DSC_SAVE_BEGIN));
+        params.setSavesEnd(envHandler.getValues(DSC_SAVE_AT_END));
 
         String abstractValue = envHandler.getValue(DSC_ABSTRACT);
         if (abstractValue.equals("off")) {

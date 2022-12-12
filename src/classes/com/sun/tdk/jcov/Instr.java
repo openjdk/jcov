@@ -243,19 +243,18 @@ public class Instr extends JCovCMDTool {
         }
     }
 
-    public void instrumentTests(String[] files, File outDir, String implantRT) throws IOException {
-
-        if (gennative || genAbstract) {
-            //TODO
-            //morph.fillIntrMethodsIDs(morph.getRoot());
-        }
-
-        setup();
-        for (String file : files) {
-            //TODO
-            //instrumenter.instrument(new File(file), outDir, implantRT, recurse);
-        }
-    }
+//    See comments in JREInstr.handleEnv(EventHandler)
+//    public void instrumentTests(String[] files, File outDir, String implantRT) throws IOException {
+//
+//        if (gennative || genAbstract) {
+//            morph.fillIntrMethodsIDs(morph.getRoot());
+//        }
+//
+//        setup();
+//        for (String file : files) {
+//            instrumenter.instrument(new File(file), outDir, implantRT, recurse);
+//        }
+//    }
 
     /**
      * Begin instrumentation in semi-automatic mode
