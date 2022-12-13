@@ -27,7 +27,6 @@ package com.sun.tdk.jcov;
 import com.sun.tdk.jcov.constants.MiscConstants;
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.data.Result;
-import com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
 import com.sun.tdk.jcov.processing.ProcessingException;
 import com.sun.tdk.jcov.tools.EnvHandler;
