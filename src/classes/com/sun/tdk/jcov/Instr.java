@@ -25,8 +25,8 @@
 package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
-import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
@@ -34,10 +34,7 @@ import com.sun.tdk.jcov.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.logging.Level;
@@ -225,15 +222,7 @@ public class Instr extends JCovCMDTool {
                 throw new RuntimeException();
             } else throw new IllegalStateException("Unknown input kind: " + file);
             InstrumentationPlugin.Destination out;
-            Path outPath = (outDir != null) ? outDir.toPath().resolve(inPath.getFileName()) : inPath;
-            if (Files.isDirectory(outPath) ||
-                    outPath.toString().endsWith(".jar") ||
-                    outPath.toString().endsWith(".jmod")) {
-                out = new InstrumentationPlugin.PathDestination(outPath);
-            } else if (Files.isRegularFile(outPath) && outPath.toString().endsWith(".class")) {
-                //TODO as above
-                throw new RuntimeException();
-            } else throw new IllegalStateException("Unknown output kind: " + file);
+            out = getDestination(outDir, inPath);
             try (in) {
                 fi.instrument(in, out, params);
             } finally {
@@ -241,6 +230,20 @@ public class Instr extends JCovCMDTool {
                 out.close();
             }
         }
+    }
+
+    protected InstrumentationPlugin.Destination getDestination(File outDir, Path inPath) throws IOException {
+        InstrumentationPlugin.Destination out;
+        Path outPath = (outDir != null) ? outDir.toPath().resolve(inPath.getFileName()) : inPath;
+        if (Files.isDirectory(outPath) ||
+                outPath.toString().endsWith(".jar") ||
+                outPath.toString().endsWith(".jmod")) {
+            out = new InstrumentationPlugin.PathDestination(outPath);
+        } else if (Files.isRegularFile(outPath) && outPath.toString().endsWith(".class")) {
+            //TODO as above
+            throw new RuntimeException();
+        } else throw new IllegalStateException("Unknown output kind: " + inPath);
+        return out;
     }
 
 //    See comments in JREInstr.handleEnv(EventHandler)
