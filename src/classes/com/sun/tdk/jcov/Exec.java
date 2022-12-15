@@ -33,6 +33,8 @@ import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
+
+import java.beans.EventHandler;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -80,6 +82,7 @@ public class Exec extends JCovCMDTool {
     private ProductInstr pInstr;
     // Report generation
     private File reportDir;
+    private EnvHandler envHandler;
 
     private void instrumentProduct() throws Exception {
         pInstr.instrumentProduct();
@@ -95,6 +98,7 @@ public class Exec extends JCovCMDTool {
         OutputStream errStream = null;
         Process proc = null;
         try {
+            grabber.handleEnv(envHandler);
             grabber.createServer();
             logger.log(Level.INFO, "Starting the Grabber");
             grabber.startServer();
@@ -255,7 +259,8 @@ public class Exec extends JCovCMDTool {
         }
 
         grabber = new Grabber();
-        grabber.handleEnv(envHandler);
+//        grabber.handleEnv(envHandler);
+        this.envHandler = envHandler;
 
         if (envHandler.isSet(DSC_REDIRECT_ERR)) {
             errLogFile = envHandler.getValue(DSC_REDIRECT_ERR);
@@ -268,7 +273,7 @@ public class Exec extends JCovCMDTool {
 
         if (envHandler.isSet(InstrumentationOptions.DSC_TEMPLATE)) {
             template = envHandler.getValue(InstrumentationOptions.DSC_TEMPLATE);
-            Utils.checkFileNotNull(template, "template file", Utils.CheckOptions.FILE_CANREAD, Utils.CheckOptions.FILE_ISFILE, Utils.CheckOptions.FILE_EXISTS);
+            Utils.checkFileNotNull(template, "template file", Utils.CheckOptions.FILE_PARENTEXISTS);
         }
 
         if (envHandler.isSet(Merger.DSC_OUTPUT_TEST_LIST)) {

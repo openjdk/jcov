@@ -411,19 +411,27 @@ public class Instr extends JCovCMDTool {
         return gennative;
     }
 
-    public void setGenNative(boolean gennative) {
-        this.gennative = gennative;
-    }
-
     public String[] getInclude() {
         return include;
+    }
+
+    public String[] getMInclude() {return m_include;}
+
+    public File getOutDir() { return outDir; }
+
+    public String getInclude_rt() { return include_rt; }
+
+    public void setInclude_rt(String include_rt) { this.include_rt = include_rt; }
+
+    public void setOutDir(File outDir) { this.outDir = outDir; }
+
+    public void setGenNative(boolean gennative) {
+        this.gennative = gennative;
     }
 
     public void setInclude(String[] include) {
         this.include = include;
     }
-
-    public String[] getMInclude() {return m_include;}
 
     public void setMInclude(String[] m_include) {this.m_include = m_include;}
 
@@ -500,6 +508,10 @@ public class Instr extends JCovCMDTool {
         return subsequentInstr;
     }
 
+    public String[] getSrcs() { return srcs; }
+
+    public void setSrcs(String[] srcs) { this.srcs = srcs; }
+
     public void setSubsequentInstr(boolean subsequentInstr) {
         this.subsequentInstr = subsequentInstr;
     }
@@ -558,7 +570,7 @@ public class Instr extends JCovCMDTool {
                 DSC_RECURSE,}, this);
     }
 
-    private int handleEnv_(EnvHandler opts) throws EnvHandlingException {
+    protected int handleEnv_(EnvHandler opts) throws EnvHandlingException {
         if (opts.isSet(DSC_VERBOSE)) {
             setVerbose(true);
         }
