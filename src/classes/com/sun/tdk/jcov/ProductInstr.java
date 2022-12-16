@@ -24,29 +24,24 @@
  */
 package com.sun.tdk.jcov;
 
-import com.sun.tdk.jcov.constants.MiscConstants;
-import com.sun.tdk.jcov.insert.AbstractUniversalInstrumenter;
-import com.sun.tdk.jcov.instrument.asm.ClassMorph;
-import com.sun.tdk.jcov.instrument.InstrumentationOptions;
-import com.sun.tdk.jcov.instrument.InstrumentationParams;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.tools.EnvHandler;
-import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
-import com.sun.tdk.jcov.util.RuntimeUtils;
 import com.sun.tdk.jcov.util.Utils;
+
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.logging.Level;
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  *
  * @author Andrey Titov
  */
-public class ProductInstr extends JCovCMDTool {
-    // instrumentation filters (include/exclude, fields, abstract, ...); removing temporary directory
+public class ProductInstr extends Instr {
 
     static final Logger logger;
 
@@ -54,121 +49,54 @@ public class ProductInstr extends JCovCMDTool {
         Utils.initLogger();
         logger = Logger.getLogger(ProductInstr.class.getName());
     }
-    private File instrProductDir;
-    private File instrOutputDir;
-    private String template = MiscConstants.JcovTemplateFileNameXML;
-    private String tempPath;
-    private File rtLibFile;
-    private String[] rtClassDirTargets;
-    private InstrumentationOptions.InstrumentationMode mode = InstrumentationOptions.InstrumentationMode.BRANCH;
-    private String[] include = new String[]{".*"};
-    private String[] exclude = new String[]{""};
-    private String[] m_include = new String[]{".*"};
-    private String[] m_exclude = new String[]{""};
-    private String[] callerInclude;
-    private String[] callerExclude;
 
-    public void instrumentProduct() throws Exception {
-        logger.log(Level.INFO, " - Instrumenting product");
-        logger.log(Level.CONFIG, "Product location: ''{0}'', target location: ''{1}''", new Object[]{instrProductDir.getPath(), instrOutputDir.getPath()});
+    public final static OptionDescr DSC_INSTRUMENT =
+            new OptionDescr("product", "", OptionDescr.VAL_SINGLE, "");
+    public final static OptionDescr DSC_INSTRUMENT_TO =
+            new OptionDescr("productOutput", "", OptionDescr.VAL_SINGLE, "");
+    public final static OptionDescr DSC_RT_TO = new OptionDescr("rtTo", "", OptionDescr.VAL_MULTI, "");
 
-        tempPath = instrProductDir.getPath() + RuntimeUtils.genSuffix();
-        createTempDir();
-
-        AbstractUniversalInstrumenter instrumenter = setupInstrumenter();
-
-        instrOutputDir.mkdir();
-        instrumenter.instrument(instrProductDir, instrOutputDir, rtLibFile.getAbsolutePath(), rtClassDirTargets == null ? null : new ArrayList(Arrays.asList(rtClassDirTargets)), true);
-        instrumenter.finishWork();
-
-        removeTempDir();
-    }
-
-    private AbstractUniversalInstrumenter setupInstrumenter() {
-        InstrumentationParams params = new InstrumentationParams(true, false, false, false, false, false, InstrumentationOptions.ABSTRACTMODE.NONE, include, exclude, callerInclude, callerExclude, m_include, m_exclude, mode, null, null)
-                .setInstrumentAnonymous(true)
-                .setInstrumentSynthetic(false);
-
-        final ClassMorph morph = new ClassMorph(params, null);
-        return new AbstractUniversalInstrumenter(true) {
-            @Override
-            protected byte[] instrument(byte[] classData, int classLength) throws IOException {
-                return morph.morph(classBuf, null, tempPath);
-            }
-
-            @Override
-            public void finishWork() {
-                morph.saveData(template, null, InstrumentationOptions.MERGE.OVERWRITE);
-            }
-        };
-    }
-
-    private void createTempDir() {
-        new File(tempPath).mkdir();
-        logger.log(Level.INFO, "Temp directory for storing instrumented classes created: ''{0}''. Automatic removal is not implemented yet so please remove it manually after all is done.", tempPath);
-    }
-
-    private void removeTempDir() {
-        File tempFile = new File(tempPath);
-        if (tempFile.isDirectory()) {
-            Utils.deleteDirectory(tempFile);
-        } else {
-            tempFile.delete();
-        }
-        logger.log(Level.INFO, "Temp directory for storing instrumented classes deleted: ''{0}''.", tempPath);
-    }
+    private static final List<String> SKIP_INSTR_OPTIONS = List.of(
+            DSC_OUTPUT).stream().map(o -> o.name).collect(Collectors.toList());
+    private static final List<OptionDescr> ADD_TO_INSTR_OPTIONS = List.of(
+            DSC_INSTRUMENT, DSC_INSTRUMENT_TO, Instr.DSC_INCLUDE_RT);
 
     @Override
-    protected int run() throws Exception {
-        instrumentProduct();
-        return SUCCESS_EXIT_CODE;
+    protected InstrumentationPlugin.Destination getDestination(File outDir, Path inPath) throws IOException {
+        if (getOutDir() == null) return new InstrumentationPlugin.PathDestination(inPath);
+        else return new InstrumentationPlugin.PathDestination(Path.of(outDir.getAbsolutePath()));
     }
 
     @Override
     protected EnvHandler defineHandler() {
-        return new EnvHandler(new OptionDescr[]{
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_TYPE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE_LIST,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE_LIST,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE_LIST,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE_LIST,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_INCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_CALLER_EXCLUDE,
-                    DSC_INSTRUMENT,
-                    DSC_INSTRUMENT_TO,
-                    Instr.DSC_INCLUDE_RT,
-                    DSC_RT_TO,}, this);
+        EnvHandler superHandler = super.defineHandler();
+        List<OptionDescr> opts = superHandler.getValidOptions().stream()
+                .filter(o -> !SKIP_INSTR_OPTIONS.contains(o.name)).collect(Collectors.toList());
+        opts = new ArrayList<>(opts);
+        opts.addAll(ADD_TO_INSTR_OPTIONS);
+        return new EnvHandler(opts.toArray(new OptionDescr[0]), this);
     }
 
     @Override
     protected int handleEnv(EnvHandler envHandler) throws EnvHandlingException {
-        instrProductDir = Utils.checkFileCanBeNull(envHandler.getValue(ProductInstr.DSC_INSTRUMENT), "product directory", Utils.CheckOptions.FILE_ISDIR, Utils.CheckOptions.FILE_CANREAD);
-        instrOutputDir = Utils.checkFileCanBeNull(envHandler.getValue(ProductInstr.DSC_INSTRUMENT_TO), "directory for instrumented product", Utils.CheckOptions.FILE_NOTEXISTS, Utils.CheckOptions.FILE_CANWRITE);
+        int superRes = super.handleEnv_(envHandler);
+        if(superRes != SUCCESS_EXIT_CODE) return superRes;
+        File instrProductDir = Utils.checkFileCanBeNull(envHandler.getValue(ProductInstr.DSC_INSTRUMENT),
+                "product directory",
+                Utils.CheckOptions.FILE_ISDIR, Utils.CheckOptions.FILE_CANREAD);
+        File instrOutputDir = Utils.checkFileCanBeNull(envHandler.getValue(ProductInstr.DSC_INSTRUMENT_TO),
+                "directory for instrumented product",
+                Utils.CheckOptions.FILE_NOTEXISTS, Utils.CheckOptions.FILE_CANWRITE);
         if (instrProductDir != null && instrOutputDir == null) {
             throw new EnvHandlingException("Output directory for instrumented files should be specified in '-instrOutput'");
         }
-        rtLibFile = Utils.checkFileCanBeNull(envHandler.getValue(Instr.DSC_INCLUDE_RT), "JCov RT Saver path", Utils.CheckOptions.FILE_EXISTS, Utils.CheckOptions.FILE_ISFILE, Utils.CheckOptions.FILE_CANREAD);
+        setSrcs(new String[] {instrProductDir.getAbsolutePath()});
+        setOutDir(instrOutputDir);
+        File rtLibFile = Utils.checkFileCanBeNull(envHandler.getValue(Instr.DSC_INCLUDE_RT), "JCov RT Saver path", Utils.CheckOptions.FILE_EXISTS, Utils.CheckOptions.FILE_ISFILE, Utils.CheckOptions.FILE_CANREAD);
         if (rtLibFile == null) {
             throw new EnvHandlingException("Please specify saver location with '-rt' option");
         }
-        rtClassDirTargets = envHandler.getValues(ProductInstr.DSC_RT_TO);
-        if (envHandler.getValue(InstrumentationOptions.DSC_TYPE) != null) {
-            mode = InstrumentationOptions.InstrumentationMode.fromString(envHandler.getValue(InstrumentationOptions.DSC_TYPE));
-        }
-
-        include = InstrumentationOptions.handleInclude(envHandler);
-        exclude = InstrumentationOptions.handleExclude(envHandler);
-
-        m_include = InstrumentationOptions.handleMInclude(envHandler);
-        m_exclude = InstrumentationOptions.handleMExclude(envHandler);
-
-        callerInclude = envHandler.getValues(InstrumentationOptions.DSC_CALLER_INCLUDE);
-        callerExclude = envHandler.getValues(InstrumentationOptions.DSC_CALLER_EXCLUDE);
-
+        setInclude_rt(rtLibFile.toString());
         return SUCCESS_EXIT_CODE;
     }
 
@@ -186,9 +114,10 @@ public class ProductInstr extends JCovCMDTool {
     protected String exampleString() {
         return "";
     }
-    public final static OptionDescr DSC_INSTRUMENT =
-            new OptionDescr("product", "", OptionDescr.VAL_SINGLE, "");
-    public final static OptionDescr DSC_INSTRUMENT_TO =
-            new OptionDescr("productOutput", "", OptionDescr.VAL_SINGLE, "");
-    public final static OptionDescr DSC_RT_TO = new OptionDescr("rtTo", "", OptionDescr.VAL_MULTI, "");
+
+    public void instrumentProduct() throws Exception {
+        if (!getOutDir().exists()) getOutDir().mkdirs();
+        instrumentFiles(getSrcs(), getOutDir(), getInclude_rt());
+        finishWork(getTemplate());
+    }
 }

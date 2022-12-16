@@ -26,7 +26,6 @@ package com.sun.tdk.jcov.instrument;
 
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.ABSTRACTMODE;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions.InstrumentationMode;
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.runtime.Collect;
 import com.sun.tdk.jcov.runtime.CollectDetect;
 import com.sun.tdk.jcov.util.Utils;
@@ -36,7 +35,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -76,6 +74,13 @@ public class InstrumentationParams {
     private String output;
 
     //TODO replace by a builder!!!
+
+
+    public InstrumentationParams() {
+        this(false, false, false, false, ABSTRACTMODE.NONE,
+                new String[0], new String[0], new String[0], new String[0], InstrumentationMode.BLOCK);
+    }
+
     public InstrumentationParams(boolean dynamicCollect, boolean instrumentNative, boolean instrumentFields,
                                  boolean detectInternal, ABSTRACTMODE instrumentAbstract, String[] includes,
                                  String[] excludes, String[] callerIncludes, String[] callerExcludes,
@@ -205,12 +210,7 @@ public class InstrumentationParams {
     public InstrumentationPlugin filter(InstrumentationPlugin plugin) {
         //TODO is it possible to optimize to return the original plugin
         //in case for filtering options are provided?
-        return new InstrumentationPlugin.FilteringPlugin(plugin) {
-            @Override
-            protected boolean filter(String cls) {
-                return isIncluded(cls);
-            }
-        };
+        return new InstrumentationPlugin.FilteringPlugin(plugin, this::isIncluded);
     }
 
     public boolean isDetectInternal() {
@@ -356,6 +356,68 @@ public class InstrumentationParams {
 
     public String[] getCallerExcludes() {
         return callerExcludes;
+    }
+
+    public ABSTRACTMODE getInstrumentAbstract() {
+        return instrumentAbstract;
+    }
+
+    public String[] getSavesBegin() {
+        return savesBegin;
+    }
+
+    public String[] getSavesEnd() {
+        return savesEnd;
+    }
+
+    public InstrumentationParams setSavesBegin(String[] savesBegin) {
+        this.savesBegin = savesBegin;
+        return this;
+    }
+
+    public InstrumentationParams setSavesEnd(String[] savesEnd) {
+        this.savesEnd = savesEnd;
+        return this;
+    }
+
+    public InstrumentationParams setMode(InstrumentationMode mode) {
+        this.mode = mode;
+        return this;
+    }
+
+    public InstrumentationParams setCallerInclude(String callerInclude) {
+        this.callerInclude = callerInclude;
+        return this;
+    }
+
+    public InstrumentationParams setCallerExclude(String callerExclude) {
+        this.callerExclude = callerExclude;
+        return this;
+    }
+
+    public InstrumentationParams setCallerIncludes(String[] callerIncludes) {
+        this.callerIncludes = callerIncludes;
+        return this;
+    }
+
+    public InstrumentationParams setCallerExcludes(String[] callerExcludes) {
+        this.callerExcludes = callerExcludes;
+        return this;
+    }
+
+    public InstrumentationParams setInstrumentFields(boolean instrumentFields) {
+        this.instrumentFields = instrumentFields;
+        return this;
+    }
+
+    public InstrumentationParams setInstrumentNative(boolean instrumentNative) {
+        this.instrumentNative = instrumentNative;
+        return this;
+    }
+
+    public InstrumentationParams setInstrumentAbstract(ABSTRACTMODE instrumentAbstract) {
+        this.instrumentAbstract = instrumentAbstract;
+        return this;
     }
 
     public static InstrumentationParams setMode(InstrumentationParams params, InstrumentationMode mode) {

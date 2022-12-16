@@ -116,6 +116,10 @@ public class EnvHandler {
         this.tool = tool;
     }
 
+    public List<OptionDescr> getValidOptions() {
+        return validOptions;
+    }
+
     private OptionDescr getOptionByName(String name) {
         for (int i = 0; i < validOptions.size(); i++) {
             if (validOptions.get(i).isName(name)) {

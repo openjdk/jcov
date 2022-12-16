@@ -25,22 +25,40 @@
 package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.sun.tdk.jcov.Instr.DSC_INCLUDE_RT;
+import static com.sun.tdk.jcov.Instr.DSC_VERBOSE;
+import static com.sun.tdk.jcov.instrument.InstrumentationOptions.*;
+import static com.sun.tdk.jcov.instrument.InstrumentationPlugin.MODULE_INFO_CLASS;
+import static com.sun.tdk.jcov.instrument.InstrumentationPlugin.TEMPLATE_ARTIFACT;
 import static com.sun.tdk.jcov.util.Utils.CheckOptions.*;
 import static com.sun.tdk.jcov.util.Utils.getListFiles;
 
@@ -57,7 +75,7 @@ import static com.sun.tdk.jcov.util.Utils.getListFiles;
  */
 public class JREInstr extends JCovCMDTool {
 
-    private Instr instr;
+//    private Instr instr;
     private File toInstrument;
     private File[] addJars;
     private File[] addJimages;
@@ -66,46 +84,24 @@ public class JREInstr extends JCovCMDTool {
     private static final Logger logger;
     private String host = null;
     private Integer port = null;
+    private InstrumentationPlugin plugin = new ASMInstrumentationPlugin();
+    private InstrumentationParams params;
+    private String template = "template.xml";
+    private String[] m_excludes;
+    private String[] m_includes;
+    private String include_rt;
 
     static {
         Utils.initLogger();
         logger = Logger.getLogger(Instr.class.getName());
     }
 
-    /**
-     * tries to find class in the specified jars
-     */
-    public static class StaticJREInstrClassLoader extends URLClassLoader {
 
-        StaticJREInstrClassLoader(URL[] urls) {
-            super(urls);
-        }
-
-        @Override
-        public InputStream getResourceAsStream(String s) {
-            InputStream in = null;
-            try {
-                in = findResource(s).openStream();
-            } catch (IOException ignore) {
-                //nothing to do
-            }
-            if (in != null) {
-                return in;
-            }
-            return super.getResourceAsStream(s);
-        }
-    }
 
     @Override
     protected int run() throws Exception {
         final String[] toInstr = new String[]{toInstrument.getAbsolutePath()};
         Utils.addToClasspath(toInstr);
-        instr.startWorking();
-
-        StaticJREInstrClassLoader cl = new StaticJREInstrClassLoader(new URL[]{toInstrument.toURI().toURL()});
-        instr.setClassLoader(cl);
-
-        instr.fixJavaBase();
 
         if (toInstrument.getName().equals("jmods")) {
             logger.log(Level.INFO, "working with jmods");
@@ -122,14 +118,38 @@ public class JREInstr extends JCovCMDTool {
             }
             urls.add(toInstrument.toURI().toURL());
 
-            cl = new StaticJREInstrClassLoader(urls.toArray(new URL[0]));
-            instr.setClassLoader(cl);
+            ClassLoader cl = new InstrumentationPlugin.OverridingClassLoader(urls.toArray(new URL[0]),
+                    ClassLoader.getSystemClassLoader());
+
+            InstrumentationPlugin.ModuleInstrumentation mi = new InstrumentationPlugin.ModuleInstrumentation(
+                    new InstrumentationPlugin.FilteringPlugin(plugin, InstrumentationPlugin.classNameFilter(params)),
+                    (InstrumentationPlugin.ModuleInstrumentationPlugin) plugin) {
+                public void proccessModule(byte[] moduleInfo, ClassLoader loader,
+                                           BiConsumer<String, byte[]> destination) throws Exception {
+                    InstrumentationPlugin.ModuleInstrumentationPlugin mip = getModulePluign();
+                    if(mip.getModuleName(moduleInfo).equals("java.base")) {
+                        moduleInfo = mip.addExports(List.of("com/sun/tdk/jcov/runtime"), moduleInfo, loader);
+                        moduleInfo = mip.clearHashes(moduleInfo, loader);
+                        InstrumentationPlugin.PathSource implantSource =
+                                new InstrumentationPlugin.PathSource(cl, implant.toPath());
+                        for (String resource : implantSource.resources()) {
+                            destination.accept(resource, implantSource.loader().getResourceAsStream(resource).readAllBytes());
+                        }
+                    }
+                    destination.accept(MODULE_INFO_CLASS, moduleInfo);
+                }
+            };
 
             try {
                 for (File mod : getListFiles(jmodsTemp)) {
                     if (mod != null && mod.isDirectory()) {
-                        File modClasses = new File(mod, "classes");
-                        instr.instrumentFile(modClasses.getAbsolutePath(), null, null, mod.getName());
+                        String moduleName = mod.getName();
+                        if (isModuleIncluded(moduleName)) {
+                            logger.log(Level.INFO, "Instrumenting " + moduleName);
+                            File modClasses = new File(mod, "classes");
+                            mi.instrument(new InstrumentationPlugin.PathSource(cl, modClasses.toPath()),
+                                    new InstrumentationPlugin.PathDestination(modClasses.toPath()), params);
+                        }
                         createJMod(mod, jdk, implant.getAbsolutePath(), null);
                     }
                 }
@@ -163,97 +183,37 @@ public class JREInstr extends JCovCMDTool {
                     logger.log(Level.SEVERE, "failed to link modules. Please, run jlink for " + jmodsTemp + " temp jmod dir manually");
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 logger.log(Level.SEVERE, "exception while creating mods, e = " + e);
             }
         } else if (toInstrument.getAbsolutePath().endsWith("bootmodules.jimage")) {
             throw new RuntimeException("This functionality has not yet been implemented");
-//            ArrayList<File> jdkImages = new ArrayList<>();
-//            jdkImages.add(toInstrument);
-//            if (addJimages != null) {
-//                Collections.addAll(jdkImages, addJimages);
-//            }
-//
-//            for (File jimageInstr : jdkImages) {
-//                String tempDirName = jimageInstr.getName().substring(0, jimageInstr.getName().indexOf(".jimage"));
-//
-//                expandJimage(jimageInstr, tempDirName);
-//
-//                File dirtoInstrument = new File(jimageInstr.getParent(), tempDirName);
-////                still need it
-//                Utils.addToClasspath(new String[]{dirtoInstrument.getAbsolutePath()});
-//                for (File file : getListFiles(dirtoInstrument)) {
-//                    if (file.isDirectory()) {
-//                        Utils.addToClasspath(new String[]{file.getAbsolutePath()});
-//                    }
-//                }
-//
-//                if (jimageInstr.equals(toInstrument)) {
-//                    for (File mod : getListFiles(dirtoInstrument)) {
-//                        if (mod != null && mod.isDirectory()) {
-//
-//                            if ("java.base".equals(mod.getName())) {
-//                                instr.instrumentFile(mod.getAbsolutePath(), null, implant.getAbsolutePath(), mod.getName());
-//                            } else {
-//                                instr.instrumentFile(mod.getAbsolutePath(), null, null, mod.getName());
-//                            }
-//                        }
-//                    }
-//                } else {
-//                    for (File mod : getListFiles(dirtoInstrument)) {
-//                        if (mod != null && mod.isDirectory()) {
-//                            instr.instrumentFile(mod.getAbsolutePath(), null, null, mod.getName());
-//                        }
-//                    }
-//                }
-//                createJimage(dirtoInstrument, jimageInstr.getAbsolutePath() + "i");
-
-//            }
-//            for (File jimageInstr : jdkImages) {
-//
-//                String tempDirName = jimageInstr.getName().substring(0, jimageInstr.getName().indexOf(".jimage"));
-//                File dirtoInstrument = new File(jimageInstr.getParent(), tempDirName);
-//                if (!Utils.deleteDirectory(dirtoInstrument)) {
-//                    logger.log(Level.SEVERE, "please, delete " + tempDirName + " jimage dir manually");
-//                }
-//
-//                Utils.copyFile(jimageInstr, new File(jimageInstr.getParent(), jimageInstr.getName() + ".bak"));
-//
-//                if (!jimageInstr.delete()) {
-//                    logger.log(Level.SEVERE, "please, delete original jimage manually: " + jimageInstr);
-//                } else {
-//                    Utils.copyFile(new File(jimageInstr.getAbsolutePath() + "i"), jimageInstr);
-//                    new File(jimageInstr.getAbsolutePath() + "i").delete();
-//                }
-//
-//            }
-
         } else {
             throw new RuntimeException("This functionality has not yet been implemented");
-//            instr.instrumentFile(toInstrument.getAbsolutePath(), null, implant.getAbsolutePath());
         }
 
-        ArrayList<String> srcs = null;
-        if (addJars != null) {
-            srcs = new ArrayList<>();
-            for (File addJar : addJars) {
-                srcs.add(addJar.getAbsolutePath());
-            }
-        }
+        //see a comment in handleEnv(EnvHandler)
+//        ArrayList<String> srcs = null;
+//        if (addJars != null) {
+//            srcs = new ArrayList<>();
+//            for (File addJar : addJars) {
+//                srcs.add(addJar.getAbsolutePath());
+//            }
+//        }
+//
+//        if (srcs != null) {
+//            Utils.addToClasspath(srcs.toArray(new String[0]));
+//            instr.instrumentFiles(srcs.toArray(new String[0]), null, null);
+//        }
+//        if (addTests != null) {
+//            ArrayList<String> tests = new ArrayList<>();
+//            for (File addTest : addTests) {
+//                tests.add(addTest.getAbsolutePath());
+//            }
+//            instr.instrumentTests(tests.toArray(new String[0]), null, null);
+//        }
 
-        if (srcs != null) {
-            Utils.addToClasspath(srcs.toArray(new String[0]));
-            instr.instrumentFiles(srcs.toArray(new String[0]), null, null);
-        }
-
-        if (addTests != null) {
-            ArrayList<String> tests = new ArrayList<>();
-            for (File addTest : addTests) {
-                tests.add(addTest.getAbsolutePath());
-            }
-            instr.instrumentTests(tests.toArray(new String[0]), null, null);
-        }
-
-        instr.finishWork();
+        plugin.complete().get(TEMPLATE_ARTIFACT).accept(Files.newOutputStream(Path.of(template)));
 
         return SUCCESS_EXIT_CODE;
     }
@@ -261,7 +221,7 @@ public class JREInstr extends JCovCMDTool {
     private boolean doCommand(String command, File where, String msg) throws IOException, InterruptedException {
         Objects.requireNonNull(command);
         Objects.requireNonNull(msg);
-        boolean success;
+        boolean success = false;
         StringBuilder sb = new StringBuilder(msg + command);
         ProcessBuilder pb = new ProcessBuilder(command.split("\\s+")).directory(where).redirectErrorStream(true);
         Process p = null;
@@ -277,6 +237,8 @@ public class JREInstr extends JCovCMDTool {
             if (!success) {
                 logger.log(Level.SEVERE, sb.toString());
             }
+        } catch (Throwable e) {
+            e.printStackTrace();
         } finally {
             if (p != null) {
                 p.destroy();
@@ -330,6 +292,10 @@ public class JREInstr extends JCovCMDTool {
         return new File(jmodDir.getParentFile(), "instr_jimage_dir");
     }
 
+    private boolean isModuleIncluded(String moduleName) {
+        return (m_includes.length == 0 || Arrays.stream(m_includes).anyMatch(i -> moduleName.matches(i))) &&
+               Arrays.stream(m_excludes).noneMatch(i -> moduleName.matches(i));
+    }
     private void createJMod(File jmodDir, File jdk, String rt_path, String pluginPath) {
         try {
             File modsDir = jmodDir.getParentFile();
@@ -372,6 +338,7 @@ public class JREInstr extends JCovCMDTool {
             command.append(" " + jmodDir.getName() + ".jmod");
             doCommand(command.toString(),modsDir,"wrong command for create jmod: ");
         } catch (Exception e) {
+            e.printStackTrace();
             logger.log(Level.SEVERE, "exception in process(create jmod)", e);
         }
     }
@@ -400,13 +367,13 @@ public class JREInstr extends JCovCMDTool {
 
     @Override
     protected EnvHandler defineHandler() {
-        Instr.DSC_INCLUDE_RT.usage = "To run instrumented JRE you should implant JCov runtime library both into rt.jar " +
+        DSC_INCLUDE_RT.usage = "To run instrumented JRE you should implant JCov runtime library both into rt.jar " +
                 "and into 'lib/endorsed' directory.\nWhen instrumenting whole JRE dir with jreinstr tool - " +
                 "these 2 actions will be done automatically.";
 
         return new EnvHandler(new OptionDescr[]{
-                Instr.DSC_INCLUDE_RT,
-                Instr.DSC_VERBOSE,
+                DSC_INCLUDE_RT,
+                DSC_VERBOSE,
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_TYPE,
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE,
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE_LIST,
@@ -430,9 +397,10 @@ public class JREInstr extends JCovCMDTool {
                 com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INSTR_PLUGIN,
                 Instr.DSC_SUBSEQUENT,
                 DSC_JAVAC_HACK,
-                DCS_ADD_JAR,
-                DCS_ADD_JIMAGE,
-                DCS_ADD_TESTS,
+                //See comment in handleEnv(EnvHandler)
+//                DCS_ADD_JAR,
+//                DCS_ADD_JIMAGE,
+//                DCS_ADD_TESTS,
                 DSC_HOST,
                 DSC_PORT
         }, this);
@@ -440,7 +408,8 @@ public class JREInstr extends JCovCMDTool {
 
     @Override
     protected int handleEnv(EnvHandler envHandler) throws EnvHandlingException {
-        instr = new Instr();
+
+        params = new InstrumentationParams();
 
         String[] tail = envHandler.getTail();
         if (tail == null || tail.length == 0) {
@@ -450,52 +419,58 @@ public class JREInstr extends JCovCMDTool {
             logger.log(Level.WARNING, "Only first argument ({0}) will be used", tail[0]);
         }
 
-        if (!envHandler.isSet(Instr.DSC_INCLUDE_RT)) {
+        if (!envHandler.isSet(DSC_INCLUDE_RT)) {
             throw new EnvHandlingException("Runtime should be always implanted when instrumenting rt.jar (e.g. '-rt jcov_j2se_rt.jar')");
         }
 
-        implant = new File(envHandler.getValue(Instr.DSC_INCLUDE_RT));
+        implant = new File(envHandler.getValue(DSC_INCLUDE_RT));
         Utils.checkFile(implant, "JCovRT library jarfile", FILE_ISFILE, FILE_EXISTS, FILE_CANREAD);
 
+        //It is currently unclear if there are solid usecases for instrumenting any additional bytecode together
+        //with the JDK. That applies to additional jars, sources and also test. If anything else need to be
+        //instrumented, a separate instrumentation call could be used.
         if (envHandler.isSet(DCS_ADD_JAR)) {
-            String[] jars = envHandler.getValues(DCS_ADD_JAR);
-            addJars = new File[jars.length];
-            for (int i = 0; i < addJars.length; ++i) {
-                addJars[i] = new File(jars[i]);
-                if (!addJars[i].exists()) {
-                    throw new EnvHandlingException("Additional jar " + jars[i] + " doesn't exist");
-                }
-                if (!addJars[i].canRead()) {
-                    throw new EnvHandlingException("Can't read additional jar " + jars[i]);
-                }
-            }
+            throw new UnsupportedOperationException("Instrumenting additional code together with JDK is not supported.");
+//            String[] jars = envHandler.getValues(DCS_ADD_JAR);
+//            addJars = new File[jars.length];
+//            for (int i = 0; i < addJars.length; ++i) {
+//                addJars[i] = new File(jars[i]);
+//                if (!addJars[i].exists()) {
+//                    throw new EnvHandlingException("Additional jar " + jars[i] + " doesn't exist");
+//                }
+//                if (!addJars[i].canRead()) {
+//                    throw new EnvHandlingException("Can't read additional jar " + jars[i]);
+//                }
+//            }
         }
         if (envHandler.isSet(DCS_ADD_JIMAGE)) {
-            String[] images = envHandler.getValues(DCS_ADD_JIMAGE);
-            addJimages = new File[images.length];
-            for (int i = 0; i < addJimages.length; ++i) {
-                addJimages[i] = new File(images[i]);
-                if (!addJimages[i].exists()) {
-                    throw new EnvHandlingException("Additional jimage " + images[i] + " doesn't exist");
-                }
-                if (!addJimages[i].canRead()) {
-                    throw new EnvHandlingException("Can't read additional jimage " + images[i]);
-                }
-            }
+            throw new UnsupportedOperationException("Instrumenting additional code together with JDK is not supported.");
+//            String[] images = envHandler.getValues(DCS_ADD_JIMAGE);
+//            addJimages = new File[images.length];
+//            for (int i = 0; i < addJimages.length; ++i) {
+//                addJimages[i] = new File(images[i]);
+//                if (!addJimages[i].exists()) {
+//                    throw new EnvHandlingException("Additional jimage " + images[i] + " doesn't exist");
+//                }
+//                if (!addJimages[i].canRead()) {
+//                    throw new EnvHandlingException("Can't read additional jimage " + images[i]);
+//                }
+//            }
         }
 
         if (envHandler.isSet(DCS_ADD_TESTS)) {
-            String[] files = envHandler.getValues(DCS_ADD_TESTS);
-            addTests = new File[files.length];
-            for (int i = 0; i < addTests.length; ++i) {
-                addTests[i] = new File(files[i]);
-                if (!addTests[i].exists()) {
-                    throw new EnvHandlingException("Test file " + files[i] + " doesn't exist");
-                }
-                if (!addTests[i].canRead()) {
-                    throw new EnvHandlingException("Can't read test file " + files[i]);
-                }
-            }
+            throw new UnsupportedOperationException("Instrumenting additional code together with JDK is not supported.");
+//            String[] files = envHandler.getValues(DCS_ADD_TESTS);
+//            addTests = new File[files.length];
+//            for (int i = 0; i < addTests.length; ++i) {
+//                addTests[i] = new File(files[i]);
+//                if (!addTests[i].exists()) {
+//                    throw new EnvHandlingException("Test file " + files[i] + " doesn't exist");
+//                }
+//                if (!addTests[i].canRead()) {
+//                    throw new EnvHandlingException("Can't read test file " + files[i]);
+//                }
+//            }
         }
 
         File f = new File(tail[0]);
@@ -608,7 +583,7 @@ public class JREInstr extends JCovCMDTool {
 
             String template = envHandler.getValue(InstrumentationOptions.DSC_TEMPLATE);
             if (template != null) {
-                instr.setTemplate(template);
+                setTemplate(template);
             }
 
             File mods = new File(f.getParentFile(), "jmods");
@@ -700,8 +675,8 @@ public class JREInstr extends JCovCMDTool {
         String[] includes = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleInclude(envHandler);
         Utils.Pattern pats[] = Utils.concatFilters(includes, excludes);
 
-        String[] m_excludes = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleMExclude(envHandler);
-        String[] m_includes = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleMInclude(envHandler);
+        m_excludes = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleMExclude(envHandler);
+        m_includes = com.sun.tdk.jcov.instrument.InstrumentationOptions.handleMInclude(envHandler);
 
         String[] callerInclude = envHandler.getValues(InstrumentationOptions.DSC_CALLER_INCLUDE);
         String[] callerExclude = envHandler.getValues(InstrumentationOptions.DSC_CALLER_EXCLUDE);
@@ -729,21 +704,74 @@ public class JREInstr extends JCovCMDTool {
             }
         }
 
-        int ret = instr.handleEnv(envHandler);
-        instr.setSave_end(new String[]{"java/lang/Shutdown.runHooks"});
-        instr.setInclude(includes);
-        instr.setExclude(excludes);
+        if (envHandler.isSet(DSC_VERBOSE)) {
+            logger.setLevel(Level.INFO);
+        }
 
-        instr.setMInclude(m_includes);
-        instr.setMExclude(m_excludes);
+        params.setSavesBegin(envHandler.getValues(DSC_SAVE_BEGIN));
+        params.setSavesEnd(envHandler.getValues(DSC_SAVE_AT_END));
 
-        instr.setCallerInclude(callerInclude);
-        instr.setCallerExclude(callerExclude);
+        String abstractValue = envHandler.getValue(DSC_ABSTRACT);
+        if (abstractValue.equals("off")) {
+            params.setInstrumentAbstract(ABSTRACTMODE.NONE);
+        } else if (abstractValue.equals("on")) {
+            params.setInstrumentAbstract(ABSTRACTMODE.DIRECT);
+        } else {
+            throw new EnvHandlingException("'" + DSC_ABSTRACT.name +
+                    "' parameter value error: expected 'on' or 'off'; found: '" + abstractValue + "'");
+        }
 
-        instr.setInnerInclude(innerInclude);
-        instr.setInnerExclude(innerExclude);
+        String nativeValue = envHandler.getValue(DSC_NATIVE);
+        if (nativeValue.equals("on")) {
+            params.setInstrumentNative(true);
+        } else if (nativeValue.equals("off")) {
+            params.setInstrumentNative(false);
+        } else {
+            throw new EnvHandlingException("'" + DSC_NATIVE.name +
+                    "' parameter value error: expected 'on' or 'off'; found: '" + nativeValue + "'");
+        }
 
-        return ret;
+        String fieldValue = envHandler.getValue(DSC_FIELD);
+        if (fieldValue.equals("on")) {
+            params.setInstrumentFields(true);
+        } else if (fieldValue.equals("off")) {
+            params.setInstrumentFields(false);
+        } else {
+            // can't happen - check is in EnvHandler
+            throw new EnvHandlingException("'" + DSC_FIELD.name +
+                    "' parameter value error: expected 'on' or 'off'; found: '" + fieldValue + "'");
+        }
+
+        params.setInstrumentAnonymous(envHandler.getValue(DSC_ANONYM).equals("on"));
+
+        params.setInstrumentSynthetic(envHandler.getValue(DSC_SYNTHETIC).equals("on"));
+
+        params.setInnerInvocations(envHandler.getValue(DSC_INNERINVOCATION).equals("off"));
+
+        params.setCallerIncludes(callerInclude);
+        params.setCallerExcludes(callerExclude);
+
+        params.setMode(InstrumentationMode.fromString(envHandler.getValue(DSC_TYPE)));
+
+        template = envHandler.getValue(DSC_TEMPLATE);
+        Utils.checkFileNotNull(template, "template filename", FILE_NOTISDIR, FILE_PARENTEXISTS);
+
+        include_rt = envHandler.getValue(DSC_INCLUDE_RT);
+        Utils.checkFileCanBeNull(include_rt, "JCovRT library jarfile", FILE_EXISTS, FILE_ISFILE, FILE_CANREAD);
+
+        params.setSavesEnd(new String[]{"java/lang/Shutdown.runHooks"});
+
+        params.setIncludes(includes);
+        params.setExcludes(excludes);
+
+        params.setInnerIncludes(innerInclude);
+        params.setInnerExcludes(innerExclude);
+
+        return SUCCESS_EXIT_CODE;
+    }
+
+    private void setTemplate(String template) {
+        this.template = template;
     }
 
     private void createPropertyFile(File dir){

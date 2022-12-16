@@ -24,118 +24,324 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.util.Utils;
+
+import java.io.Closeable;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+
+import static com.sun.tdk.jcov.util.Utils.isClassFile;
 
 /**
  * TODO describe the lifecycle
  */
 public interface InstrumentationPlugin {
 
-    void instrument(Collection<String> classes, Function<String, byte[]> loader, BiConsumer<String, byte[]> saver,
+    /**
+     * An identifier for template artifact.
+     */
+    String TEMPLATE_ARTIFACT = "template.xml";
+    String CLASS_EXTENTION = ".class";
+    String MODULE_INFO_CLASS = "module-info.class";
+
+    /**
+     *
+     * @param resources A collection of resource paths relative to root of the class hierarchy. '/' is supposed to be
+     *                  used as a file separator.
+     * @param loader
+     * @param saver
+     * @param parameters
+     * @throws Exception
+     */
+    void instrument(Collection<String> resources, ClassLoader loader,
+                    BiConsumer<String, byte[]> saver,
                     InstrumentationParams parameters) throws Exception;
 
-    void complete(Supplier<OutputStream> templateStreamSupplier) throws Exception;
+    /**
+     * Completes the instrumentation proccess and returns a map of instrumentation artifacts.
+     * @see #TEMPLATE_ARTIFACT
+     *
+     * @return the artifact map. The artifacts are identifiable by a string. The artifacts are consumers of
+     * OutputStream's.
+     * @throws Exception
+     */
+    Map<String, Consumer<OutputStream>> complete() throws Exception;
+
+    default boolean isClass(String resource) {
+        return resource.endsWith(CLASS_EXTENTION) && !resource.endsWith(MODULE_INFO_CLASS);
+    }
 
     //TODO properly relocate the inner classes
 
-    abstract class FilteringPlugin implements InstrumentationPlugin {
+    interface ModuleInstrumentationPlugin {
+        String getModuleName(byte[] moduleInfo);
+        byte[] addExports(List<String> exports, byte[] moduleInfo, ClassLoader loader);
+        byte[] clearHashes(byte[] moduleInfo, ClassLoader loader);
+    }
+
+    abstract class ProxyInstrumentationPlugin implements InstrumentationPlugin {
         private final InstrumentationPlugin inner;
 
-        public FilteringPlugin(InstrumentationPlugin inner) {
+        protected ProxyInstrumentationPlugin(InstrumentationPlugin inner) {
             this.inner = inner;
         }
 
-        protected abstract boolean filter(String cls);
-        @Override
-        public void instrument(Collection<String> classes, Function<String, byte[]> loader,
-                               BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
-            inner.instrument(classes.stream().filter(this::filter).collect(Collectors.toList()),
-                    loader, saver, parameters);
+        public InstrumentationPlugin getInner() {
+            return inner;
         }
 
         @Override
-        public void complete(Supplier<OutputStream> templateStreamSupplier) throws Exception {
-            inner.complete(templateStreamSupplier);
+        public final Map<String, Consumer<OutputStream>> complete() throws Exception {
+            return inner.complete();
         }
     }
 
-    interface ModuleImplant {
-        //TODO qualified exports?
-        List<String> exports();
-        Collection<String> classes();
-        Function<String, byte[]> loader();
-    }
+    class FilteringPlugin extends ProxyInstrumentationPlugin {
+        private final Predicate<String> filter;
 
-    abstract class ModuleImplantingPlugin implements InstrumentationPlugin {
-
-        public static final String MODULE_INFO_CLASS = "module-info.class";
-
-        public interface ModuleInstrumentationPlugin extends InstrumentationPlugin {
-            String getModuleName(byte[] moduleInfo);
-            byte[] addExports(List<String> exports, byte[] moduleInfo);
-        }
-
-        private final ModuleInstrumentationPlugin inner;
-        private final Function<String, ModuleImplant> implants;
-
-        public ModuleImplantingPlugin(ModuleInstrumentationPlugin inner, Function<String, ModuleImplant> implants) {
-            this.inner = inner;
-            this.implants = implants;
+        public FilteringPlugin(InstrumentationPlugin inner, Predicate<String> filter) {
+            super(inner);
+            this.filter = filter;
         }
 
         @Override
-        public void instrument(Collection<String> classes, Function<String, byte[]> loader,
+        public void instrument(Collection<String> resources, ClassLoader loader,
                                BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
-            inner.instrument(classes, loader, saver, parameters);
-            String moduleName = inner.getModuleName(loader.apply(MODULE_INFO_CLASS));
-            if(moduleName != null) {
-                ModuleImplant implant = implants.apply(moduleName);
-                if(implant != null) {
-                    saver.accept(MODULE_INFO_CLASS, loader.apply(MODULE_INFO_CLASS));
-                    for(String c : implant.classes()) saver.accept(c, implant.loader().apply(c));
+            List<String> accepted = new ArrayList<>();
+            List<String> rejected = new ArrayList<>();
+            resources.forEach(r -> {
+                if (filter.test(r)) accepted.add(r);
+                else rejected.add(r);
+            });
+            getInner().instrument(accepted, loader, saver, parameters);
+            rejected.forEach(c -> {
+                try {
+                    saver.accept(c,
+                            loader.getResourceAsStream(c).readAllBytes());
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
                 }
+            });
+        }
+    }
+
+    static Predicate<String> classNameFilter(InstrumentationParams params) {
+        return r -> {
+            if (isClassFile(r))
+                return params.isIncluded(r.substring(0,
+                        r.length() - Utils.FILE_TYPE.CLASS.name().length() - 1));
+            else return true;
+        };
+    }
+
+    interface Source extends Closeable {
+        //paths relative to the result root
+        Collection<String> resources() throws Exception;
+        ClassLoader loader();
+    }
+
+    class ImplantingPlugin extends ProxyInstrumentationPlugin {
+        private final Source source;
+
+        //TODO similar to ModuleImplantingPlugin have different implants for different locations somehow?
+        public ImplantingPlugin(InstrumentationPlugin inner, Source source) {
+            super(inner);
+            this.source = source;
+        }
+
+        @Override
+        public void instrument(Collection<String> classes, ClassLoader loader,
+                               BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
+            getInner().instrument(classes, loader, saver, parameters);
+            for(String r : source.resources()) saver.accept(r, source.loader().getResourceAsStream(r).readAllBytes());
+        }
+    }
+
+    //TODO better be private
+    class OverridingClassLoader extends URLClassLoader {
+
+        private static URL[] toURL(Path root) {
+            try {
+                return new URL[] {root.toUri().toURL()};
+            } catch (MalformedURLException e) {
+                //should not happen since getting teh URL legally
+                throw new RuntimeException(e);
             }
         }
 
+        private final ClassLoader backup;
+
+        public OverridingClassLoader(Path root, ClassLoader backup) {
+            this(toURL(root), backup);
+        }
+
+        public OverridingClassLoader(URL[] urls, ClassLoader backup) {
+            super(urls);
+            this.backup = backup;
+        }
+
         @Override
-        public void complete(Supplier<OutputStream> template) throws Exception {
-            inner.complete(template);
+        public URL getResource(String name) {
+            //first try to find local resource, from teh current module
+            URL resource = findResource(name);
+            //for module-info it does not make sense to look in other classloaders
+            if(name.equals(MODULE_INFO_CLASS)) return resource;
+            //if none, try other modules
+            if (resource == null) resource = backup.getResource(name);
+            //that should not happen during normal use
+            //if happens, refer to super, nothing else we can do
+            if (resource == null) resource = super.getResource(name);
+            return resource;
         }
     }
 
-    class ImplantingPlugin implements InstrumentationPlugin {
-        private final Collection<String> implant;
-        private final Function<String, byte[]> implantLoader;
+    interface Destination extends Closeable {
+        BiConsumer<String, byte[]> saver();
+    }
+
+    /**
+     * A utility class which works with a given plugin in turms of file hierarchies.
+     */
+    class Instrumentation {
         private final InstrumentationPlugin inner;
 
-        //TODO similar to ModuleImplantingPlugin have different implants for different locations somehow?
-        public ImplantingPlugin(InstrumentationPlugin inner,
-                                Collection<String> implant, Function<String, byte[]> loader) {
-            this.implant = implant;
-            this.implantLoader = loader;
+        public Instrumentation(InstrumentationPlugin inner) {
             this.inner = inner;
         }
 
-        @Override
-        public void instrument(Collection<String> classes, Function<String, byte[]> loader,
-                               BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
-            inner.instrument(classes, loader, saver, parameters);
-            implant.forEach(c -> saver.accept(c, implantLoader.apply(c)));
+        public void instrument(Source source, Destination destination,
+                                     InstrumentationParams parameters) throws Exception {
+            inner.instrument(source.resources(), source.loader(),
+                    destination.saver(), parameters);
+        }
+    }
+
+    /**
+     * Helps to instrument modules.
+     * @see #Instrumentation
+     */
+    class ModuleInstrumentation extends Instrumentation {
+        private final ModuleInstrumentationPlugin modulePlugin;
+
+        public ModuleInstrumentation(InstrumentationPlugin inner, ModuleInstrumentationPlugin modulePlugin) {
+            super(inner);
+            this.modulePlugin = modulePlugin;
+        }
+
+        public ModuleInstrumentationPlugin getModulePluign() {
+            return modulePlugin;
+        }
+
+        /**
+         * Take any required action needed to instrument a module. This implementation does not do anything.
+         * @param moduleInfo
+         * @param loader
+         * @param destination
+         * @throws Exception
+         * @see ModuleInstrumentationPlugin
+         */
+        protected void proccessModule(byte[] moduleInfo, ClassLoader loader, BiConsumer<String, byte[]> destination)
+                throws Exception {
         }
 
         @Override
-        public void complete(Supplier<OutputStream> templateStreamSupplier) throws Exception {
-            inner.complete(templateStreamSupplier);
+        public void instrument(Source source, Destination destination,
+                               InstrumentationParams parameters) throws Exception {
+            super.instrument(source, destination, parameters);
+            byte[] moduleInfo = source.loader().getResourceAsStream(MODULE_INFO_CLASS).readAllBytes();
+            proccessModule(moduleInfo, source.loader(), destination.saver());
+        }
+    }
+
+    class PathSource implements Source, Closeable {
+
+        private final ClassLoader loader;
+        private final Path root;
+
+        public PathSource(ClassLoader backup, Path root) {
+            this.loader = new OverridingClassLoader(root, backup);
+            this.root = root;
         }
 
-        protected InstrumentationPlugin inner() {
-            return inner;
+        @Override
+        public Collection<String> resources() throws Exception {
+            if(Files.isDirectory(root))
+                return Files.find(root, Integer.MAX_VALUE, (f, a) -> Files.isRegularFile(f))
+                        .map(r -> root.relativize(r).toString())
+                        .collect(Collectors.toList());
+            else
+                try (JarFile jar = new JarFile(root.toFile())) {
+                    return jar.stream().filter(f -> !f.isDirectory())
+                            .map(ZipEntry::getName).collect(Collectors.toList());
+                }
+        }
+
+        @Override
+        public ClassLoader loader() {
+            return loader;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (loader instanceof Closeable) ((Closeable) loader).close();
+        }
+
+        public boolean isModule() throws IOException {
+            if (Files.isDirectory(root)) {
+                return Files.exists(root.resolve(MODULE_INFO_CLASS));
+            } else {
+                try (JarFile jar = new JarFile(root.toFile())) {
+                    return jar.stream().map(ZipEntry::getName).anyMatch(MODULE_INFO_CLASS::equals);
+                }
+            }
+        }
+    }
+
+    class PathDestination implements Destination, Closeable {
+        private final Path root;
+        private final FileSystem fs;
+        private final BiConsumer<String, byte[]> saver;
+
+        public PathDestination(Path root) throws IOException {
+            fs = Files.isDirectory(root) ? null : FileSystems.newFileSystem(root, null);
+            this.root = Files.isDirectory(root) ? root : fs.getPath("/");
+            saver = (s, bytes) -> {
+                try {
+                    Path f = PathDestination.this.root.resolve(s);
+                    Files.createDirectories(f.getParent());
+                    Files.write(f, bytes);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            };
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (fs != null) fs.close();
+        }
+
+        @Override
+        public BiConsumer<String, byte[]> saver() {
+            return saver;
         }
     }
 }

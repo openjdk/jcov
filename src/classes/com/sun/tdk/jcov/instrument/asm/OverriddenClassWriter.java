@@ -227,34 +227,6 @@ public class OverriddenClassWriter extends ClassWriter {
 
         ClassInfo classInfo;
 
-        if (loader instanceof JREInstr.StaticJREInstrClassLoader) {
-            InputStream in = getInputStreamForName(clName, loader, false, ".class");
-
-            if (in == null) {
-                in = getInputStreamForName(clName, ClassLoader.getSystemClassLoader(), false, ".class");
-
-                if (in == null) {
-                    throw new IOException("Can't read class " + clName + " from classloader " + loader);
-                }
-
-                ClassReader cr = new OffsetLabelingClassReader(in);
-                classInfo = new ClassInfo(cr.getSuperName(), cr.getInterfaces());
-                try{
-                    in.close();
-                }
-                catch (Throwable ignore){}
-                return classInfo;
-            }
-
-            ClassReader cr = new OffsetLabelingClassReader(in);
-            classInfo = new ClassInfo(cr.getSuperName(), cr.getInterfaces());
-            try{
-                in.close();
-            }
-            catch (Throwable ignore){}
-            return classInfo;
-        }
-
         InputStream in = getInputStreamForName(clName, ClassLoader.getSystemClassLoader(), false, ".class");
         String superClassName = null;
         String[] interfaceNames = null;
@@ -330,6 +302,7 @@ public class OverriddenClassWriter extends ClassWriter {
                 return in;
             }
         } catch (Throwable ignore) {
+            ignore.printStackTrace();
         }
 
         // trying to get class with custom extension(s) mentioned in "jcov.clext" system property
