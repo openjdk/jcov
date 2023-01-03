@@ -24,7 +24,6 @@
  */
 package com.sun.tdk.jcov.instrument;
 
-import com.sun.tdk.jcov.instrument.asm.ASMModifiers;
 import com.sun.tdk.jcov.util.NaturalComparator;
 import com.sun.tdk.jcov.data.Scale;
 import com.sun.tdk.jcov.data.ScaleOptions;
@@ -117,7 +116,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
         super(k.rootId);
 
         this.parent = k;
-        this.access = new ASMModifiers(access);
+        this.access = Modifiers.parse(access);
         this.name = name;
         this.vmSig = desc;
         this.signature = signature;
@@ -510,7 +509,7 @@ public class DataField extends DataAnnotated implements Comparable<DataField>,
         name = in.readUTF();
         signature = readString(in);
         vmSig = readString(in);
-        access = new ASMModifiers(in.readInt());
+        access = Modifiers.parse(in.readInt());
         if (in.readBoolean()) {
             value = in.readUTF(); // value
         } else {

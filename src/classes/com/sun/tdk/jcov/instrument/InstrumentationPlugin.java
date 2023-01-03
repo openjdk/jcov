@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -61,6 +62,10 @@ public interface InstrumentationPlugin {
     String TEMPLATE_ARTIFACT = "template.xml";
     String CLASS_EXTENTION = ".class";
     String MODULE_INFO_CLASS = "module-info.class";
+
+    static InstrumentationPlugin getPlugin() {
+        return Services.getPlugin();
+    }
 
     /**
      *

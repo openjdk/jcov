@@ -5,7 +5,7 @@ import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.instrument.DataPackage;
 import com.sun.tdk.jcov.instrument.DataRoot;
-import com.sun.tdk.jcov.instrument.Util;
+import com.sun.tdk.jcov.instrument.util.Util;
 import com.sun.tdk.jcov.instrument.instr.UserCode;
 import com.sun.tdk.jcov.io.Reader;
 import org.testng.annotations.AfterClass;

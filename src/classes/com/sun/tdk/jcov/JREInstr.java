@@ -27,7 +27,6 @@ package com.sun.tdk.jcov;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
@@ -40,7 +39,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -51,6 +52,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,16 +77,15 @@ import static com.sun.tdk.jcov.util.Utils.getListFiles;
  */
 public class JREInstr extends JCovCMDTool {
 
-//    private Instr instr;
     private File toInstrument;
-    private File[] addJars;
-    private File[] addJimages;
-    private File[] addTests;
+//    private File[] addJars;
+//    private File[] addJimages;
+//    private File[] addTests;
     private File implant;
     private static final Logger logger;
     private String host = null;
     private Integer port = null;
-    private InstrumentationPlugin plugin = new ASMInstrumentationPlugin();
+    private InstrumentationPlugin plugin;
     private InstrumentationParams params;
     private String template = "template.xml";
     private String[] m_excludes;
@@ -121,6 +122,7 @@ public class JREInstr extends JCovCMDTool {
             ClassLoader cl = new InstrumentationPlugin.OverridingClassLoader(urls.toArray(new URL[0]),
                     ClassLoader.getSystemClassLoader());
 
+            if(plugin == null) plugin = InstrumentationPlugin.getPlugin();
             InstrumentationPlugin.ModuleInstrumentation mi = new InstrumentationPlugin.ModuleInstrumentation(
                     new InstrumentationPlugin.FilteringPlugin(plugin, InstrumentationPlugin.classNameFilter(params)),
                     (InstrumentationPlugin.ModuleInstrumentationPlugin) plugin) {
@@ -213,7 +215,8 @@ public class JREInstr extends JCovCMDTool {
 //            instr.instrumentTests(tests.toArray(new String[0]), null, null);
 //        }
 
-        plugin.complete().get(TEMPLATE_ARTIFACT).accept(Files.newOutputStream(Path.of(template)));
+        Consumer<OutputStream> tmplGen = plugin.complete().get(TEMPLATE_ARTIFACT);
+        if (tmplGen != null) tmplGen.accept(Files.newOutputStream(Path.of(template)));
 
         return SUCCESS_EXIT_CODE;
     }
@@ -766,6 +769,17 @@ public class JREInstr extends JCovCMDTool {
 
         params.setInnerIncludes(innerInclude);
         params.setInnerExcludes(innerExclude);
+
+        try {
+            String pluginClass = envHandler.getValue(DSC_INSTR_PLUGIN);
+            if(pluginClass != null && !pluginClass.isEmpty()) {
+                plugin = (InstrumentationPlugin) Class.forName(pluginClass)
+                        .getDeclaredConstructor().newInstance();
+            }
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
+                NoSuchMethodException | InvocationTargetException e) {
+            throw new EnvHandlingException("'" + DSC_INSTR_PLUGIN.name + "' parameter error: '" + e + "'");
+        }
 
         return SUCCESS_EXIT_CODE;
     }

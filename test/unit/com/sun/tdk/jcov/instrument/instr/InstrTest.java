@@ -26,11 +26,10 @@ package com.sun.tdk.jcov.instrument.instr;
 
 import com.sun.tdk.jcov.Instr;
 import com.sun.tdk.jcov.data.FileFormatException;
-import com.sun.tdk.jcov.instrument.DataClass;
 import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.instrument.DataPackage;
 import com.sun.tdk.jcov.instrument.DataRoot;
-import com.sun.tdk.jcov.instrument.Util;
+import com.sun.tdk.jcov.instrument.util.Util;
 import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.runtime.Collect;
 import org.testng.annotations.AfterClass;

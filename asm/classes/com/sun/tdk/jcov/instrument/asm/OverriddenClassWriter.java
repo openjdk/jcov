@@ -24,8 +24,6 @@
  */
 package com.sun.tdk.jcov.instrument.asm;
 
-import com.sun.tdk.jcov.JREInstr;
-import com.sun.tdk.jcov.runtime.PropertyFinder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessController;

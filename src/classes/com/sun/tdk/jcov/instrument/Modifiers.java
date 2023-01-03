@@ -24,7 +24,18 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import java.util.ServiceLoader;
+
 public interface Modifiers {
+
+    static Modifiers parse(String[] flags) {
+        return Services.getFactory().parse(flags);
+    }
+
+    static Modifiers parse(int flags) {
+        return Services.getFactory().parse(flags);
+    }
+
     boolean isPublic();
 
     boolean isPrivate();
@@ -76,4 +87,8 @@ public interface Modifiers {
     @Deprecated
     boolean is(int code);
 
+    interface ModifiersFactory {
+        Modifiers parse(String[] flags);
+        Modifiers parse(int flags);
+    }
 }

@@ -36,11 +36,15 @@
     <!-- Build area -->
     <property name="build.dir" location="${result.dir}/jcov_${build.version}"/>
     <property name="jcov.classpath" value="${asm.jar}:${asm.util.jar}:${asm.tree.jar}:${java.home}/lib/tools.jar"/>
+    <property name="asm.libs" location="${asm.jar}/.."/>
+    <property name="jcov.modulepath" value="${asm.libs}"/>
 
     <!-- Temp dir is for files which do not appear in release directory -->
     <property name="tmp.dir" location="${result.dir}/temp"/>
 
+    <property name="all.classes" location="${tmp.dir}/all_classes"/>
     <property name="jcov.classes" location="${tmp.dir}/jcov_classes"/>
+    <property name="jcov.asm.classes" location="${tmp.dir}/jcov_asm_classes"/>
     <property name="jcov.src.update" location="${tmp.dir}/jcov_src_update"/>
 
     <property name="jcov.filesaver.classes" location="${tmp.dir}/jcov_filesaver_classes"/>
@@ -54,6 +58,12 @@
     <patternset id="jcov.files">
         <include name="com/sun/tdk/jcov/**"/>
         <include name="resources/**"/>
+        <include name="module-info.*"/>
+    </patternset>
+
+    <patternset id="jcov.asm.files">
+        <include name="com/sun/tdk/jcov/instrument/asm/**"/>
+        <include name="module-info.*"/>
     </patternset>
 
     <patternset id="jcov.file.saver.files">
@@ -111,7 +121,9 @@
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${tmp.dir}"/>
         <mkdir dir="${jcov.src.update}"/>
+        <mkdir dir="${all.classes}"/>
         <mkdir dir="${jcov.classes}"/>
+        <mkdir dir="${jcov.asm.classes}"/>
 
     </target>
 
@@ -161,44 +173,75 @@
 
     </target>
 
-    <target name="compile"  depends="prepare, build-date"
+    <target name="compile-jcov"  depends="prepare, build-date"
             description="compile main tools">
 
-        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="8" source="8"
+        <javac includeantruntime="false" encoding="iso-8859-1" debug="true"
                srcdir="${jcov.src.update}"
                destdir="${jcov.classes}"
                classpath="${jcov.classpath}">
         </javac>
 
-        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="8" source="8"
+        <javac includeantruntime="true" encoding="iso-8859-1" debug="true"
                srcdir="${src.dir}"
                destdir="${jcov.classes}"
-               classpath="${jcov.classpath}">
+               modulepath="${javatestjar}:${ant.home}/lib/ant.jar">
+            <compilerarg value="--add-modules"/>
+            <compilerarg value="jdk.jdeps"/>
+            <compilerarg value="--add-exports"/>
+            <compilerarg value="jdk.jdeps/com.sun.tools.javap=jcov"/>
             <patternset refid="jcov.files"/>
         </javac>
 
         <copy todir="${jcov.classes}">
             <fileset refid="jcov.resources.files"/>
         </copy>
+        <copy todir="${all.classes}">
+            <fileset dir="${jcov.classes}">
+                <exclude name="module-info.class"/>
+            </fileset>
+        </copy>
+        <jmod classpath="${jcov.classes}" destfile="${build.dir}/jcov.jmod"/>
     </target>
 
+    <target name="compile-asm"  depends="compile-jcov" if="with.asm">
+        <javac encoding="iso-8859-1" debug="true"
+               srcdir="${asm.src.dir}"
+               destdir="${jcov.asm.classes}"
+               modulepath="${jcov.classes}:${jcov.modulepath}:${javatestjar}:${ant.home}/lib/ant.jar">
+            <patternset refid="jcov.asm.files"/>
+        </javac>
+        <copy todir="${all.classes}">
+            <fileset dir="${jcov.asm.classes}">
+                <exclude name="module-info.class"/>
+            </fileset>
+        </copy>
+        <jmod classpath="${jcov.asm.classes}" destfile="${build.dir}/jcov.asm.jmod"/>
+    </target>
+
+    <target name="compile"  depends="compile-jcov, compile-asm"/>
+<!-- TODO
     <patternset id="jcov.services">
         <include name="META-INF/services/**"/>
     </patternset>
+-->
+    <target name="add-asm" if="with.asm">
+        <unjar src="${asm.jar}" dest="${all.classes}"/>
+        <unjar src="${asm.tree.jar}" dest="${all.classes}"/>
+        <unjar src="${asm.util.jar}" dest="${all.classes}"/>
+        <delete file="${all.classes}/module-info.class"/>
+    </target>
 
-    <target name="build-jcov" depends="compile" description="build jcov jar">
-        <unjar src="${asm.jar}" dest="${jcov.classes}"/>
-        <unjar src="${asm.tree.jar}" dest="${jcov.classes}"/>
-        <unjar src="${asm.util.jar}" dest="${jcov.classes}"/>
-
-        <mkdir dir="${jcov.classes}/META-INF"/>
-        <mkdir dir="${jcov.classes}/META-INF/services"/>
-        <echo file="${jcov.classes}/META-INF/services/com.sun.tdk.jcov.report.AncFilterFactory"
+    <target name="build-jcov" depends="compile, add-asm" description="build jcov jar">
+<!--
+        <mkdir dir="${all.classes}/META-INF"/>
+        <mkdir dir="${all.classes}/META-INF/services"/>
+        <echo file="${all.classes}/META-INF/services/com.sun.tdk.jcov.report.AncFilterFactory"
               append="false">
             com.sun.tdk.jcov.report.ancfilters.BuiltInAncFilters
         </echo>
-
-        <jar destfile="${build.dir}/jcov.jar" basedir="${jcov.classes}" index="false">
+-->
+        <jar destfile="${build.dir}/jcov.jar" basedir="${all.classes}" index="false">
             <manifest>
                 <attribute name="Built-By"   value="${user.name}"/>
                 <attribute name="Premain-Class" value="com.sun.tdk.jcov.Agent"/>
@@ -208,9 +251,10 @@
                 <attribute name="Can-Set-Native-Method-Prefix" value="true" />
             </manifest>
 
-            <patternset refid="jcov.files"/>
             <patternset refid="asm.files"/>
-            <patternset refid="jcov.services"/>
+            <!--patternset refid="jcov.services"/-->
+            <patternset refid="jcov.files"/>
+            <patternset refid="jcov.asm.files"/>
         </jar>
 
     </target>
@@ -236,7 +280,7 @@
                 </tokenfilter>
             </filterchain>
         </copy>
-        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="8" source="8"
+        <javac includeantruntime="true" encoding="iso-8859-1" debug="true"
                srcdir="${jcov.filesaver.src}"
                sourcepath=""
                classpath="${jcov.filesaver.classes}"
@@ -270,7 +314,7 @@
                 </tokenfilter>
             </filterchain>
         </copy>
-        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="8" source="8"
+        <javac includeantruntime="true" encoding="iso-8859-1" debug="true"
                srcdir="${jcov.networksaver.src}"
                sourcepath=""
                classpath="${jcov.networksaver.classes}"
@@ -289,8 +333,6 @@
         <mkdir dir="${jcov.jtobserver.classes}"/>
         <javac includeantruntime="false" encoding="iso-8859-1"
                debug="no"
-               target="8"
-               source="8"
                srcdir="${src.dir}"
                sourcepath=""
                destdir="${jcov.jtobserver.classes}" classpath="${javatestjar}">
@@ -334,8 +376,6 @@ MILESTONE="${build.milestone}"
         <mkdir dir="${result.dir}/test/classes" />
         <javac includeantruntime="false" encoding="iso-8859-1"
                debug="no"
-               target="8"
-               source="8"
                srcdir="${test.src.dir}"
                sourcepath="${test.src.dir}"
                classpath="${testngjar}:${build.dir}/jcov.jar"

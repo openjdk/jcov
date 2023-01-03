@@ -24,7 +24,6 @@
  */
 package com.sun.tdk.jcov.instrument;
 
-import com.sun.tdk.jcov.instrument.asm.ASMModifiers;
 import com.sun.tdk.jcov.util.NaturalComparator;
 import com.sun.tdk.jcov.data.Scale;
 import com.sun.tdk.jcov.util.Utils;
@@ -101,7 +100,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         super(k.rootId);
 
         this.parent = k;
-        this.access = new ASMModifiers(access);
+        this.access = Modifiers.parse(access);
         this.name = name;
         this.vmSig = desc;
         this.signature = signature;
@@ -598,7 +597,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         name = in.readUTF();
         vmSig = readString(in);
         signature = readString(in);
-        access = new ASMModifiers(in.readInt());
+        access = Modifiers.parse(in.readInt());
         differentiateMethods = in.readBoolean();
         exceptions = readStrings(in);
         int len = in.readShort();
