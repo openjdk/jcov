@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tdk.jcov.instrument.plugin.jreinstr;
+package com.sun.tdk.jcov.instrument.plugin;
 
-import java.lang.module.ModuleDescriptor;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 
-public class Collect {
-    //this is called from the test to test that the necessary changes has been done by the instarumentation
-    public static void main(String[] args) {
-        Object.class.getModule().getDescriptor().exports().stream().filter(e -> !e.isQualified())
-                .map(ModuleDescriptor.Exports::source)
-                .forEach(System.out::println);
+import java.util.List;
+
+public class JRETestPlugin extends TestPlugin implements InstrumentationPlugin.ModuleInstrumentationPlugin {
+
+    private final ModuleInstrumentationPlugin actual = new ASMInstrumentationPlugin();
+
+    @Override
+    public String getModuleName(byte[] moduleInfo) {
+        return actual.getModuleName(moduleInfo);
+    }
+
+    @Override
+    public byte[] addExports(List<String> exports, byte[] moduleInfo, ClassLoader loader) {
+        return moduleInfo;
+    }
+
+    @Override
+    public byte[] clearHashes(byte[] moduleInfo, ClassLoader loader) {
+        return actual.clearHashes(moduleInfo, loader);
     }
 }

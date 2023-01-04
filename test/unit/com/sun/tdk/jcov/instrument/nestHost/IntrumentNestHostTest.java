@@ -23,7 +23,7 @@
  * questions.
  */
 
-package com.sun.tdk.jcov.instrument;
+package com.sun.tdk.jcov.instrument.nestHost;
 
 import java.io.OutputStream;
 import java.lang.reflect.Method;
@@ -34,6 +34,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.sun.tdk.jcov.Instr;
+import com.sun.tdk.jcov.instrument.DataBlock;
+import com.sun.tdk.jcov.instrument.DataClass;
+import com.sun.tdk.jcov.instrument.DataMethod;
+import com.sun.tdk.jcov.instrument.DataRoot;
 import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.runtime.Collect;
 import org.testng.Assert;
@@ -75,10 +79,10 @@ public class IntrumentNestHostTest {
             int blocks = 0;
             for (DataClass dc : root.getClasses()) {
                 for (DataMethod dm : dc.getMethods()) {
-                    if ("<init>".equals(dm.name))
+                    if ("<init>".equals(dm.getName()))
                         continue;
                     for (DataBlock db : dm.getBlocks()) {
-                        Assert.assertEquals(Collect.countFor(db.slot), 1);
+                        Assert.assertEquals(Collect.countFor(db.getId()), 1);
                         blocks++;
                     }
                 }

@@ -25,7 +25,6 @@
 package com.sun.tdk.jcov.instrument;
 
 import com.sun.tdk.jcov.data.FileFormatException;
-import com.sun.tdk.jcov.instrument.asm.ASMModifiers;
 import com.sun.tdk.jcov.instrument.reader.Reader;
 import com.sun.tdk.jcov.instrument.reader.ReaderFactory;
 import java.io.DataInput;
@@ -209,7 +208,7 @@ public abstract class DataAbstract {
     }
 
     public Modifiers access(String[] accessFlags) {
-        return ASMModifiers.parse(accessFlags);
+        return Modifiers.parse(accessFlags);
     }
 
     public String access(Modifiers access) {

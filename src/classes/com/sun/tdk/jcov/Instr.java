@@ -26,7 +26,6 @@ package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
@@ -34,9 +33,11 @@ import com.sun.tdk.jcov.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -86,7 +87,7 @@ public class Instr extends JCovCMDTool {
     private ClassLoader cl = ClassLoader.getSystemClassLoader();
     private static final Logger logger;
     //TODO do need both?
-    private InstrumentationPlugin plugin = new ASMInstrumentationPlugin();
+    private InstrumentationPlugin plugin;
     private InstrumentationParams params;
 
     static {
@@ -199,6 +200,7 @@ public class Instr extends JCovCMDTool {
      */
     public void instrumentFiles(String[] files, File outDir, String implantRT) throws Exception {
         setup();
+        if (plugin == null) plugin = InstrumentationPlugin.getPlugin();
         InstrumentationPlugin aPlugin = plugin;
         InstrumentationPlugin.Source source;
         if (implantRT != null) {
@@ -314,8 +316,8 @@ public class Instr extends JCovCMDTool {
      * @param outTemplate template path
      */
     public void finishWork(String outTemplate) throws Exception {
-        //TODO what's with two finishWork methods????
-        plugin.complete().get(TEMPLATE_ARTIFACT).accept(Files.newOutputStream(Path.of(outTemplate)));
+        Consumer<OutputStream> tmplGen = plugin.complete().get(TEMPLATE_ARTIFACT);
+        if (tmplGen != null) tmplGen.accept(Files.newOutputStream(Path.of(outTemplate)));
     }
 
     /**

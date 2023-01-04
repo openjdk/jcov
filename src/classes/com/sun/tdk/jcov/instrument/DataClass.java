@@ -24,7 +24,6 @@
  */
 package com.sun.tdk.jcov.instrument;
 
-import com.sun.tdk.jcov.instrument.asm.ASMModifiers;
 import com.sun.tdk.jcov.util.NaturalComparator;
 import com.sun.tdk.jcov.filter.MemberFilter;
 import java.io.DataInput;
@@ -268,7 +267,7 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
      * @param access
      */
     public void setAccess(int access) {
-        this.access = new ASMModifiers(access);
+        this.access = Modifiers.parse(access);
     }
 
     /**
@@ -1113,7 +1112,7 @@ public class DataClass extends DataAnnotated implements Comparable<DataClass> {
         superName = readString(in);
         superInterfaces = readString(in);
         checksum = in.readLong();
-        access = new ASMModifiers(in.readInt());
+        access = Modifiers.parse(in.readInt());
         byte b = in.readByte();
         differentiateClass = (b & 1) != 0;
         inner = (b & 2) != 0;

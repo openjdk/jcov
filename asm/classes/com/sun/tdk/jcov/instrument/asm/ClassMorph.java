@@ -42,7 +42,6 @@ import com.sun.tdk.jcov.instrument.XmlNames;
 import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.runtime.Collect;
 import com.sun.tdk.jcov.runtime.FileSaver;
-import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.DebugUtils;
 import com.sun.tdk.jcov.util.Utils;
 import org.objectweb.asm.Attribute;

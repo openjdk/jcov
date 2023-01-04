@@ -34,7 +34,6 @@ import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.util.Utils;
 
-import java.beans.EventHandler;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;

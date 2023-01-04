@@ -126,5 +126,18 @@ public class ASMModifiers implements Modifiers {
         }
         return new ASMModifiers(access);
     }
+
+    public static class ASMModfiersFactory implements ModifiersFactory {
+
+        @Override
+        public Modifiers parse(String[] flags) {
+            return ASMModifiers.parse(flags);
+        }
+
+        @Override
+        public Modifiers parse(int flags) {
+            return new ASMModifiers(flags);
+        }
+    }
 }
 
