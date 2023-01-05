@@ -62,7 +62,7 @@ public class TmplGen extends Instr {
     }
 
     @Override
-    protected InstrumentationPlugin.Destination getDestination(File outDir, Path inPath) {
+    protected InstrumentationPlugin.Destination getDestination(Path path) {
         return new InstrumentationPlugin.Destination() {
             @Override public BiConsumer<String, byte[]> saver() {return (n, c) -> {};}
             @Override public void close() {}

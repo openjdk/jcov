@@ -35,6 +35,7 @@ import org.objectweb.asm.ModuleVisitor;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.URL;
@@ -65,13 +66,15 @@ public class ASMInstrumentationPlugin implements InstrumentationPlugin,
         String moduleName = (miURL == null) ? null : getModuleName(miURL.openStream().readAllBytes());
         ClassMorph morph = new ClassMorph(null, data, parameters);
         morph.setCurrentModuleName(moduleName);
-        for(String r : resources) {
-            byte[] content = loader.getResourceAsStream(r).readAllBytes();
-            if(isClass(r)) {
-                byte[] instrumented = morph.morph(content, loader, null);
-                //TODO should never be null
-                if(instrumented != null) saver.accept(r, instrumented);
-            } else saver.accept(r, content);
+        for (String r : resources) {
+            try (InputStream in = loader.getResourceAsStream(r)) {
+                byte[] content = in.readAllBytes();
+                if (isClass(r)) {
+                    byte[] instrumented = morph.morph(content, loader, null);
+                    //TODO should never be null
+                    if (instrumented != null) saver.accept(r, instrumented);
+                } else saver.accept(r, content);
+            }
         }
 //        moduleName = null;
     }

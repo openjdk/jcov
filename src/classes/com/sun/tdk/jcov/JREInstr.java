@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -135,7 +136,9 @@ public class JREInstr extends JCovCMDTool {
                         InstrumentationPlugin.PathSource implantSource =
                                 new InstrumentationPlugin.PathSource(cl, implant.toPath());
                         for (String resource : implantSource.resources()) {
-                            destination.accept(resource, implantSource.loader().getResourceAsStream(resource).readAllBytes());
+                            try(InputStream in = implantSource.loader().getResourceAsStream(resource)) {
+                                destination.accept(resource, in.readAllBytes());
+                            }
                         }
                     }
                     destination.accept(MODULE_INFO_CLASS, moduleInfo);
