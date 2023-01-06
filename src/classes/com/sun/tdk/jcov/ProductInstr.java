@@ -62,12 +62,6 @@ public class ProductInstr extends Instr {
             DSC_INSTRUMENT, DSC_INSTRUMENT_TO, Instr.DSC_INCLUDE_RT);
 
     @Override
-    protected InstrumentationPlugin.Destination getDestination(File outDir, Path inPath) throws IOException {
-        if (getOutDir() == null) return new InstrumentationPlugin.PathDestination(inPath);
-        else return new InstrumentationPlugin.PathDestination(Path.of(outDir.getAbsolutePath()));
-    }
-
-    @Override
     protected EnvHandler defineHandler() {
         EnvHandler superHandler = super.defineHandler();
         List<OptionDescr> opts = superHandler.getValidOptions().stream()

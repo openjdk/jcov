@@ -28,6 +28,7 @@ import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,7 +47,9 @@ public class TestPlugin implements InstrumentationPlugin {
                            InstrumentationParams parameters) throws IOException {
         for(String r : resources) {
             processed.add(r);
-            saver.accept(r, loader.getResourceAsStream(r).readAllBytes());
+            try (InputStream in = loader.getResourceAsStream(r)) {
+                saver.accept(r, in.readAllBytes());
+            }
         };
     }
 

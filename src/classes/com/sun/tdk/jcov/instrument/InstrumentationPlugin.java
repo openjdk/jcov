@@ -28,6 +28,7 @@ import com.sun.tdk.jcov.util.Utils;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.MalformedURLException;
@@ -138,9 +139,8 @@ public interface InstrumentationPlugin {
             });
             getInner().instrument(accepted, loader, saver, parameters);
             rejected.forEach(c -> {
-                try {
-                    saver.accept(c,
-                            loader.getResourceAsStream(c).readAllBytes());
+                try (InputStream in = loader.getResourceAsStream(c)) {
+                    saver.accept(c, in.readAllBytes());
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -176,7 +176,10 @@ public interface InstrumentationPlugin {
         public void instrument(Collection<String> classes, ClassLoader loader,
                                BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
             getInner().instrument(classes, loader, saver, parameters);
-            for(String r : source.resources()) saver.accept(r, source.loader().getResourceAsStream(r).readAllBytes());
+            for(String r : source.resources())
+                try (InputStream in = source.loader().getResourceAsStream(r)) {
+                    saver.accept(r, in.readAllBytes());
+                }
         }
     }
 
@@ -271,8 +274,10 @@ public interface InstrumentationPlugin {
         public void instrument(Source source, Destination destination,
                                InstrumentationParams parameters) throws Exception {
             super.instrument(source, destination, parameters);
-            byte[] moduleInfo = source.loader().getResourceAsStream(MODULE_INFO_CLASS).readAllBytes();
-            proccessModule(moduleInfo, source.loader(), destination.saver());
+            try (InputStream in = source.loader().getResourceAsStream(MODULE_INFO_CLASS)) {
+                byte[] moduleInfo = in.readAllBytes();
+                proccessModule(moduleInfo, source.loader(), destination.saver());
+            }
         }
     }
 
@@ -326,7 +331,7 @@ public interface InstrumentationPlugin {
         private final BiConsumer<String, byte[]> saver;
 
         public PathDestination(Path root) throws IOException {
-            fs = Files.isDirectory(root) ? null : FileSystems.newFileSystem(root, null);
+            fs = Files.isDirectory(root) ? null : FileSystems.newFileSystem(root, (ClassLoader) null);
             this.root = Files.isDirectory(root) ? root : fs.getPath("/");
             saver = (s, bytes) -> {
                 try {

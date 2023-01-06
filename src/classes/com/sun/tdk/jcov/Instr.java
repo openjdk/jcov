@@ -213,7 +213,6 @@ public class Instr extends JCovCMDTool {
                 new InstrumentationPlugin.Instrumentation(aPlugin);
         for (String file : files) {
             InstrumentationPlugin.PathSource in;
-//            FileSystem outFS = null;
             Path inPath = Path.of(file);
             if (Files.isDirectory(inPath) || file.endsWith(".jar") || file.endsWith(".jmod")) {
                 in = new InstrumentationPlugin.PathSource(cl, inPath);
@@ -223,8 +222,35 @@ public class Instr extends JCovCMDTool {
                 //a class hierarchy root and filters
                 throw new RuntimeException();
             } else throw new IllegalStateException("Unknown input kind: " + file);
-            InstrumentationPlugin.Destination out;
-            out = getDestination(outDir, inPath);
+            Path outPath;
+            if (outDir == null) {
+                //no matter how many input files/dirs, the instrumentation need to be done in place for every file/dir
+                outPath = inPath;
+            } else {
+                outPath = outDir.toPath();
+                boolean isJar = outPath.toString().endsWith(".jar") || outPath.toString().endsWith(".jmod");
+                if (isJar) {
+                    //trying to put content of all class hierarchies (could be more then one) into one jar
+                    //fine, we can do that
+                } else {
+                    //if it is not a jar, then it is a directory, nothing else is supported
+                    if (files.length > 1) {
+                        //if multiple inputs, put every output separately inside the out dir
+                        outPath = outPath.resolve(inPath.getFileName());
+                    } else {
+                        boolean isInputJar = inPath.toString().endsWith(".jar") || inPath.toString().endsWith(".jmod");
+                        if (isInputJar) {
+                            //input is a jar, output is a dir
+                            //place the jar inside the target dir
+                            outPath = outPath.resolve(inPath.getFileName());
+                        } else {
+                            //input is a dir, output is a dir
+                            //place content of the dir into the target dir
+                        }
+                    }
+                }
+            }
+            InstrumentationPlugin.Destination  out = getDestination(outPath);
             try (in) {
                 fi.instrument(in, out, params);
             } finally {
@@ -234,18 +260,8 @@ public class Instr extends JCovCMDTool {
         }
     }
 
-    protected InstrumentationPlugin.Destination getDestination(File outDir, Path inPath) throws IOException {
-        InstrumentationPlugin.Destination out;
-        Path outPath = (outDir != null) ? outDir.toPath().resolve(inPath.getFileName()) : inPath;
-        if (Files.isDirectory(outPath) ||
-                outPath.toString().endsWith(".jar") ||
-                outPath.toString().endsWith(".jmod")) {
-            out = new InstrumentationPlugin.PathDestination(outPath);
-        } else if (Files.isRegularFile(outPath) && outPath.toString().endsWith(".class")) {
-            //TODO as above
-            throw new RuntimeException();
-        } else throw new IllegalStateException("Unknown output kind: " + inPath);
-        return out;
+    protected InstrumentationPlugin.Destination getDestination(Path path) throws IOException {
+        return new InstrumentationPlugin.PathDestination(path);
     }
 
 //    See comments in JREInstr.handleEnv(EventHandler)

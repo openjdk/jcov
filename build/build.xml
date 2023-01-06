@@ -372,24 +372,15 @@ MILESTONE="${build.milestone}"
         </echo>
     </target>
 
-    <target name="test" depends="build-jcov,build-network.saver">
-        <mkdir dir="${result.dir}/test/classes" />
-        <javac includeantruntime="false" encoding="iso-8859-1"
-               debug="no"
-               srcdir="${test.src.dir}"
-               sourcepath="${test.src.dir}"
-               classpath="${testngjar}:${build.dir}/jcov.jar"
-               destdir="${result.dir}/test/classes">
-        </javac>
-        <copy todir="${result.dir}/test/classes">
-            <fileset dir="${test.src.dir}" includes="**/*.xml"/>
-        </copy>
-        <taskdef classname="org.testng.TestNGAntTask" classpath="${testngjar}" name="testng"/>
-        <testng failureProperty="tests.failed" listeners="org.testng.reporters.VerboseReporter" outputdir="${result.dir}/test/result" suitename="jcov" testname="TestNG tests" workingDir="${result.dir}/test/work" verbose="2">
-                <classfileset dir="${result.dir}/test/classes" includes="**/*Test.class" />
-            <classpath>
-                <path path="${testngjar}:${build.dir}/jcov.jar:${build.dir}/jcov_network_saver.jar:${result.dir}/test/classes:${jcommanderjar}"/>
-            </classpath>
-        </testng>
+    <target name="test" depends="build-jcov,build-network.saver,build-file.saver">
+        <mkdir dir="${result.dir}/test" />
+        <java jar="${jtreg.home}/lib/jtreg.jar" fork="true">
+            <arg value="-cpa:${build.dir}/jcov.jar:${build.dir}/jcov_file_saver.jar"/>
+            <arg value="-workDir:${result.dir}/test/workdir"/>
+            <arg value="-reportDir:${result.dir}/test/report"/>
+            <arg value="-timeoutFactor:10"/>
+            <arg value="-v1"/>
+            <arg value="../test/unit"/>
+        </java>
     </target>
 </project>
