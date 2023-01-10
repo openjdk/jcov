@@ -375,8 +375,8 @@ MILESTONE="${build.milestone}"
 
     <target name="test" depends="build-jcov,build-network.saver,build-file.saver">
         <mkdir dir="${result.dir}/test" />
-        <!--module tests-->
         <java jar="${jtreg.home}/lib/jtreg.jar" fork="true">
+            <arg value="-cpa:${build.dir}/jcov.jar:${build.dir}/jcov_file_saver.jar"/>
             <arg value="-javacoption:--add-exports"/>
             <arg value="-javacoption:java.compiler/javax.tools=ALL-UNNAMED"/>
             <arg value="-javaoption:-p"/>
@@ -385,19 +385,10 @@ MILESTONE="${build.milestone}"
             <arg value="-javaoption:java.compiler/javax.tools=ALL-UNNAMED"/>
             <arg value="-workDir:${result.dir}/test/workdir_mp"/>
             <arg value="-reportDir:${result.dir}/test/report_mp"/>
-            <arg value="-jdk:${java.home}"/>
-            <arg value="-v1"/>
-            <arg value="../test/module"/>
-        </java>
-        <!--classpath based tests-->
-        <java jar="${jtreg.home}/lib/jtreg.jar" fork="true">
-            <arg value="-cpa:${build.dir}/jcov.jar:${build.dir}/jcov_file_saver.jar"/>
-            <arg value="-workDir:${result.dir}/test/workdir_cp"/>
-            <arg value="-reportDir:${result.dir}/test/report_cp"/>
             <arg value="-timeoutFactor:10"/>
             <arg value="-jdk:${java.home}"/>
             <arg value="-v1"/>
-            <arg value="../test/unit"/>
+            <arg value="../test"/>
         </java>
     </target>
 </project>
