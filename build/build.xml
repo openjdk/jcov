@@ -35,6 +35,7 @@
 
     <!-- Build area -->
     <property name="build.dir" location="${result.dir}/jcov_${build.version}"/>
+    <property name="modules.dir" location="${result.dir}/modules"/>
     <property name="jcov.classpath" value="${asm.jar}:${asm.util.jar}:${asm.tree.jar}:${java.home}/lib/tools.jar"/>
     <property name="asm.libs" location="${asm.jar}/.."/>
     <property name="jcov.modulepath" value="${asm.libs}"/>
@@ -201,7 +202,7 @@
                 <exclude name="module-info.class"/>
             </fileset>
         </copy>
-        <jmod classpath="${jcov.classes}" destfile="${build.dir}/jcov.jmod"/>
+        <jar basedir="${jcov.classes}" destfile="${modules.dir}/jcov.jar"/>
     </target>
 
     <target name="compile-asm"  depends="compile-jcov" if="with.asm">
@@ -216,7 +217,7 @@
                 <exclude name="module-info.class"/>
             </fileset>
         </copy>
-        <jmod classpath="${jcov.asm.classes}" destfile="${build.dir}/jcov.asm.jmod"/>
+        <jar basedir="${jcov.asm.classes}" destfile="${modules.dir}/jcov-asm.jar"/>
     </target>
 
     <target name="compile"  depends="compile-jcov, compile-asm"/>
@@ -374,11 +375,27 @@ MILESTONE="${build.milestone}"
 
     <target name="test" depends="build-jcov,build-network.saver,build-file.saver">
         <mkdir dir="${result.dir}/test" />
+        <!--module tests-->
+        <java jar="${jtreg.home}/lib/jtreg.jar" fork="true">
+            <arg value="-javacoption:--add-exports"/>
+            <arg value="-javacoption:java.compiler/javax.tools=ALL-UNNAMED"/>
+            <arg value="-javaoption:-p"/>
+            <arg value="-javaoption:/Users/shura/JDK/git/jcov-mine/JCOV_build/modules/jcov.jar:${javatestjar}:${ant.home}/lib/ant.jar"/>
+            <arg value="-javaoption:--add-exports"/>
+            <arg value="-javaoption:java.compiler/javax.tools=ALL-UNNAMED"/>
+            <arg value="-workDir:${result.dir}/test/workdir_mp"/>
+            <arg value="-reportDir:${result.dir}/test/report_mp"/>
+            <arg value="-jdk:${java.home}"/>
+            <arg value="-v1"/>
+            <arg value="../test/module"/>
+        </java>
+        <!--classpath based tests-->
         <java jar="${jtreg.home}/lib/jtreg.jar" fork="true">
             <arg value="-cpa:${build.dir}/jcov.jar:${build.dir}/jcov_file_saver.jar"/>
-            <arg value="-workDir:${result.dir}/test/workdir"/>
-            <arg value="-reportDir:${result.dir}/test/report"/>
+            <arg value="-workDir:${result.dir}/test/workdir_cp"/>
+            <arg value="-reportDir:${result.dir}/test/report_cp"/>
             <arg value="-timeoutFactor:10"/>
+            <arg value="-jdk:${java.home}"/>
             <arg value="-v1"/>
             <arg value="../test/unit"/>
         </java>

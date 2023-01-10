@@ -25,20 +25,25 @@
 package com.sun.tdk.jcov.instrument;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Optional;
 import java.util.ServiceLoader;
+
+import com.sun.tdk.jcov.instrument.Modifiers.ModifiersFactory;
 
 class Services {
     private static volatile InstrumentationPlugin PLUGIN;
 
-    private static volatile Modifiers.ModifiersFactory MODIFIERS_FACTORY;
+    private static volatile ModifiersFactory MODIFIERS_FACTORY;
 
     static synchronized InstrumentationPlugin getPlugin() {
         if (Services.PLUGIN == null) {
             try {
-                PLUGIN = ServiceLoader.load(InstrumentationPlugin.class).findFirst()
-                        .orElse((InstrumentationPlugin)
+                Optional<InstrumentationPlugin> service = ServiceLoader.load(InstrumentationPlugin.class).findFirst();
+                PLUGIN = service.isPresent() ? service.get() :
+                        //for backward compatibility for a non-modular jar
+                        (InstrumentationPlugin)
                                 Class.forName("com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin")
-                                        .getConstructor().newInstance());
+                                        .getConstructor().newInstance();
             } catch (InstantiationException|IllegalAccessException|InvocationTargetException|NoSuchMethodException|ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -46,14 +51,15 @@ class Services {
         return Services.PLUGIN;
     }
 
-    static synchronized Modifiers.ModifiersFactory getFactory() {
+    static synchronized ModifiersFactory getFactory() {
         if (MODIFIERS_FACTORY == null) {
             try {
-                MODIFIERS_FACTORY =
-                        ServiceLoader.load(Modifiers.ModifiersFactory.class).findFirst()
-                                .orElse((Modifiers.ModifiersFactory)
-                                        Class.forName("com.sun.tdk.jcov.instrument.asm.ASMModifiers$ASMModfiersFactory")
-                                                .getConstructor().newInstance());
+                Optional<ModifiersFactory> service = ServiceLoader.load(ModifiersFactory.class).findFirst();
+                MODIFIERS_FACTORY = service.isPresent() ? service.get() :
+                        //for backward compatibility for a non-modular jar
+                        (ModifiersFactory)
+                                Class.forName("com.sun.tdk.jcov.instrument.asm.ASMModifiers$ASMModfiersFactory")
+                                        .getConstructor().newInstance();
             } catch (InstantiationException|IllegalAccessException|InvocationTargetException|NoSuchMethodException|ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
