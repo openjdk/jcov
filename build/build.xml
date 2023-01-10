@@ -383,8 +383,8 @@ MILESTONE="${build.milestone}"
             <arg value="-javaoption:/Users/shura/JDK/git/jcov-mine/JCOV_build/modules/jcov.jar:${javatestjar}:${ant.home}/lib/ant.jar"/>
             <arg value="-javaoption:--add-exports"/>
             <arg value="-javaoption:java.compiler/javax.tools=ALL-UNNAMED"/>
-            <arg value="-workDir:${result.dir}/test/workdir_mp"/>
-            <arg value="-reportDir:${result.dir}/test/report_mp"/>
+            <arg value="-workDir:${result.dir}/test/workdir"/>
+            <arg value="-reportDir:${result.dir}/test/report"/>
             <arg value="-timeoutFactor:10"/>
             <arg value="-jdk:${java.home}"/>
             <arg value="-v1"/>
