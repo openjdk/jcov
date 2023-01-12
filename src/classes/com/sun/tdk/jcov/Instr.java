@@ -26,6 +26,13 @@ package com.sun.tdk.jcov;
 
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.plugin.Destination;
+import com.sun.tdk.jcov.instrument.plugin.FilteringPlugin;
+import com.sun.tdk.jcov.instrument.plugin.ImplantingPlugin;
+import com.sun.tdk.jcov.instrument.plugin.Instrumentation;
+import com.sun.tdk.jcov.instrument.plugin.PathDestination;
+import com.sun.tdk.jcov.instrument.plugin.PathSource;
+import com.sun.tdk.jcov.instrument.plugin.Source;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
 import com.sun.tdk.jcov.tools.OptionDescr;
@@ -33,10 +40,15 @@ import com.sun.tdk.jcov.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -86,7 +98,6 @@ public class Instr extends JCovCMDTool {
     private InstrumentationMode mode = InstrumentationMode.BRANCH;
     private ClassLoader cl = ClassLoader.getSystemClassLoader();
     private static final Logger logger;
-    //TODO do need both?
     private InstrumentationPlugin plugin;
     private InstrumentationParams params;
 
@@ -202,30 +213,48 @@ public class Instr extends JCovCMDTool {
         setup();
         if (plugin == null) plugin = InstrumentationPlugin.getPlugin();
         InstrumentationPlugin aPlugin = plugin;
-        InstrumentationPlugin.Source source;
+        Source source;
         if (implantRT != null) {
-            source = new InstrumentationPlugin.PathSource(ClassLoader.getSystemClassLoader(), Path.of(implantRT));
-            aPlugin = new InstrumentationPlugin.ImplantingPlugin(plugin, source);
+            source = new PathSource(ClassLoader.getSystemClassLoader(), Path.of(implantRT));
+            aPlugin = new ImplantingPlugin(plugin, source);
         }
-        aPlugin = new InstrumentationPlugin.FilteringPlugin(aPlugin, InstrumentationPlugin.classNameFilter(params));
+        aPlugin = new FilteringPlugin(aPlugin, Utils.classNameFilter(params));
 
-        InstrumentationPlugin.Instrumentation fi =
-                new InstrumentationPlugin.Instrumentation(aPlugin);
+        Instrumentation fi =
+                new Instrumentation(aPlugin);
         for (String file : files) {
-            InstrumentationPlugin.PathSource in;
+            PathSource in;
             Path inPath = Path.of(file);
             if (Files.isDirectory(inPath) || file.endsWith(".jar") || file.endsWith(".jmod")) {
-                in = new InstrumentationPlugin.PathSource(cl, inPath);
+                in = new PathSource(cl, inPath);
             } else if (Files.isRegularFile(inPath) && file.endsWith(".class")) {
-                //TODO implement by directly calling the plugin
-                //TODO deprecate in documentation: instead of providing specific files, ask the user to provide
-                //a class hierarchy root and filters
-                throw new RuntimeException();
+                in = new PathSource(new ClassLoader() {
+                    @Override
+                    public URL getResource(String name) {
+                        if(name.equals(inPath.getFileName().toString())) {
+                            try {
+                                return inPath.toUri().toURL();
+                            } catch (MalformedURLException e) {
+                                throw new IllegalArgumentException(e);
+                            }
+                        } else return cl.getResource(name);
+                    }
+                }, inPath) {
+                    @Override
+                    public Collection<String> resources() throws Exception {
+                        return List.of(inPath.getFileName().toString());
+                    }
+                };
+//                throw new RuntimeException("Instrumenting separate classes is not implemented. " +
+//                        "Instrument class hierarchies with appropriate filters.");
             } else throw new IllegalStateException("Unknown input kind: " + file);
             Path outPath;
             if (outDir == null) {
-                //no matter how many input files/dirs, the instrumentation need to be done in place for every file/dir
-                outPath = inPath;
+                if(Files.isRegularFile(inPath) && file.endsWith(".class"))
+                    outPath = inPath.getParent();
+                else
+                    //no matter how many input files/dirs, the instrumentation need to be done in place for every file/dir
+                    outPath = inPath;
             } else {
                 outPath = outDir.toPath();
                 boolean isJar = outPath.toString().endsWith(".jar") || outPath.toString().endsWith(".jmod");
@@ -250,18 +279,14 @@ public class Instr extends JCovCMDTool {
                     }
                 }
             }
-            InstrumentationPlugin.Destination  out = getDestination(outPath);
-            try (in) {
+            try (Destination out = getDestination(outPath); in) {
                 fi.instrument(in, out, params);
-            } finally {
-                in.close();
-                out.close();
             }
         }
     }
 
-    protected InstrumentationPlugin.Destination getDestination(Path path) throws IOException {
-        return new InstrumentationPlugin.PathDestination(path);
+    protected Destination getDestination(Path path) throws IOException {
+        return new PathDestination(path);
     }
 
 //    See comments in JREInstr.handleEnv(EventHandler)
@@ -351,7 +376,7 @@ public class Instr extends JCovCMDTool {
 
 
     protected String usageString() {
-        return "java -cp jcov.jar:source1:sourceN com.sun.tdk.jcov.Instr [-option value] source1 sourceN";
+        return "java -cp jcov.jar:source1:sourceN com.sun.tdk.jcov.Instr [-option value] <jar or jmod or directory>...";
     }
 
     /**
@@ -694,11 +719,13 @@ public class Instr extends JCovCMDTool {
     }
 
     final static OptionDescr DSC_OUTPUT =
-            new OptionDescr("instr.output", new String[]{"output", "o"}, "Output directory for instrumented classes",
+            new OptionDescr("instr.output", new String[]{"output", "o"},
+                    "Output directory or jar or jmod for instrumented classes",
                     OptionDescr.VAL_SINGLE,
-                    "Specifies output directory, default directory is current. " +
-                            "Instr command could process different dirs and different jars: \n " +
-                            "all classes from input dirs and all jars will be placed in output directory.");
+                    "If jar or jmod, all instrumented code is placed into the jar, according to class hierarchy. \n" +
+                    "If a dir and a single input provided, all instrumented code stored in the dirr, according to class hierarchy.\n" +
+                    "If a dir and multiple inputs, multiple dirs/jars/jmods are created within the output dir, one for eah input.\n" +
+                    "If no option provided, all code is instrumented in place.");
     final static OptionDescr DSC_VERBOSE =
             new OptionDescr("verbose", "Verbose mode", "Enable verbose mode.");
     final static OptionDescr DSC_INCLUDE_RT =

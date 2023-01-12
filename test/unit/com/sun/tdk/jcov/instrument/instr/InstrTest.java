@@ -46,8 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 public class InstrTest {
     Path implant_dir;
@@ -71,15 +70,14 @@ public class InstrTest {
     public void rm() throws IOException {
         Util.rmRF(test_dir);
     }
-//    @Test
+    @Test
     public void instrumentClass() throws IOException, InterruptedException, FileFormatException,
             ClassNotFoundException, InvocationTargetException, NoSuchMethodException,
             IllegalAccessException, InstantiationException {
         List<String> params = new ArrayList<>();
-        params.add("-t");
-        params.add(template.toString());
+        params.add("-t"); params.add(template.toString());
         params.add(new Util(test_dir).copyBytecode(UserCode.class.getName()).get(0).toString());
-        new Instr().run(params.toArray(new String[0]));
+        assertEquals(new Instr().run(params.toArray(new String[0])), 0);
         testInstrumentation();
         run(test_dir);
     }

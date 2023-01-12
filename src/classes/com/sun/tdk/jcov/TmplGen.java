@@ -24,11 +24,10 @@
  */
 package com.sun.tdk.jcov;
 
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.plugin.Destination;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.OptionDescr;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -62,8 +61,8 @@ public class TmplGen extends Instr {
     }
 
     @Override
-    protected InstrumentationPlugin.Destination getDestination(Path path) {
-        return new InstrumentationPlugin.Destination() {
+    protected Destination getDestination(Path path) {
+        return new Destination() {
             @Override public BiConsumer<String, byte[]> saver() {return (n, c) -> {};}
             @Override public void close() {}
         };

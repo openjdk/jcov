@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,22 @@
  */
 package com.sun.tdk.jcov.instrument.plugin;
 
-import com.sun.tdk.jcov.instrument.ModuleInstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 
-import java.util.List;
+/**
+ * A utility class which works with a given plugin in terms of file hierarchies.
+ */
+public class Instrumentation {
+    private final InstrumentationPlugin inner;
 
-public class JRETestPlugin extends TestPlugin implements ModuleInstrumentationPlugin {
-
-    private final ModuleInstrumentationPlugin actual = new ASMInstrumentationPlugin();
-
-    @Override
-    public String getModuleName(byte[] moduleInfo) {
-        return actual.getModuleName(moduleInfo);
+    public Instrumentation(InstrumentationPlugin inner) {
+        this.inner = inner;
     }
 
-    @Override
-    public byte[] addExports(List<String> exports, byte[] moduleInfo, ClassLoader loader) {
-        return moduleInfo;
-    }
-
-    @Override
-    public byte[] clearHashes(byte[] moduleInfo, ClassLoader loader) {
-        return actual.clearHashes(moduleInfo, loader);
+    public void instrument(Source source, Destination destination,
+                           InstrumentationParams parameters) throws Exception {
+        inner.instrument(source.resources(), source.loader(),
+                destination.saver(), parameters);
     }
 }

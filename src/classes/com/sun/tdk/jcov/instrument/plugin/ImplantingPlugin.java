@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,28 @@
  */
 package com.sun.tdk.jcov.instrument.plugin;
 
-import com.sun.tdk.jcov.instrument.ModuleInstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 
-import java.util.List;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.function.BiConsumer;
 
-public class JRETestPlugin extends TestPlugin implements ModuleInstrumentationPlugin {
+public class ImplantingPlugin extends ProxyInstrumentationPlugin {
+    private final Source source;
 
-    private final ModuleInstrumentationPlugin actual = new ASMInstrumentationPlugin();
-
-    @Override
-    public String getModuleName(byte[] moduleInfo) {
-        return actual.getModuleName(moduleInfo);
+    public ImplantingPlugin(InstrumentationPlugin inner, Source source) {
+        super(inner);
+        this.source = source;
     }
 
     @Override
-    public byte[] addExports(List<String> exports, byte[] moduleInfo, ClassLoader loader) {
-        return moduleInfo;
-    }
-
-    @Override
-    public byte[] clearHashes(byte[] moduleInfo, ClassLoader loader) {
-        return actual.clearHashes(moduleInfo, loader);
+    public void instrument(Collection<String> classes, ClassLoader loader,
+                           BiConsumer<String, byte[]> saver, InstrumentationParams parameters) throws Exception {
+        getInner().instrument(classes, loader, saver, parameters);
+        for (String r : source.resources())
+            try (InputStream in = source.loader().getResourceAsStream(r)) {
+                saver.accept(r, in.readAllBytes());
+            }
     }
 }

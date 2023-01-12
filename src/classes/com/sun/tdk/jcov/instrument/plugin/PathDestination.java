@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,41 @@
  */
 package com.sun.tdk.jcov.instrument.plugin;
 
-import com.sun.tdk.jcov.instrument.ModuleInstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.function.BiConsumer;
 
-import java.util.List;
+public class PathDestination implements Destination, Closeable {
+    private final Path root;
+    private final FileSystem fs;
+    private final BiConsumer<String, byte[]> saver;
 
-public class JRETestPlugin extends TestPlugin implements ModuleInstrumentationPlugin {
-
-    private final ModuleInstrumentationPlugin actual = new ASMInstrumentationPlugin();
-
-    @Override
-    public String getModuleName(byte[] moduleInfo) {
-        return actual.getModuleName(moduleInfo);
+    public PathDestination(Path root) throws IOException {
+        fs = Files.isDirectory(root) ? null : FileSystems.newFileSystem(root, (ClassLoader) null);
+        this.root = Files.isDirectory(root) ? root : fs.getPath("/");
+        saver = (s, bytes) -> {
+            try {
+                Path f = PathDestination.this.root.resolve(s);
+                Files.createDirectories(f.getParent());
+                Files.write(f, bytes);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        };
     }
 
     @Override
-    public byte[] addExports(List<String> exports, byte[] moduleInfo, ClassLoader loader) {
-        return moduleInfo;
+    public void close() throws IOException {
+        if (fs != null) fs.close();
     }
 
     @Override
-    public byte[] clearHashes(byte[] moduleInfo, ClassLoader loader) {
-        return actual.clearHashes(moduleInfo, loader);
+    public BiConsumer<String, byte[]> saver() {
+        return saver;
     }
 }
