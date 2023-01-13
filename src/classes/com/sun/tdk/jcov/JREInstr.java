@@ -27,6 +27,12 @@ package com.sun.tdk.jcov;
 import com.sun.tdk.jcov.instrument.InstrumentationOptions;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.plugin.FilteringPlugin;
+import com.sun.tdk.jcov.instrument.plugin.ModuleInstrumentation;
+import com.sun.tdk.jcov.instrument.ModuleInstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.plugin.OverridingClassLoader;
+import com.sun.tdk.jcov.instrument.plugin.PathDestination;
+import com.sun.tdk.jcov.instrument.plugin.PathSource;
 import com.sun.tdk.jcov.runtime.JCovSESocketSaver;
 import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
@@ -120,21 +126,21 @@ public class JREInstr extends JCovCMDTool {
             }
             urls.add(toInstrument.toURI().toURL());
 
-            ClassLoader cl = new InstrumentationPlugin.OverridingClassLoader(urls.toArray(new URL[0]),
+            ClassLoader cl = new OverridingClassLoader(urls.toArray(new URL[0]),
                     ClassLoader.getSystemClassLoader());
 
             if(plugin == null) plugin = InstrumentationPlugin.getPlugin();
-            InstrumentationPlugin.ModuleInstrumentation mi = new InstrumentationPlugin.ModuleInstrumentation(
-                    new InstrumentationPlugin.FilteringPlugin(plugin, InstrumentationPlugin.classNameFilter(params)),
-                    (InstrumentationPlugin.ModuleInstrumentationPlugin) plugin) {
+            ModuleInstrumentation mi = new ModuleInstrumentation(
+                    new FilteringPlugin(plugin, Utils.classNameFilter(params)),
+                    (ModuleInstrumentationPlugin) plugin) {
                 public void proccessModule(byte[] moduleInfo, ClassLoader loader,
                                            BiConsumer<String, byte[]> destination) throws Exception {
-                    InstrumentationPlugin.ModuleInstrumentationPlugin mip = getModulePluign();
+                    ModuleInstrumentationPlugin mip = getModulePluign();
                     if(mip.getModuleName(moduleInfo).equals("java.base")) {
                         moduleInfo = mip.addExports(List.of("com/sun/tdk/jcov/runtime"), moduleInfo, loader);
                         moduleInfo = mip.clearHashes(moduleInfo, loader);
-                        InstrumentationPlugin.PathSource implantSource =
-                                new InstrumentationPlugin.PathSource(cl, implant.toPath());
+                        PathSource implantSource =
+                                new PathSource(cl, implant.toPath());
                         for (String resource : implantSource.resources()) {
                             try(InputStream in = implantSource.loader().getResourceAsStream(resource)) {
                                 destination.accept(resource, in.readAllBytes());
@@ -152,8 +158,8 @@ public class JREInstr extends JCovCMDTool {
                         if (isModuleIncluded(moduleName)) {
                             logger.log(Level.INFO, "Instrumenting " + moduleName);
                             File modClasses = new File(mod, "classes");
-                            mi.instrument(new InstrumentationPlugin.PathSource(cl, modClasses.toPath()),
-                                    new InstrumentationPlugin.PathDestination(modClasses.toPath()), params);
+                            mi.instrument(new PathSource(cl, modClasses.toPath()),
+                                    new PathDestination(modClasses.toPath()), params);
                         }
                         createJMod(mod, jdk, implant.getAbsolutePath(), null);
                     }

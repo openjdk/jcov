@@ -28,6 +28,7 @@ import com.sun.tdk.jcov.instrument.DataRoot;
 import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 import com.sun.tdk.jcov.instrument.XmlContext;
+import com.sun.tdk.jcov.instrument.ModuleInstrumentationPlugin;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -51,7 +52,7 @@ import java.util.function.Consumer;
  * @author Alexander (Shura) Ilin.
  */
 public class ASMInstrumentationPlugin implements InstrumentationPlugin,
-        InstrumentationPlugin.ModuleInstrumentationPlugin {
+        ModuleInstrumentationPlugin {
 
     private final DataRoot data = new DataRoot();
 //    private String moduleName;

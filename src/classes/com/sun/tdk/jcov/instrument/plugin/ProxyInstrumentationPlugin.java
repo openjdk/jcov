@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,25 @@
  */
 package com.sun.tdk.jcov.instrument.plugin;
 
-import com.sun.tdk.jcov.instrument.ModuleInstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.asm.ASMInstrumentationPlugin;
+import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
 
-import java.util.List;
+import java.io.OutputStream;
+import java.util.Map;
+import java.util.function.Consumer;
 
-public class JRETestPlugin extends TestPlugin implements ModuleInstrumentationPlugin {
+public abstract class ProxyInstrumentationPlugin implements InstrumentationPlugin {
+    private final InstrumentationPlugin inner;
 
-    private final ModuleInstrumentationPlugin actual = new ASMInstrumentationPlugin();
+    protected ProxyInstrumentationPlugin(InstrumentationPlugin inner) {
+        this.inner = inner;
+    }
 
-    @Override
-    public String getModuleName(byte[] moduleInfo) {
-        return actual.getModuleName(moduleInfo);
+    public InstrumentationPlugin getInner() {
+        return inner;
     }
 
     @Override
-    public byte[] addExports(List<String> exports, byte[] moduleInfo, ClassLoader loader) {
-        return moduleInfo;
-    }
-
-    @Override
-    public byte[] clearHashes(byte[] moduleInfo, ClassLoader loader) {
-        return actual.clearHashes(moduleInfo, loader);
+    public final Map<String, Consumer<OutputStream>> complete() throws Exception {
+        return inner.complete();
     }
 }

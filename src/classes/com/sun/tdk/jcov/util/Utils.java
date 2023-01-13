@@ -24,6 +24,7 @@
  */
 package com.sun.tdk.jcov.util;
 
+import com.sun.tdk.jcov.instrument.InstrumentationParams;
 import com.sun.tdk.jcov.runtime.PropertyFinder;
 import com.sun.tdk.jcov.tools.JCovTool.EnvHandlingException;
 import com.sun.tdk.jcov.tools.LoggingFormatter;
@@ -40,6 +41,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.logging.Formatter;
 import java.util.logging.*;
 import java.util.regex.Matcher;
@@ -114,6 +116,14 @@ public final class Utils {
         return CUSTOM_CLASS_FILE_EXTENSIONS.stream().anyMatch(ext -> fileName.endsWith(ext));
     }
 
+    public static Predicate<String> classNameFilter(InstrumentationParams params) {
+        return r -> {
+            if (isClassFile(r))
+                return params.isIncluded(r.substring(0,
+                        r.length() - FILE_TYPE.CLASS.name().length() - 1));
+            else return true;
+        };
+    }
     public final static int VER1_6 = 160;  // 1.6
     public final static int VER1_7 = 160;  // 1.7
     public final static int VER1_8 = 160;  // 1.8
