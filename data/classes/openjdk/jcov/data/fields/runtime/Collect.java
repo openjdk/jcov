@@ -22,26 +22,41 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.Modifiers;
+package openjdk.jcov.data.fields.runtime;
 
-module jcov {
-    exports com.sun.tdk.jcov.instrument;
-    exports com.sun.tdk.jcov.io;
-    exports com.sun.tdk.jcov.util;
-    exports com.sun.tdk.jcov.data;
-    exports com.sun.tdk.jcov.runtime;
-    exports com.sun.tdk.jcov;
-    exports com.sun.tdk.jcov.report;
-    exports com.sun.tdk.jcov.report.ancfilters;
-    exports com.sun.tdk.jcov.processing;
-    exports com.sun.tdk.jcov.instrument.plugin;
-    requires java.logging;
-    requires ant;
-    requires java.xml;
-    requires jdk.compiler;
-    requires javatest;
-    requires jdk.jdeps;
-    uses InstrumentationPlugin;
-    uses Modifiers.ModifiersFactory;
+
+import jdk.internal.classfile.FieldModel;
+import openjdk.jcov.data.runtime.EntryControl;
+
+public class Collect {
+
+    private static volatile Coverage data = new Coverage();
+
+    public static void template(FieldModel fieldModel) {
+        data.get(fieldModel.parent().get().thisClass().name().stringValue(), fieldModel.fieldName().stringValue());
+    }
+
+    private final static EntryControl entryControl = new EntryControl();
+
+    public static void collect(Object value, String owner, String name) {
+        Runtime.init();
+        if(!entryControl.enter()) return;
+        try {
+            if (!data.writing) data.add(owner, name, value);
+        } finally {
+            entryControl.exit();
+        }
+    }
+
+    public static void data(Coverage data) {
+        Collect.data = data;
+    }
+
+    public static Coverage data() {
+        return data;
+    }
+
+    static void setData(Coverage data) {
+        Collect.data = data;
+    }
 }

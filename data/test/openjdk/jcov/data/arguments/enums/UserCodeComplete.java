@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.Modifiers;
+package openjdk.jcov.data.arguments.enums;
 
-module jcov {
-    exports com.sun.tdk.jcov.instrument;
-    exports com.sun.tdk.jcov.io;
-    exports com.sun.tdk.jcov.util;
-    exports com.sun.tdk.jcov.data;
-    exports com.sun.tdk.jcov.runtime;
-    exports com.sun.tdk.jcov;
-    exports com.sun.tdk.jcov.report;
-    exports com.sun.tdk.jcov.report.ancfilters;
-    exports com.sun.tdk.jcov.processing;
-    exports com.sun.tdk.jcov.instrument.plugin;
-    requires java.logging;
-    requires ant;
-    requires java.xml;
-    requires jdk.compiler;
-    requires javatest;
-    requires jdk.jdeps;
-    uses InstrumentationPlugin;
-    uses Modifiers.ModifiersFactory;
+import openjdk.jcov.data.arguments.runtime.Collect;
+
+public class UserCodeComplete {
+    public enum ENum {ONE, TWO, THREE};
+    public void method(ENum e) {
+        System.out.println(e);
+    }
+    public static void staticMethod(ENum e) {
+        System.out.println(e);
+    }
+
+    public static void main(String[] args) {
+        Collect.collect("openjdk/jcov/data/arguments/enums/UserCode", "main", "([Ljava/lang/String;)V", new Object[] {args});
+        new UserCodeComplete().method(ENum.ONE);
+        UserCodeComplete.staticMethod(ENum.TWO);
+    }
 }

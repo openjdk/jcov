@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.sun.tdk.jcov.Instr.DSC_INCLUDE_RT;
 import static com.sun.tdk.jcov.Instr.DSC_VERBOSE;
@@ -137,7 +138,13 @@ public class JREInstr extends JCovCMDTool {
                                            BiConsumer<String, byte[]> destination) throws Exception {
                     ModuleInstrumentationPlugin mip = getModulePluign();
                     if(mip.getModuleName(moduleInfo).equals("java.base")) {
-                        moduleInfo = mip.addExports(List.of("com/sun/tdk/jcov/runtime"), moduleInfo, loader);
+                        // this is a temporary fix to integrate data coverage,
+                        // proper implementation needs to come with CODETOOLS-7903452
+                        List<String> javaBaseExports = Arrays.stream(System.getProperty("jcov.java.base.exports",
+                                "com/sun/tdk/jcov/runtime").split(",")).collect(Collectors.toList());
+                        // end of the temporary fix which is later to be replaced
+                        // by a proper implementation of CODETOOLS-7903452
+                        moduleInfo = mip.addExports(javaBaseExports, moduleInfo, loader);
                         moduleInfo = mip.clearHashes(moduleInfo, loader);
                         PathSource implantSource =
                                 new PathSource(cl, implant.toPath());

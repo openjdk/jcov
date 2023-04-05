@@ -40,6 +40,10 @@ public class PathSource implements Source, Closeable {
     private final ClassLoader loader;
     private final Path root;
 
+    public PathSource(Path root) {
+        this(ClassLoader.getSystemClassLoader(), root);
+    }
+
     public PathSource(ClassLoader backup, Path root) {
         this.loader = new OverridingClassLoader(root, backup);
         this.root = root;

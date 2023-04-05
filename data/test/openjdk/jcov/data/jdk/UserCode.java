@@ -22,26 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.Modifiers;
+package openjdk.jcov.data.jdk;
 
-module jcov {
-    exports com.sun.tdk.jcov.instrument;
-    exports com.sun.tdk.jcov.io;
-    exports com.sun.tdk.jcov.util;
-    exports com.sun.tdk.jcov.data;
-    exports com.sun.tdk.jcov.runtime;
-    exports com.sun.tdk.jcov;
-    exports com.sun.tdk.jcov.report;
-    exports com.sun.tdk.jcov.report.ancfilters;
-    exports com.sun.tdk.jcov.processing;
-    exports com.sun.tdk.jcov.instrument.plugin;
-    requires java.logging;
-    requires ant;
-    requires java.xml;
-    requires jdk.compiler;
-    requires javatest;
-    requires jdk.jdeps;
-    uses InstrumentationPlugin;
-    uses Modifiers.ModifiersFactory;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+
+public class UserCode {
+    public static void main(String[] args) {
+        LocalDateTime.of(1, 1, 1, 1, 1);
+        System.out.println(LocalDateTime.now().minus(42, ChronoUnit.YEARS));
+    }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+  Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
   DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
   This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@
     <property name="all.classes" location="${tmp.dir}/all_classes"/>
     <property name="jcov.classes" location="${tmp.dir}/jcov_classes"/>
     <property name="jcov.asm.classes" location="${tmp.dir}/jcov_asm_classes"/>
+    <property name="jcov.data.classes" location="${tmp.dir}/jcov_data_classes"/>
     <property name="jcov.src.update" location="${tmp.dir}/jcov_src_update"/>
 
     <property name="jcov.filesaver.classes" location="${tmp.dir}/jcov_filesaver_classes"/>
@@ -64,6 +65,11 @@
 
     <patternset id="jcov.asm.files">
         <include name="com/sun/tdk/jcov/instrument/asm/**"/>
+        <include name="module-info.*"/>
+    </patternset>
+
+    <patternset id="jcov.data.files">
+        <include name="openjdk/jcov/**"/>
         <include name="module-info.*"/>
     </patternset>
 
@@ -125,6 +131,7 @@
         <mkdir dir="${all.classes}"/>
         <mkdir dir="${jcov.classes}"/>
         <mkdir dir="${jcov.asm.classes}"/>
+        <mkdir dir="${jcov.data.classes}"/>
 
     </target>
 
@@ -220,7 +227,22 @@
         <jar basedir="${jcov.asm.classes}" destfile="${modules.dir}/jcov-asm.jar"/>
     </target>
 
-    <target name="compile"  depends="compile-jcov, compile-asm"/>
+    <target name="compile-data"  depends="compile-jcov" if="with.data">
+        <javac encoding="iso-8859-1" debug="true"
+               srcdir="${data.src.dir}"
+               destdir="${jcov.data.classes}"
+               modulepath="${jcov.classes}:${jcov.modulepath}:${javatestjar}:${ant.home}/lib/ant.jar">
+            <patternset refid="jcov.data.files"/>
+            <compilerarg value="--add-exports"/> <compilerarg value="java.base/jdk.internal.classfile=jcov.data"/>
+            <compilerarg value="--add-exports"/> <compilerarg value="java.base/jdk.internal.classfile.instruction=jcov.data"/>
+            <compilerarg value="--add-exports"/> <compilerarg value="java.base/jdk.internal.classfile.constantpool=jcov.data"/>
+            <compilerarg value="--add-exports"/> <compilerarg value="java.base/jdk.internal.classfile.attribute=jcov.data"/>
+            <compilerarg value="--add-exports"/> <compilerarg value="java.base/jdk.internal.classfile.java.lang.constant=jcov.data"/>
+        </javac>
+        <jar basedir="${jcov.data.classes}" destfile="${modules.dir}/jcov-data.jar"/>
+    </target>
+
+    <target name="compile"  depends="compile-jcov, compile-asm, compile-data"/>
 <!-- TODO
     <patternset id="jcov.services">
         <include name="META-INF/services/**"/>
@@ -380,7 +402,7 @@ MILESTONE="${build.milestone}"
             <arg value="-javacoption:--add-exports"/>
             <arg value="-javacoption:java.compiler/javax.tools=ALL-UNNAMED"/>
             <arg value="-javaoption:-p"/>
-            <arg value="-javaoption:/Users/shura/JDK/git/jcov-mine/JCOV_build/modules/jcov.jar:${javatestjar}:${ant.home}/lib/ant.jar"/>
+            <arg value="-javaoption:${modules.dir}/jcov.jar:${javatestjar}:${ant.home}/lib/ant.jar"/>
             <arg value="-javaoption:--add-exports"/>
             <arg value="-javaoption:java.compiler/javax.tools=ALL-UNNAMED"/>
             <arg value="-workDir:${result.dir}/test/workdir"/>
@@ -389,6 +411,38 @@ MILESTONE="${build.milestone}"
             <arg value="-jdk:${java.home}"/>
             <arg value="-v1"/>
             <arg value="../test"/>
+        </java>
+    </target>
+
+    <!--target name="test-data" depends="compile-jcov, compile-data" if="with.data"-->
+    <target name="test-data" if="with.data">
+        <mkdir dir="${result.dir}/test-data" />
+        <java jar="${jtreg.home}/lib/jtreg.jar" fork="true">
+            <arg value="-cpa:${build.dir}/jcov.jar"/>
+            <arg value="-javacoption:-p"/>
+            <arg value="-javacoption:${modules.dir}/jcov.jar:${modules.dir}/jcov-data.jar"/>
+            <arg value="-javacoption:--add-exports"/>
+            <arg value="-javacoption:java.compiler/javax.tools=ALL-UNNAMED"/>
+            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile=jcov.data"/>
+            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile.instruction=jcov.data"/>
+            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile.constantpool=jcov.data"/>
+            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile.attribute=jcov.data"/>
+            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile.java.lang.constant=jcov.data"/>
+            <arg value="-javaoption:-p"/>
+            <arg value="-javaoption:${modules.dir}/jcov.jar:${modules.dir}/jcov-data.jar"/>
+            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile=jcov.data"/>
+            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile.instruction=jcov.data"/>
+            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile.constantpool=jcov.data"/>
+            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile.attribute=jcov.data"/>
+            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile.java.lang.constant=jcov.data"/>
+            <arg value="-javaoption:--add-exports"/>
+            <arg value="-javaoption:java.compiler/javax.tools=ALL-UNNAMED"/>
+            <arg value="-workDir:${result.dir}/test-data/workdir"/>
+            <arg value="-reportDir:${result.dir}/test-data/report"/>
+            <arg value="-timeoutFactor:10"/>
+            <arg value="-jdk:${java.home}"/>
+            <arg value="-v1"/>
+            <arg value="../data/test"/>
         </java>
     </target>
 </project>
