@@ -414,29 +414,20 @@ MILESTONE="${build.milestone}"
         </java>
     </target>
 
-    <!--target name="test-data" depends="compile-jcov, compile-data" if="with.data"-->
-    <target name="test-data" if="with.data">
+    <target name="test-data" depends="compile-jcov, compile-data" if="with.data">
         <mkdir dir="${result.dir}/test-data" />
         <java jar="${jtreg.home}/lib/jtreg.jar" fork="true">
-            <arg value="-cpa:${build.dir}/jcov.jar"/>
-            <arg value="-javacoption:-p"/>
-            <arg value="-javacoption:${modules.dir}/jcov.jar:${modules.dir}/jcov-data.jar"/>
-            <arg value="-javacoption:--add-exports"/>
-            <arg value="-javacoption:java.compiler/javax.tools=ALL-UNNAMED"/>
-            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile=jcov.data"/>
-            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile.instruction=jcov.data"/>
-            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile.constantpool=jcov.data"/>
-            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile.attribute=jcov.data"/>
-            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile.java.lang.constant=jcov.data"/>
-            <arg value="-javaoption:-p"/>
-            <arg value="-javaoption:${modules.dir}/jcov.jar:${modules.dir}/jcov-data.jar"/>
-            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile=jcov.data"/>
-            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile.instruction=jcov.data"/>
-            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile.constantpool=jcov.data"/>
-            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile.attribute=jcov.data"/>
-            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile.java.lang.constant=jcov.data"/>
-            <arg value="-javaoption:--add-exports"/>
-            <arg value="-javaoption:java.compiler/javax.tools=ALL-UNNAMED"/>
+            <arg value="-cpa:${modules.dir}/jcov.jar:${modules.dir}/jcov-data.jar"/>
+            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile=ALL-UNNAMED"/>
+            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile.instruction=ALL-UNNAMED"/>
+            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED"/>
+            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile.attribute=ALL-UNNAMED"/>
+            <arg value="-javacoption:--add-exports"/> <arg value="-javacoption:java.base/jdk.internal.classfile.java.lang.constant=ALL-UNNAMED"/>
+            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile=ALL-UNNAMED"/>
+            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile.instruction=ALL-UNNAMED"/>
+            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED"/>
+            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile.attribute=ALL-UNNAMED"/>
+            <arg value="-javaoption:--add-exports"/> <arg value="-javaoption:java.base/jdk.internal.classfile.java.lang.constant=ALL-UNNAMED"/>
             <arg value="-workDir:${result.dir}/test-data/workdir"/>
             <arg value="-reportDir:${result.dir}/test-data/report"/>
             <arg value="-timeoutFactor:10"/>

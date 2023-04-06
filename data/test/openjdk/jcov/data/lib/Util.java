@@ -138,9 +138,19 @@ public class Util {
         command.add(System.getProperty("java.home") + separator + "bin" + separator + "java");
         command.addAll(vmArgs);
         command.addAll(addExports());
-        command.add("-cp"); command.add(System.getProperty("java.class.path"));
-        command.add("--module-path"); command.add(System.getProperty("jdk.module.path"));
-        command.add("--module"); command.add("jcov.data/" + mainClass.getName());
+        String classPath = System.getProperty("java.class.path");
+        if (classPath != null) {
+            command.add("-cp"); command.add(classPath);
+        }
+        String modulePath = System.getProperty("jdk.module.path");
+        if (modulePath != null) {
+            command.add("--module-path"); command.add(modulePath);
+        }
+        if (modulePath != null) {
+            command.add("--module"); command.add("jcov.data/" + mainClass.getName());
+        } else {
+            command.add(mainClass.getName());
+        }
         command.addAll(params);
         System.out.println("Running " + command.stream().collect(Collectors.joining(" ")));
         ProcessBuilder pb = new ProcessBuilder(command).inheritIO();

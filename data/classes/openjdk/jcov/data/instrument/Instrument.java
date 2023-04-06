@@ -35,6 +35,7 @@ import jdk.internal.classfile.MethodModel;
 import openjdk.jcov.data.Env;
 import openjdk.jcov.data.runtime.CoverageData;
 import openjdk.jcov.data.runtime.Deserializer;
+import openjdk.jcov.data.runtime.EntryControl;
 import openjdk.jcov.data.runtime.Runtime;
 import openjdk.jcov.data.runtime.Serializer;
 
@@ -64,7 +65,8 @@ public class Instrument {
             dest = src;
         Plugin plugin = Env.getSPIEnv(PLUGIN_CLASS, new DoNothingPlugin());
         Set<Class> runtime = new HashSet<>(plugin.runtime());
-        runtime.addAll(Set.of(CoverageData.class, Deserializer.class, Runtime.class, Serializer.class, Env.class));
+        runtime.addAll(Set.of(CoverageData.class, Deserializer.class, Runtime.class, Serializer.class, Env.class,
+                EntryControl.class));
         Set.of(Runtime.serializer().getClass(), Runtime.deserializer().getClass()).forEach(cls -> {
             if (!runtime.contains(cls)) runtime.add(cls);
         });
