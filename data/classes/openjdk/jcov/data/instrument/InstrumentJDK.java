@@ -33,13 +33,16 @@ import openjdk.jcov.data.runtime.serialization.ToStringSerializer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 
 public class InstrumentJDK {
@@ -60,10 +63,9 @@ public class InstrumentJDK {
         params.add("-i"); params.add(includes);
         params.add("-instr_plugin"); params.add(aClass.getName());
         params.add("-t"); params.add(template.toString());
-        Path rt = createRtJar();
+        Path rt = createRtJar(exports);
         params.add("-rt"); params.add(rt.toString());
         params.add(jdk.toString());
-        System.setProperty("jcov.java.base.exports", exports.stream().collect(Collectors.joining(",")));
         System.out.println("Running JREInstr with: " + params.stream().collect(Collectors.joining(" ")));
         try {
             return new JREInstr().run(params.toArray(new String[0]));
@@ -72,13 +74,18 @@ public class InstrumentJDK {
         }
     }
 
-    public Path createRtJar() throws IOException {
+    public Path createRtJar(List<String> exports) throws IOException {
         Path dest = Files.createTempFile("rtjar", ".jar");
         List<Class> runtime = new ArrayList<>(plugin.runtime());
         //TODO move to Plugin
         runtime.addAll(List.of(Env.class, Runtime.class, Serializer.class, ToStringSerializer.class,
                 EntryControl.class));
         try(JarOutputStream jar = new JarOutputStream(Files.newOutputStream(dest))) {
+            jar.putNextEntry(new JarEntry(JREInstr.JCOV_EXPORTS_FILE_NAME  ));
+            for (String e : exports) {
+                jar.write((e + "=ALL-UNNAMED").getBytes());
+                jar.write(System.getProperty("line.separator").getBytes());
+            }
             for (Class cls : runtime) {
                 String entryName = cls.getName().replace('.', '/') + ".class";
                 jar.putNextEntry(new JarEntry(entryName));
