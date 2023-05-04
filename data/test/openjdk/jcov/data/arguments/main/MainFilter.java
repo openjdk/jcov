@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.Modifiers;
+package openjdk.jcov.data.arguments.main;
 
-module jcov {
-    exports com.sun.tdk.jcov.instrument;
-    exports com.sun.tdk.jcov.io;
-    exports com.sun.tdk.jcov.util;
-    exports com.sun.tdk.jcov.data;
-    exports com.sun.tdk.jcov.runtime;
-    exports com.sun.tdk.jcov;
-    exports com.sun.tdk.jcov.report;
-    exports com.sun.tdk.jcov.report.ancfilters;
-    exports com.sun.tdk.jcov.processing;
-    exports com.sun.tdk.jcov.instrument.plugin;
-    requires java.logging;
-    requires ant;
-    requires java.xml;
-    requires jdk.compiler;
-    requires javatest;
-    requires jdk.jdeps;
-    uses InstrumentationPlugin;
-    uses Modifiers.ModifiersFactory;
+import openjdk.jcov.data.arguments.instrument.Plugin;
+import openjdk.jcov.data.instrument.MethodFilter;
+
+import java.lang.reflect.Modifier;
+import java.util.List;
+
+public class MainFilter implements MethodFilter {
+    @Override
+    public boolean accept(int access, String owner, String method, String desc) throws ClassNotFoundException {
+        List<Plugin.TypeDescriptor> params = Plugin.parseDesc(desc);
+        return method.equals("main") &&
+                params.size() == 1 &&
+                (access & Modifier.STATIC) > 0 &&
+                (access & Modifier.PUBLIC) > 0 &&
+                desc.endsWith(")V") &&
+                params.stream().anyMatch(td -> td.id().equals("["));
+    }
 }

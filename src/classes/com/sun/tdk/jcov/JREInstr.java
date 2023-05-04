@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -84,6 +85,7 @@ import static com.sun.tdk.jcov.util.Utils.getListFiles;
  */
 public class JREInstr extends JCovCMDTool {
 
+    public static final String JCOV_EXPORTS_FILE_NAME = "META-INF/JCOV.exports";
     private File toInstrument;
 //    private File[] addJars;
 //    private File[] addJimages;
@@ -137,11 +139,27 @@ public class JREInstr extends JCovCMDTool {
                                            BiConsumer<String, byte[]> destination) throws Exception {
                     ModuleInstrumentationPlugin mip = getModulePluign();
                     if(mip.getModuleName(moduleInfo).equals("java.base")) {
-                        moduleInfo = mip.addExports(List.of("com/sun/tdk/jcov/runtime"), moduleInfo, loader);
-                        moduleInfo = mip.clearHashes(moduleInfo, loader);
                         PathSource implantSource =
                                 new PathSource(cl, implant.toPath());
-                        for (String resource : implantSource.resources()) {
+                        Collection<String> resources = implantSource.resources();
+                        List<String> javaBaseExports;
+                        if (resources.contains(JCOV_EXPORTS_FILE_NAME)) {
+                            javaBaseExports = new ArrayList<>();
+                            try (BufferedReader exportsIn =
+                                         new BufferedReader(new InputStreamReader(
+                                                 implantSource.loader().getResourceAsStream(JCOV_EXPORTS_FILE_NAME)))) {
+                                String line;
+                                while ((line = exportsIn.readLine()) != null) {
+                                    //TODO allow qualified exports
+                                    javaBaseExports.add(line.substring(0, line.indexOf("=")));
+                                }
+                            }
+                        } else {
+                            javaBaseExports = List.of("com/sun/tdk/jcov/runtime");
+                        }
+                        moduleInfo = mip.addExports(javaBaseExports, moduleInfo, loader);
+                        moduleInfo = mip.clearHashes(moduleInfo, loader);
+                        for (String resource : resources) {
                             try(InputStream in = implantSource.loader().getResourceAsStream(resource)) {
                                 destination.accept(resource, in.readAllBytes());
                             }

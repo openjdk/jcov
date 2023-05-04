@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,48 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.Modifiers;
+package openjdk.jcov.data.fields.test;
 
-module jcov {
-    exports com.sun.tdk.jcov.instrument;
-    exports com.sun.tdk.jcov.io;
-    exports com.sun.tdk.jcov.util;
-    exports com.sun.tdk.jcov.data;
-    exports com.sun.tdk.jcov.runtime;
-    exports com.sun.tdk.jcov;
-    exports com.sun.tdk.jcov.report;
-    exports com.sun.tdk.jcov.report.ancfilters;
-    exports com.sun.tdk.jcov.processing;
-    exports com.sun.tdk.jcov.instrument.plugin;
-    requires java.logging;
-    requires ant;
-    requires java.xml;
-    requires jdk.compiler;
-    requires javatest;
-    requires jdk.jdeps;
-    uses InstrumentationPlugin;
-    uses Modifiers.ModifiersFactory;
+public class UserCode {
+    int i;
+    long j;
+    float f;
+    double d;
+    boolean z;
+    byte b;
+    String s;
+
+    public void setI(int i) {
+        this.i = i;
+    }
+
+    public void setJ(long j) {
+        this.j = j;
+    }
+
+    public void setF(float f) {
+        this.f = f;
+    }
+
+    public void setD(double d) {
+        this.d = d;
+    }
+
+    public void setZ(boolean z) {
+        this.z = z;
+    }
+
+    public void setB(byte b) {
+        this.b = b;
+    }
+
+    public void setS(String s) {
+        this.s = s;
+    }
+
+    public static void main(String[] args) {
+        UserCode o = new UserCode();
+        o.setI(0); o.setJ(1); o.setF(2f); o.setD(3.); o.setZ(true); o.setB((byte)5); o.setS("6");
+        o.setI(7); o.setJ(8); o.setF(9f); o.setD(10d); o.setZ(false); o.setB((byte)12); o.setS("13");
+    }
 }

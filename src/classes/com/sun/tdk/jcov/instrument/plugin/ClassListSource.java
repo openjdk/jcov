@@ -22,26 +22,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.Modifiers;
+package com.sun.tdk.jcov.instrument.plugin;
 
-module jcov {
-    exports com.sun.tdk.jcov.instrument;
-    exports com.sun.tdk.jcov.io;
-    exports com.sun.tdk.jcov.util;
-    exports com.sun.tdk.jcov.data;
-    exports com.sun.tdk.jcov.runtime;
-    exports com.sun.tdk.jcov;
-    exports com.sun.tdk.jcov.report;
-    exports com.sun.tdk.jcov.report.ancfilters;
-    exports com.sun.tdk.jcov.processing;
-    exports com.sun.tdk.jcov.instrument.plugin;
-    requires java.logging;
-    requires ant;
-    requires java.xml;
-    requires jdk.compiler;
-    requires javatest;
-    requires jdk.jdeps;
-    uses InstrumentationPlugin;
-    uses Modifiers.ModifiersFactory;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+public class ClassListSource implements Source {
+    private final ClassLoader loader;
+    private final Set<Class> classes;
+
+    public ClassListSource(ClassLoader loader, Set<Class> classes) {
+        this.loader = loader;
+        this.classes = classes;
+    }
+
+    @Override
+    public Collection<String> resources() throws Exception {
+        return classes.stream().map(c -> c.getName().replace('.','/') + ".class")
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public ClassLoader loader() {
+        return loader;
+    }
+
+    @Override
+    public void close() throws IOException {
+    }
 }

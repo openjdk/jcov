@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import com.sun.tdk.jcov.instrument.InstrumentationPlugin;
-import com.sun.tdk.jcov.instrument.Modifiers;
+package openjdk.jcov.data;
 
-module jcov {
-    exports com.sun.tdk.jcov.instrument;
-    exports com.sun.tdk.jcov.io;
-    exports com.sun.tdk.jcov.util;
-    exports com.sun.tdk.jcov.data;
-    exports com.sun.tdk.jcov.runtime;
-    exports com.sun.tdk.jcov;
-    exports com.sun.tdk.jcov.report;
-    exports com.sun.tdk.jcov.report.ancfilters;
-    exports com.sun.tdk.jcov.processing;
-    exports com.sun.tdk.jcov.instrument.plugin;
-    requires java.logging;
-    requires ant;
-    requires java.xml;
-    requires jdk.compiler;
-    requires javatest;
-    requires jdk.jdeps;
-    uses InstrumentationPlugin;
-    uses Modifiers.ModifiersFactory;
+import org.testng.annotations.Test;
+
+import static org.testng.Assert.assertEquals;
+
+public class EnvTest {
+    public static final String TEST_PROPERTY = "jcov.data.test.property";
+    public static final String IUNDEFINED_TEST_PROPERTY = "jcov.data.test.property.undefined";
+//    @Test
+    public void defaultsTest() {
+        assertEquals(Env.getStringEnv(TEST_PROPERTY, "three"), "one");
+        System.setProperty(TEST_PROPERTY, "two");
+        assertEquals(Env.getStringEnv(TEST_PROPERTY, "three"), "two");
+        assertEquals(Env.getStringEnv(IUNDEFINED_TEST_PROPERTY, "three"), "three");
+        System.setProperty(IUNDEFINED_TEST_PROPERTY, "two");
+        assertEquals(Env.getStringEnv(IUNDEFINED_TEST_PROPERTY, "three"), "two");
+    }
 }
