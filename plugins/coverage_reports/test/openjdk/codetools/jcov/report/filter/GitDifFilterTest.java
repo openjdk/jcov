@@ -115,6 +115,7 @@ public class GitDifFilterTest {
                     }
                     return res;
                 },
+                "ObjectInputStream coverage",
                 filter).report(report);
         List<String> reportLines = Files.readAllLines(report);
         assertTrue(reportLines.contains("ObjectInputStream.java 1/2"));

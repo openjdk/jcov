@@ -42,18 +42,23 @@ public class JDKReport {
             var diff = GitDiffFilter.parseDiff(Path.of(args[2]), source.roots(List.of(Path.of(args[1]))));
             String reportFile = args[3];
             boolean isHTML = reportFile.endsWith("html");
+            String title = args.length >= 5 ? args[4] : "";
+            String header = args.length >= 6 ? args[5] : "";
             if (isHTML)
-                new SingleHTMLReport(source, new FileSet(diff.files()), coverage, diff, new ContextFilter(diff, 10))
+                new SingleHTMLReport(source, new FileSet(diff.files()), coverage,
+                        title, header,
+                        diff, new ContextFilter(diff, 10))
                         .report(Path.of(reportFile));
             else
-                new TextReport(source, new FileSet(diff.files()), coverage, diff)
+                new TextReport(source, new FileSet(diff.files()), coverage, header, diff)
                         .report(Path.of(reportFile));
         } catch (Throwable e) {
             System.out.println("Usage: java ... openjdk.codetools.jcov.report.view.JDKReport \\");
             System.out.println("    <JCov coderage file produced for the tip of the repository> \\");
             System.out.println("    <JDK source hierarchy> \\");
             System.out.println("    <git diff file from the tip to a revision in the past produced with -U0 option> \\");
-            System.out.println("    <output file>");
+            System.out.println("    <output file> \\");
+            System.out.println("    <report title> <report header>");
             throw e;
         }
     }

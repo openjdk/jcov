@@ -37,12 +37,16 @@ import java.nio.file.Path;
 
 public class TextReport extends HightlightFilteredReport {
 
-    public TextReport(SourceHierarchy source, FileSet files, FileCoverage coverage, SourceFilter filter) {
+    private String header;
+
+    public TextReport(SourceHierarchy source, FileSet files, FileCoverage coverage, String header, SourceFilter filter) {
         super(source, files, new CoverageHierarchy(files.files(), coverage, filter), filter, filter);
+        this.header = header;
     }
 
     public void report(Path dest) throws Exception {
         try (BufferedWriter out = Files.newBufferedWriter(dest)) {
+            out.write(header); out.newLine(); out.newLine();
             super.toc(new TOCOut() {
                 @Override
                 public void printFileLine(String file) throws Exception {

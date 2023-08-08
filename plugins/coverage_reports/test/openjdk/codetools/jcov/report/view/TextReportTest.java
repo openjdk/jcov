@@ -73,9 +73,10 @@ public class TextReportTest {
         );
         var files = new FileSet(Set.of(SingleFiletReportTest.FILE_11, SingleFiletReportTest.FILE_12,
                 SingleFiletReportTest.FILE_21, SingleFiletReportTest.FILE_22));
-        var report = new TextReport(source, files, coverage, filter);
+        var report = new TextReport(source, files, coverage, "HEADER", filter);
         report.report(reportFile);
         var content = Files.readAllLines(reportFile);
+        assertTrue(content.contains("HEADER"));
         assertTrue(content.stream().anyMatch("total 1/2"::equals));
         assertTrue(content.stream().anyMatch("4:-4"::equals));
         assertTrue(content.stream().anyMatch("6:+6"::equals));

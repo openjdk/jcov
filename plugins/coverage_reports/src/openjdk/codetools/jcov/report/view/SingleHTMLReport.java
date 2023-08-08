@@ -40,15 +40,23 @@ import java.nio.file.Path;
 
 public class SingleHTMLReport extends HightlightFilteredReport {
 
+    private String title;
+    private String header;
+
     public SingleHTMLReport(SourceHierarchy source, FileSet files, FileCoverage coverage,
+                            String title, String header,
                             SourceFilter highlight, SourceFilter include) {
         super(source, files, new CoverageHierarchy(files.files(), coverage, highlight), highlight, include);
+        this.title = title;
+        this.header = header;
     }
 
     public void report(Path dest) throws Exception {
         try (BufferedWriter out = Files.newBufferedWriter(dest)) {
             var rout = new HtmlOut(out);
-            out.write("<html><head><style>\n" +
+            out.write("<html><head>"); out.newLine();
+            out.write("<title>" + title + "</title>"); out.newLine();
+            out.write("<style>\n" +
                     ".highlight {\n" +
                     "  font-weight: bold;\n" +
                     "}\n" +
@@ -64,7 +72,9 @@ public class SingleHTMLReport extends HightlightFilteredReport {
                     "  font-weight: bold;\n" +
                     "  font-size: larger;\n" +
                     "}\n" +
-                    "</style></head><body>\n");
+                    "</style>"); out.newLine();
+            out.write("</head><body>\n"); out.newLine();
+            out.write("<h1>" + header + "</h1>\n"); out.newLine();
             out.write("<table><tbody>"); out.newLine();
             toc(rout, "");
             out.write("</tbody></table>"); out.newLine();

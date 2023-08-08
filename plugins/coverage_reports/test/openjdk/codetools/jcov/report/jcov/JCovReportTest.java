@@ -82,6 +82,7 @@ public class JCovReportTest {
         new TextReport(new SourcePath(List.of(src)),
                 files,
                 rawCoverage,
+                "negative array size fix",
                 new ContextFilter(filter, 10)).report(textReport);
         List<String> reportLines = Files.readAllLines(textReport);
         assertTrue(reportLines.contains("1454:      * @throws StreamCorruptedException if arrayLength is negative"));
@@ -95,6 +96,8 @@ public class JCovReportTest {
         new SingleHTMLReport(new SourcePath(List.of(src)),
                 files,
                 rawCoverage,
+                "negative array size fix",
+                "negative array size fix",
                 filter,
                 new ContextFilter(filter, 10)).report(htmlReport);
         System.out.println("Report: " + htmlReport);
@@ -120,6 +123,7 @@ public class JCovReportTest {
         new TextReport(new SourcePath(List.of(src)),
                 files,
                 rawCoverage,
+                "negative array size fix",
                 filter).report(textReport);
         List<String> reportLines = Files.readAllLines(textReport);
         assertTrue(reportLines.contains("3035:+            this.in = new PeekInputStream(in);"));

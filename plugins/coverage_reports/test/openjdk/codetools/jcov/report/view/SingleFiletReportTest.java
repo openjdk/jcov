@@ -87,10 +87,12 @@ public class SingleFiletReportTest {
                 new LineRange(8, 8)
         );
         var report = new SingleHTMLReport(source, fileSet,
-                coverage, filter, filter);
+                coverage, "TITLE", "HEADER", filter, filter);
         report.report(reportFile);
         System.out.println("Report: " + reportFile.toString());
         List<String> content = Files.readAllLines(reportFile);
+        assertTrue(content.contains("<title>TITLE</title>"));
+        assertTrue(content.contains("<h1>HEADER</h1>"));
         assertTrue(content.stream().anyMatch("<tr><td><a href=\"#total\">total</a></td><td>1/2</td></tr>"::equals));
         assertTrue(content.stream().anyMatch("<a class=\"uncovered\">4: 4</a>"::equals));
         assertTrue(content.stream().anyMatch("<a class=\"covered\">6: 6</a>"::equals));
