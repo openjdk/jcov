@@ -24,16 +24,15 @@
  */
 package openjdk.codetools.jcov.report.jcov;
 
+import com.sun.tdk.jcov.instrument.DataClass;
+import com.sun.tdk.jcov.instrument.DataMethod;
+import com.sun.tdk.jcov.instrument.DataMethodWithBlocks;
+import com.sun.tdk.jcov.instrument.DataRoot;
 import com.sun.tdk.jcov.instrument.LocationRef;
 import com.sun.tdk.jcov.report.MethodCoverage;
 import openjdk.codetools.jcov.report.Coverage;
 import openjdk.codetools.jcov.report.CoveredLineRange;
 import openjdk.codetools.jcov.report.FileCoverage;
-import openjdk.codetools.jcov.report.LineRange;
-import com.sun.tdk.jcov.instrument.DataClass;
-import com.sun.tdk.jcov.instrument.DataMethod;
-import com.sun.tdk.jcov.instrument.DataMethodWithBlocks;
-import com.sun.tdk.jcov.instrument.DataRoot;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,8 +43,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 
 public class JCovLineCoverage implements FileCoverage {
     private final DataRoot root;
@@ -70,11 +67,12 @@ public class JCovLineCoverage implements FileCoverage {
         var result = new HashMap<Integer, Boolean>();
         for (DataMethod m : cls.getMethods()) if (m instanceof DataMethodWithBlocks) {
             var lc = new MethodCoverage(m, true).getLineCoverage();
-            boolean methodCovered = false;
+//            boolean methodCovered = false;
             for (int i = (int)lc.firstLine(); i <= lc.lastLine(); i++) {
                 if (lc.isCode(i)) {
-                    result.put(i, lc.isLineCovered(i));
-                    methodCovered |= lc.isLineCovered(i);
+                    if (result.get(i) == null || !result.get(i).booleanValue())
+                        result.put(i, lc.isLineCovered(i));
+//                    methodCovered |= lc.isLineCovered(i);
                 }
             }
             //mmm but also the method declaration
