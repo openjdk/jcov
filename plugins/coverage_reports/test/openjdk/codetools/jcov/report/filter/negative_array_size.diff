@@ -1,0 +1,28 @@
+diff --git a/src/ObjectInputStream.java b/src/ObjectInputStream.java
+index 2e0d6384f81..10b7f7715fa 100644
+--- a/src/ObjectInputStream.java
++++ b/src/ObjectInputStream.java
+@@ -1454 +1454 @@ public class ObjectInputStream
+-     * @throws NegativeArraySizeException if arrayLength is negative
++     * @throws StreamCorruptedException if arrayLength is negative
+@@ -1457 +1457 @@ public class ObjectInputStream
+-    private void checkArray(Class<?> arrayType, int arrayLength) throws InvalidClassException {
++    private void checkArray(Class<?> arrayType, int arrayLength) throws ObjectStreamException {
+@@ -1463 +1463 @@ public class ObjectInputStream
+-            throw new NegativeArraySizeException();
++            throw new StreamCorruptedException("Array length is negative");
+@@ -2141 +2141,3 @@ public class ObjectInputStream
+-
++        if (len < 0) {
++            throw new StreamCorruptedException("Array length is negative");
++        }
+diff --git a/src/JavaObjectInputStreamAccess.java b/src/JavaObjectInputStreamAccess.java
+index 2633ac0edca..a47add473c6 100644
+--- a/src/JavaObjectInputStreamAccess.java
++++ b/src/JavaObjectInputStreamAccess.java
+@@ -28 +28 @@ package jdk.internal.access;
+-import java.io.InvalidClassException;
++import java.io.ObjectStreamException;
+@@ -37 +37 @@ public interface JavaObjectInputStreamAccess {
+-        throws InvalidClassException;
++        throws ObjectStreamException;
