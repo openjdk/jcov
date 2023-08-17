@@ -87,7 +87,7 @@ public class SingleFiletReportTest {
                 new LineRange(8, 8)
         );
         var report = new SingleHTMLReport(source, fileSet,
-                coverage, "TITLE", "HEADER", filter, filter);
+                coverage, "TITLE", "<h1>HEADER</h1>", filter, filter);
         report.report(reportFile);
         System.out.println("Report: " + reportFile.toString());
         List<String> content = Files.readAllLines(reportFile);

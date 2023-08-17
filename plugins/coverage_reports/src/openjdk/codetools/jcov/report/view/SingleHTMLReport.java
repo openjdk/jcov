@@ -74,7 +74,7 @@ public class SingleHTMLReport extends HightlightFilteredReport {
                     "}\n" +
                     "</style>"); out.newLine();
             out.write("</head><body>\n"); out.newLine();
-            out.write("<h1>" + header + "</h1>\n"); out.newLine();
+            out.write(header + "\n"); out.newLine();
             out.write("<table><tbody>"); out.newLine();
             toc(rout, "");
             out.write("</tbody></table>"); out.newLine();
