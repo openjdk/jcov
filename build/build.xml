@@ -97,8 +97,7 @@
 
     </target>
 
-    <target name="prepare" depends="clean, verify-dependencies" description="checks dependencies">
-
+    <target name="check-javatestjar">
         <condition property="javatest.present">
             <and>
                 <isset property="javatestjar"/>
@@ -107,12 +106,13 @@
                 </not>
             </and>
         </condition>
+    </target>
 
+    <target name="prepare" depends="clean, check-javatestjar, verify-dependencies" description="checks dependencies">
         <mkdir dir="${build.dir}"/>
         <mkdir dir="${tmp.dir}"/>
         <mkdir dir="${jcov.src.update}"/>
         <mkdir dir="${jcov.classes}"/>
-
     </target>
 
     <target name="build-date" description="adds build and date information">
@@ -330,7 +330,7 @@ MILESTONE="${build.milestone}"
         </echo>
     </target>
 
-    <target name="test" depends="build-jcov,build-network.saver">
+    <target name="test" depends="build-jcov,build-network.saver,download-test-dependencies">
         <mkdir dir="${result.dir}/test/classes" />
         <javac includeantruntime="false" encoding="iso-8859-1"
                debug="no"
