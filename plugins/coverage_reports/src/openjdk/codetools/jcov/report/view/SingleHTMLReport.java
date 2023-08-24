@@ -133,7 +133,7 @@ public class SingleHTMLReport extends HightlightFilteredReport {
             }
             out.write(">");
             out.write((lineNo + 1) + ": ");
-            out.write(line);
+            out.write(line.replaceAll("</?\\s*pre\\s*>", ""));
             out.write("</a>");
             out.newLine();
         }
