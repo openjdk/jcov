@@ -20,4 +20,4 @@ hs_err_pid*
 
 # build
 JCOV_BUILD/
-
+build/template.xml
