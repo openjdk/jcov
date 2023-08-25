@@ -35,12 +35,15 @@ import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * Implements a hierarchical report in a single text file.
+ */
 public class TextReport extends HightlightFilteredReport {
 
     private String header;
 
     public TextReport(SourceHierarchy source, FileSet files, FileCoverage coverage, String header, SourceFilter filter) {
-        super(source, files, new CoverageHierarchy(files.files(), coverage, filter), filter, filter);
+        super(source, files, new CoverageHierarchy(files.files(), source, coverage, filter), filter, filter);
         this.header = header;
     }
 
@@ -55,8 +58,8 @@ public class TextReport extends HightlightFilteredReport {
                 }
 
                 @Override
-                public void printFolderLine(String folder) throws Exception {
-                    out.write((folder.isEmpty() ? "total" : folder) + " " + coverage().get(folder));
+                public void printFolderLine(String folder, Coverage cov) throws Exception {
+                    out.write((folder.isEmpty() ? "total" : folder) + " " + cov);
                     out.newLine();
                 }
             }, "");
@@ -91,7 +94,7 @@ public class TextReport extends HightlightFilteredReport {
                 }
 
                 @Override
-                public void startDir(String s) throws Exception {
+                public void startDir(String s, Coverage cov) throws Exception {
 
                 }
             }, "");

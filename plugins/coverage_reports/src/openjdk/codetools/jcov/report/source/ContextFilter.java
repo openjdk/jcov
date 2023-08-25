@@ -32,6 +32,9 @@ import java.util.List;
 
 import static java.lang.Math.max;
 
+/**
+ * Adds "context lines" to a filter. See <code>man diff</code>
+ */
 public class ContextFilter implements SourceFilter {
     private final SourceFilter filter;
     private final int contextLines;

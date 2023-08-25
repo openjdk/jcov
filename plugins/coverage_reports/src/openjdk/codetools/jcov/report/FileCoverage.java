@@ -26,7 +26,12 @@ package openjdk.codetools.jcov.report;
 
 import java.util.List;
 
+/**
+ * Presents a coverage of a file in terms of line ranges.
+ * @see LineRange
+ * @see CoveredLineRange
+ * @see Coverage
+ */
 public interface FileCoverage {
-//    Map<LineRange, Coverage> ranges(String file);
     List<CoveredLineRange> ranges(String file);
 }

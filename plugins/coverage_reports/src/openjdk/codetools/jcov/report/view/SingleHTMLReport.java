@@ -30,14 +30,15 @@ import openjdk.codetools.jcov.report.FileSet;
 import openjdk.codetools.jcov.report.LineRange;
 import openjdk.codetools.jcov.report.filter.SourceFilter;
 import openjdk.codetools.jcov.report.source.SourceHierarchy;
-import openjdk.codetools.jcov.report.view.CoverageHierarchy;
-import openjdk.codetools.jcov.report.view.HightlightFilteredReport;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * Implements a hierarchical report in a single html file.
+ */
 public class SingleHTMLReport extends HightlightFilteredReport {
 
     private String title;
@@ -46,7 +47,9 @@ public class SingleHTMLReport extends HightlightFilteredReport {
     public SingleHTMLReport(SourceHierarchy source, FileSet files, FileCoverage coverage,
                             String title, String header,
                             SourceFilter highlight, SourceFilter include) {
-        super(source, files, new CoverageHierarchy(files.files(), coverage, highlight), highlight, include);
+        //TODO a builder
+        super(source, files, new CoverageHierarchy(files.files(), source, coverage, highlight),
+                highlight, include);
         this.title = title;
         this.header = header;
     }
@@ -93,14 +96,14 @@ public class SingleHTMLReport extends HightlightFilteredReport {
 
         @Override
         public void printFileLine(String s) throws IOException {
+            var cov = coverage().get(s);
             out.write("<tr><td><a href=\"#" + s.replace('/', '_') + "\">" + s + "</a></td><td>" +
-                    coverage().get(s) + "</td></tr>");
+                    cov + "</td></tr>");
             out.newLine();
         }
 
         @Override
-        public void printFolderLine(String s) throws IOException {
-            Coverage cov = coverage().get(s);
+        public void printFolderLine(String s, Coverage cov) throws IOException {
             if (s.isEmpty()) s = "total";
             out.write("<tr><td><a href=\"#" + s.replace('/', '_') + "\">" + s + "</a></td><td>" +
                     cov + "</td></tr>");
@@ -149,7 +152,7 @@ public class SingleHTMLReport extends HightlightFilteredReport {
         }
 
         @Override
-        public void startDir(String s) throws IOException {
+        public void startDir(String s, Coverage cov) throws IOException {
             if (s.isEmpty()) s = "total";
             out.write("<a id=\"" + s.replace('/', '_') + "\"/>");
         }

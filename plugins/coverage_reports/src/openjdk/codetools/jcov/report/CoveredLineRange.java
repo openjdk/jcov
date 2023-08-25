@@ -24,6 +24,11 @@
  */
 package openjdk.codetools.jcov.report;
 
+/**
+ * The assumption is that some coverage information can be linked to a portion of source code.
+ * @see Coverage
+ * @see FileCoverage
+ */
 public class CoveredLineRange extends LineRange {
     private final Coverage coverage;
     public CoveredLineRange(int first, int last, Coverage coverage) {

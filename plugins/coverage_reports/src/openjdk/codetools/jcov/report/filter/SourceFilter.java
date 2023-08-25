@@ -28,8 +28,18 @@ import openjdk.codetools.jcov.report.LineRange;
 
 import java.util.List;
 
+/**
+ * Filters a source file by providing a list of line ranges which needs not be included.
+ * @see LineRange
+ */
 public interface SourceFilter {
-    //assumed to return ranges in order
+
+    /**
+     * Line ranges to be included. Any implementaiton is assumed to return a list of line that is ordered
+     * by beginning line.
+     * @param file
+     * @return
+     */
     List<LineRange> ranges(String file);
 
     default boolean includes(String file, int line) {

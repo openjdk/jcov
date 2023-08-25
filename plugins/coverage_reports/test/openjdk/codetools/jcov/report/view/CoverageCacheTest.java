@@ -28,6 +28,7 @@ import openjdk.codetools.jcov.report.Coverage;
 import openjdk.codetools.jcov.report.CoveredLineRange;
 import openjdk.codetools.jcov.report.FileCoverage;
 import openjdk.codetools.jcov.report.LineRange;
+import openjdk.codetools.jcov.report.source.SourceHierarchy;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -55,22 +56,48 @@ public class CoverageCacheTest {
     }
     @Test
     void everyEven() throws IOException {
-        var cache = new CoverageHierarchy(files, coverage, file -> file.endsWith("file1") ?
-                List.of(
-                    new LineRange(0, 0),
-                    new LineRange(2, 2),
-                    new LineRange(4, 4),
-                    new LineRange(6, 6),
-                    new LineRange(8, 8)
-                ) :
-                List.of());
+        var cache = new CoverageHierarchy(files,
+                new SourceHierarchy() {
+                    @Override
+                    public List<String> readFile(String file) throws IOException {
+                        return Files.readAllLines(Path.of(file));
+                    }
+
+                    @Override
+                    public String toClass(String file) {
+                        return file;
+                    }
+                },
+                coverage,
+                file -> file.endsWith("file1") ?
+                        List.of(
+                                new LineRange(0, 0),
+                                new LineRange(2, 2),
+                                new LineRange(4, 4),
+                                new LineRange(6, 6),
+                                new LineRange(8, 8)
+                        ) :
+                        List.of());
         assertTrue(cache.get("").equals(new Coverage(4, 4)));
         assertTrue(cache.get("dir1").equals(new Coverage(2, 2)));
         assertTrue(cache.get("dir1/file1").equals(new Coverage(2, 2)));
     }
     @Test
     void getLineCoverage() throws IOException {
-        var cache = new CoverageHierarchy(files, coverage, file -> file.endsWith("file1") ?
+        var cache = new CoverageHierarchy(files,
+                new SourceHierarchy() {
+                    @Override
+                    public List<String> readFile(String file) throws IOException {
+                        return Files.readAllLines(Path.of(file));
+                    }
+
+                    @Override
+                    public String toClass(String file) {
+                        return file;
+                    }
+                },
+                coverage,
+                file -> file.endsWith("file1") ?
                 List.of(
                         new LineRange(0, 0),
                         new LineRange(2, 2),

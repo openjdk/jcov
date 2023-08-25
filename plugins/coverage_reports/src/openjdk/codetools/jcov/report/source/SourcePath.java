@@ -24,16 +24,74 @@
  */
 package openjdk.codetools.jcov.report.source;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
-public class SourcePath extends SourceHierarchy {
-    public SourcePath(List<Path> roots) {
-        super(roots);
+/**
+ * When the source code is available locally.
+ */
+public class SourcePath implements SourceHierarchy {
+    private final Map<Path, List<Path>> roots;
+
+    /**
+     * Single source repository, Single class hierarchy.
+     */
+    public SourcePath(Path srcRoot, Path classRoot) {
+        this(srcRoot, List.of(classRoot));
+    }
+
+    /**
+     * Single source repository, multiple class hierarchies.
+     */
+    public SourcePath(Path srcRoot, List<Path> classRoots) {
+        this(Map.of(srcRoot, classRoots));
+    }
+
+    /**
+     * There could be multiple repositories which multiple class hierarchies within each.
+     */
+    public SourcePath(Map<Path, List<Path>> roots) {
+        this.roots = roots;
+    }
+
+    protected Path resolveFile(Path root, String file) {
+        return root.resolve(file);
     }
 
     @Override
-    protected Path resolve(Path root, String file) {
-        return root.resolve(file);
+    public List<String> readFile(String file) throws IOException {
+        Path res;
+        for (var root : roots.keySet()) {
+            res = resolveFile(root, file);
+            if (Files.exists(res)) return Files.readAllLines(res);
+        }
+        return null;
+    }
+
+    public Path resolveClass(String file) {
+        Path res;
+        for (var sourceRoot : roots.keySet()) {
+            for (var classRoot : roots.get(sourceRoot)) {
+                res = resolveFile(classRoot, file);
+                if (Files.exists(res)) return res;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public String toClass(String file) {
+        for (var sourceRoot : roots.keySet()) {
+            var path = sourceRoot.resolve(file);
+            if (Files.exists(path))  {
+                for (var classRoot : roots.get(sourceRoot))
+                    if (path.startsWith(classRoot))
+                        return classRoot.relativize(path).toString();
+            }
+        }
+        return null;
     }
 }

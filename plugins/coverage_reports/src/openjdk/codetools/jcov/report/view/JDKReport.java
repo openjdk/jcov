@@ -29,17 +29,24 @@ import openjdk.codetools.jcov.report.FileSet;
 import openjdk.codetools.jcov.report.filter.GitDiffFilter;
 import openjdk.codetools.jcov.report.jcov.JCovLineCoverage;
 import openjdk.codetools.jcov.report.source.ContextFilter;
-import openjdk.codetools.jcov.report.source.JDKHierarchy;
+import openjdk.codetools.jcov.report.source.SourcePath;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 
+/**
+ * This is a utility class to generate report for openjdk.
+ */
 public class JDKReport {
     public static void main(String[] args) throws Exception {
         try {
             var coverage = new JCovLineCoverage(DataRoot.read(args[0]));
-            var source = new JDKHierarchy(List.of(Path.of(args[1])));
-            var diff = GitDiffFilter.parseDiff(Path.of(args[2]), source.roots(List.of(Path.of(args[1]))));
+            var source = jdkSource(List.of(Path.of(args[1])));
+            var diff = GitDiffFilter.parseDiff(Path.of(args[2])/*, source.roots(List.of(Path.of(args[1])))*/);
             String reportFile = args[3];
             boolean isHTML = reportFile.endsWith("html");
             String title = args.length >= 5 ? args[4] : "";
@@ -61,5 +68,20 @@ public class JDKReport {
             System.out.println("    <report title> <report header>");
             throw e;
         }
+    }
+
+    private static SourcePath jdkSource(List<Path> repos) {
+        //TODO add platform specific - one platform or many?
+        //TODO - what about closed?
+        return new SourcePath(repos.stream().collect(Collectors.toMap(
+                repo -> repo,
+                repo -> {
+                    try {
+                        return Files.list(repo.resolve("src")).map(module -> module.resolve("share/classes")).
+                                filter(Files::exists).collect(Collectors.toList());
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                })));
     }
 }

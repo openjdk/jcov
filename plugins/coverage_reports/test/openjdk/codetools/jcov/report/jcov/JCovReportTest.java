@@ -31,7 +31,6 @@ import openjdk.codetools.jcov.report.filter.GitDiffFilter;
 import openjdk.codetools.jcov.report.filter.SourceFilter;
 import openjdk.codetools.jcov.report.source.ContextFilter;
 import openjdk.codetools.jcov.report.source.SourcePath;
-import openjdk.codetools.jcov.report.view.CoverageHierarchy;
 import openjdk.codetools.jcov.report.view.SingleHTMLReport;
 import openjdk.codetools.jcov.report.view.TextReport;
 import com.sun.tdk.jcov.data.FileFormatException;
@@ -57,29 +56,20 @@ public class JCovReportTest {
     @BeforeClass
     void init() throws IOException, FileFormatException {
         String pkg = "/" + GitDifFilterTest.class.getPackageName().replace('.', '/') + "/";
-        src = GitDifFilterTest.cp("src, ", Map.of(
+        src = GitDifFilterTest.cp("src", Map.of(
                 pkg + "JavaObjectInputStreamAccess.java.txt", "java/io/JavaObjectInputStreamAccess.java",
                 pkg + "ObjectInputStream.java.txt", "java/io/ObjectInputStream.java"));
-        files = new FileSet(Set.of("java/io/JavaObjectInputStreamAccess.java", "java/io/ObjectInputStream.java"));
+        files = new FileSet(Set.of("src/java/io/JavaObjectInputStreamAccess.java", "src/java/io/ObjectInputStream.java"));
         var xmlName = JCovLoadTest.class.getName().replace('.', '/');
         xmlName = "/" + xmlName.substring(0, xmlName.lastIndexOf('/')) + "/ObjectInputStream.xml";
         rawCoverage = new JCovLineCoverage(DataRoot.read(GitDifFilterTest.cp(xmlName).toString()));
     }
     @Test
     void report() throws Exception {
-//        String pkg = "/" + GitDifFilterTest.class.getPackageName().replace('.', '/') + "/";
-//        Path src = GitDifFilterTest.cp("src, ", Map.of(
-//                pkg + "JavaObjectInputStreamAccess.java.txt", "java/io/JavaObjectInputStreamAccess.java",
-//                pkg + "ObjectInputStream.java.txt", "java/io/ObjectInputStream.java"));
-//        var files = new FileSet(Set.of("java/io/JavaObjectInputStreamAccess.java", "java/io/ObjectInputStream.java"));
-//        var xmlName = JCovLoadTest.class.getName().replace('.', '/');
-//        xmlName = "/" + xmlName.substring(0, xmlName.lastIndexOf('/')) + "/ObjectInputStream.xml";
-//        String diffPkg = "/" + JCovReportTest.class.getPackageName().replace('.', '/') + "/";
         String diffPkg = "/" + JCovReportTest.class.getPackageName().replace('.', '/') + "/";
-        var filter = GitDiffFilter.parseDiff(GitDifFilterTest.cp(diffPkg + "negative_array_size.diff"), Set.of("src"));
-//        var rawCoverage = new JCovLineCoverage(DataRoot.read(GitDifFilterTest.cp(xmlName).toString()));
+        var filter = GitDiffFilter.parseDiff(GitDifFilterTest.cp(diffPkg + "negative_array_size.diff")/*, Set.of("src")*/);
         Path textReport = Files.createTempFile("report", ".txt");
-        new TextReport(new SourcePath(List.of(src)),
+        new TextReport(new SourcePath(src, src.resolve("src")),
                 files,
                 rawCoverage,
                 "negative array size fix",
@@ -93,7 +83,7 @@ public class JCovReportTest {
         assertTrue(reportLines.contains("2143:         }"));
         assertTrue(reportLines.contains("2142:+            throw new StreamCorruptedException(\"Array length is negative\");"));
         Path htmlReport = Files.createTempFile("report", ".html");
-        new SingleHTMLReport(new SourcePath(List.of(src)),
+        new SingleHTMLReport(new SourcePath(src, src.resolve("src")),
                 files,
                 rawCoverage,
                 "negative array size fix",
@@ -120,7 +110,7 @@ public class JCovReportTest {
             }
         };
         Path textReport = Files.createTempFile("report", ".txt");
-        new TextReport(new SourcePath(List.of(src)),
+        new TextReport(new SourcePath(src, src.resolve("src")),
                 files,
                 rawCoverage,
                 "negative array size fix",

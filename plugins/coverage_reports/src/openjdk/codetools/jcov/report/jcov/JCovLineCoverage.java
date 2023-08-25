@@ -44,6 +44,9 @@ import java.util.stream.Collectors;
 
 import static java.lang.Math.max;
 
+/**
+ * This uses JCov output to determine line coverage of classes
+ */
 public class JCovLineCoverage implements FileCoverage {
     private final DataRoot root;
     private final Map<String, List<CoveredLineRange>> cache = new HashMap<>();
@@ -55,7 +58,6 @@ public class JCovLineCoverage implements FileCoverage {
     @Override
     public List<CoveredLineRange> ranges(String file) {
         var result = new ArrayList<CoveredLineRange>();
-        System.out.println(file);
         String className = file.substring(0, file.length() - ".java".length());
         root.getClasses().stream()
                 .filter(dc -> dc.getFullname().equals(className) || dc.getFullname().startsWith(className + "$"))
@@ -140,25 +142,25 @@ public class JCovLineCoverage implements FileCoverage {
                 .map(le -> new CoveredLineRange(le.getKey(), le.getKey(), le.getValue() ? Coverage.COVERED : Coverage.UNCOVERED))
                 .collect(Collectors.toList());
     }
-    private static int getLine(List<DataMethod.LineEntry> lineTable, int bci) {
-        int maxLine = 0;
-        for (var le : lineTable) {
-            if (le.bci > bci) return maxLine;
-            else maxLine = max(maxLine, le.line);
-        }
-        return maxLine;
-    }
-    private static class Item {
-        private final LocationRef loc;
-        private volatile boolean covered;
-
-        private Item(LocationRef loc, boolean covered) {
-            this.loc = loc;
-            this.covered = covered;
-        }
-        public void cover() {this.covered = true;}
-
-        public int startBCI() {return loc.startBCI();}
-        public int endBCI() {return loc.endBCI();}
-    }
+//    private static int getLine(List<DataMethod.LineEntry> lineTable, int bci) {
+//        int maxLine = 0;
+//        for (var le : lineTable) {
+//            if (le.bci > bci) return maxLine;
+//            else maxLine = max(maxLine, le.line);
+//        }
+//        return maxLine;
+//    }
+//    private static class Item {
+//        private final LocationRef loc;
+//        private volatile boolean covered;
+//
+//        private Item(LocationRef loc, boolean covered) {
+//            this.loc = loc;
+//            this.covered = covered;
+//        }
+//        public void cover() {this.covered = true;}
+//
+//        public int startBCI() {return loc.startBCI();}
+//        public int endBCI() {return loc.endBCI();}
+//    }
 }

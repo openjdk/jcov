@@ -28,9 +28,7 @@ import openjdk.codetools.jcov.report.Coverage;
 import openjdk.codetools.jcov.report.CoveredLineRange;
 import openjdk.codetools.jcov.report.FileSet;
 import openjdk.codetools.jcov.report.jcov.JCovLoadTest;
-import openjdk.codetools.jcov.report.source.ContextFilter;
 import openjdk.codetools.jcov.report.source.SourcePath;
-import openjdk.codetools.jcov.report.view.CoverageHierarchy;
 import openjdk.codetools.jcov.report.view.TextReport;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -67,7 +65,7 @@ public class GitDifFilterTest {
         var root = res.resolve(dir);
         Files.createDirectories(root);
         for (var r : resources.keySet()) {
-            Path file = res.resolve(resources.get(r));
+            Path file = root.resolve(resources.get(r));
             Files.createDirectories(file.getParent());
             try (var in = new BufferedReader(new InputStreamReader(JCovLoadTest.class.getResourceAsStream(r)));
                  var out = Files.newBufferedWriter(file)) {
@@ -83,24 +81,24 @@ public class GitDifFilterTest {
     @BeforeClass
     static void init() throws IOException {
         String pkg = "/" + GitDifFilterTest.class.getPackageName().replace('.', '/') + "/";
-        filter = GitDiffFilter.parseDiff(cp(pkg + "negative_array_size.diff"), Set.of("src"));
+        filter = GitDiffFilter.parseDiff(cp(pkg + "negative_array_size.diff")/*, Set.of("src")*/);
     }
     @Test
     void basic() {
-        assertTrue(filter.includes("JavaObjectInputStreamAccess.java", 37));
-        var oisRanges = filter.ranges("ObjectInputStream.java");
+        assertTrue(filter.includes("src/JavaObjectInputStreamAccess.java", 37));
+        var oisRanges = filter.ranges("src/ObjectInputStream.java");
         assertEquals(oisRanges.get(oisRanges.size() - 1).first(), 2141);
         assertEquals(oisRanges.get(oisRanges.size() - 1).last(), 2143);
     }
     @Test
     void report() throws Exception {
         String pkg = "/" + GitDifFilterTest.class.getPackageName().replace('.', '/') + "/";
-        Path src = cp("src, ", Map.of(
+        Path src = cp("src", Map.of(
                 pkg + "JavaObjectInputStreamAccess.java.txt", "JavaObjectInputStreamAccess.java",
                 pkg + "ObjectInputStream.java.txt", "ObjectInputStream.java"));
-        var files = new FileSet(Set.of("JavaObjectInputStreamAccess.java", "ObjectInputStream.java"));
+        var files = new FileSet(Set.of("src/JavaObjectInputStreamAccess.java", "src/ObjectInputStream.java"));
         Path report = Files.createTempFile("report", ".txt");
-        new TextReport(new SourcePath(List.of(src)),
+        new TextReport(new SourcePath(src, src.resolve("src")),
                 files,
                 file -> {
                     var res = new ArrayList<CoveredLineRange>();
@@ -118,7 +116,7 @@ public class GitDifFilterTest {
                 "ObjectInputStream coverage",
                 filter).report(report);
         List<String> reportLines = Files.readAllLines(report);
-        assertTrue(reportLines.contains("ObjectInputStream.java 1/2"));
+        assertTrue(reportLines.contains("src/ObjectInputStream.java 1/2"));
         assertTrue(reportLines.contains("2142:-            throw new StreamCorruptedException(\"Array length is negative\");"));
     }
 }

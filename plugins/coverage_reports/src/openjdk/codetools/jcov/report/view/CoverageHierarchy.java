@@ -28,6 +28,7 @@ import openjdk.codetools.jcov.report.Coverage;
 import openjdk.codetools.jcov.report.CoveredLineRange;
 import openjdk.codetools.jcov.report.FileCoverage;
 import openjdk.codetools.jcov.report.filter.SourceFilter;
+import openjdk.codetools.jcov.report.source.SourceHierarchy;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,15 +36,18 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+
 public class CoverageHierarchy {
     private final Map<String, Coverage> data;
     private final Map<String, Map<Integer, CoveredLineRange>> lineCoverage;
     private final FileCoverage coverage;
     private final SourceFilter filter;
+    private final SourceHierarchy source;
 
-    public CoverageHierarchy(Collection<String> files, FileCoverage coverage, SourceFilter filter) {
+    public CoverageHierarchy(Collection<String> files, SourceHierarchy source, FileCoverage coverage, SourceFilter filter) {
         data = new HashMap<>();
         lineCoverage = new HashMap<>();
+        this.source = source;
         data.put("", null);
         for (String file : files) {
             lineCoverage.put(file, null);
@@ -60,7 +64,9 @@ public class CoverageHierarchy {
     public Map<Integer, CoveredLineRange> getLineRanges(String file) {
         if (lineCoverage.containsKey(file) && lineCoverage.get(file) != null)
             return lineCoverage.get(file);
-        var coverage = this.coverage.ranges(file);
+        String className = source.toClass(file);
+        if (className == null) return null;
+        var coverage = this.coverage.ranges(className);
         var coverageIt = coverage.iterator();
         CoveredLineRange lastCoverageRange = null;
         var fileCoverage = new HashMap<Integer, CoveredLineRange>();
@@ -86,21 +92,26 @@ public class CoverageHierarchy {
         var res = data.get(fileOrDir);
         if (res != null) return res;
         if (lineCoverage.containsKey(fileOrDir)) {
-            getLineRanges(fileOrDir);
-            return data.get(fileOrDir);
+            return getLineRanges(fileOrDir) == null ? null : data.get(fileOrDir);
         }
         int[] coverage = {0, 0};
+        boolean[] someCoverageFound = {false};
         data.entrySet().stream()
                 .filter(e -> e.getKey().startsWith(fileOrDir + "/") && e.getKey().substring(fileOrDir.length() + 1).indexOf('/') < 0 ||
                         fileOrDir.isEmpty() && !e.getKey().isEmpty() && e.getKey().indexOf('/') < 0)
                 .forEach(e -> {
                     var c = (e.getValue() == null) ? get(e.getKey()) : e.getValue();
-                    coverage[0] += c.covered();
-                    coverage[1] += c.total();
+                    if (c != null) {
+                        someCoverageFound[0] = true;
+                        coverage[0] += c.covered();
+                        coverage[1] += c.total();
+                    }
                 });
-        res = new Coverage(coverage[0], coverage[1]);
-        data.put(fileOrDir, res);
-        return res;
+        if (someCoverageFound[0]) {
+            res = new Coverage(coverage[0], coverage[1]);
+            data.put(fileOrDir, res);
+            return res;
+        } else return null;
     }
 
 

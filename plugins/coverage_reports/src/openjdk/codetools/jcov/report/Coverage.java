@@ -27,6 +27,10 @@ package openjdk.codetools.jcov.report;
 import java.util.Collection;
 import java.util.Objects;
 
+/**
+ * There is a fixed number of items of some sort. Some of those items can be covered.
+ * @see CoveredLineRange
+ */
 public class Coverage {
     public static final Coverage COVERED = new Coverage(1,1);
     public static final Coverage UNCOVERED = new Coverage(0, 1);

@@ -30,6 +30,9 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
 
+/**
+ * Used to define for which files, within a hierarchy, to generate report for.
+ */
 public class FileSet {
     private final Set<String> files;
     private final Set<String> folders;

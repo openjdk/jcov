@@ -50,7 +50,7 @@ public class TextReportTest {
     @BeforeClass
     static void init() throws IOException {
         Path root = SingleFiletReportTest.createFiles();
-        source = new SourcePath(List.of(root));
+        source = new SourcePath(root, root);
         coverage = new FileCoverage() {
             @Override
             public List<CoveredLineRange> ranges(String file) {

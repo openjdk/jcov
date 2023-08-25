@@ -37,16 +37,24 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class GitDiffFilter implements SourceFilter {
+/**
+ * An implementation of the source filter which is coming from parsing git diff.
+ * @see #parseDiff(Path)
+ */
+public class GitDiffFilter implements SourceFileFilter {
     private final Map<String, List<LineRange>> lines;
 
-    public GitDiffFilter(Map<String, List<LineRange>> lines) {
+    private GitDiffFilter(Map<String, List<LineRange>> lines) {
         this.lines = lines;
     }
 
-    //Assumes output of next git command:
-    //git diff -U0 -r <reference changeset>
-    public static GitDiffFilter parseDiff(Path diffFile, Set<String> sourceRoots) throws IOException {
+    /**
+     * Parses git diff into a source filter. The diff is supposed to be produced with <code>-U0</code> option.
+     * @param diffFile the File to parse
+     * @return
+     * @throws IOException
+     */
+    public static SourceFileFilter parseDiff(Path diffFile) throws IOException {
         Map<String, List<LineRange>> lines = new HashMap<>();
         try(BufferedReader in = Files.newBufferedReader(diffFile)) {
             String line = null;
@@ -55,46 +63,39 @@ public class GitDiffFilter implements SourceFilter {
                     while ((line = in.readLine()) != null && !line.startsWith("+++ b/")) {}
                 if (line == null) break;;
                 String fileName = line.substring("+++ b/".length());
-                System.out.println(fileName);
                 if (fileName.endsWith(".java")) {
-                    Optional<String> root = sourceRoots.stream().filter(r -> fileName.startsWith(r)).findFirst();
-                    if (root.isPresent()) {
-                        List<LineRange> fragments = new ArrayList<>();
-                        String lineNumbers = in.readLine();
-                        while (lineNumbers !=null && !lineNumbers.startsWith("+++ b/")) {
-                            lineNumbers = lineNumbers.substring("@@ ".length());
-                            lineNumbers = lineNumbers.substring(lineNumbers.indexOf(" +") + 2, lineNumbers.indexOf(" @@"));
-                            int commaIndex = lineNumbers.indexOf(',');
-                            int firstLine, lastLine;
-                            if (commaIndex > -1) {
-                                firstLine = Integer.parseInt(lineNumbers.substring(0, commaIndex));
-                                lastLine = firstLine + Integer.parseInt(lineNumbers.substring(commaIndex + 1)) - 1;
-                            } else {
-                                lastLine = firstLine = Integer.parseInt(lineNumbers);
-                            }
-                            fragments.add(new LineRange(firstLine, lastLine));
-                            while ((lineNumbers = in.readLine()) != null && !lineNumbers.startsWith("@@ ")
-                                    && !lineNumbers.startsWith("+++ b/")) {}
-                            if (lineNumbers == null) break;
-                            if (lineNumbers.startsWith("+++ b/")) {
-                                line = lineNumbers;
-                                continue;
-                            }
+                    List<LineRange> fragments = new ArrayList<>();
+                    String lineNumbers = in.readLine();
+                    while (lineNumbers != null && !lineNumbers.startsWith("+++ b/")) {
+                        lineNumbers = lineNumbers.substring("@@ ".length());
+                        lineNumbers = lineNumbers.substring(lineNumbers.indexOf(" +") + 2, lineNumbers.indexOf(" @@"));
+                        int commaIndex = lineNumbers.indexOf(',');
+                        int firstLine, lastLine;
+                        if (commaIndex > -1) {
+                            firstLine = Integer.parseInt(lineNumbers.substring(0, commaIndex));
+                            lastLine = firstLine + Integer.parseInt(lineNumbers.substring(commaIndex + 1)) - 1;
+                        } else {
+                            lastLine = firstLine = Integer.parseInt(lineNumbers);
                         }
-                        lines.put(fileName.substring(root.get().length() + 1), fragments);
+                        fragments.add(new LineRange(firstLine, lastLine));
+                        while ((lineNumbers = in.readLine()) != null && !lineNumbers.startsWith("@@ ")
+                                && !lineNumbers.startsWith("+++ b/")) {
+                        }
                         if (lineNumbers == null) break;
-                    } else line = null;
+                        if (lineNumbers.startsWith("+++ b/")) {
+                            line = lineNumbers;
+                            continue;
+                        }
+                    }
+                    lines.put(fileName, fragments);
+                    if (lineNumbers == null) break;
                 } else line = null;
             }
         }
         return new GitDiffFilter(lines);
     }
 
-//    public static void main(String[] args) throws IOException {
-//        System.out.println(parseDiff(Path.of("/tmp/diff.test"), Set.of("src/java.base/share/classes")).lines
-//                .get("java.io.FileInputStream").stream().anyMatch(r -> r[0] <= 500 && r[1] >= 500));
-//    }
-
+    @Override
     public Set<String> files() {
         return lines.keySet();
     }

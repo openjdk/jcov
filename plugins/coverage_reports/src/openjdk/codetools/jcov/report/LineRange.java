@@ -26,6 +26,9 @@ package openjdk.codetools.jcov.report;
 
 import java.util.Objects;
 
+/**
+ * Range of a file lines. Used in filters and in coverage.
+ */
 public class LineRange implements Comparable<LineRange> {
     private final int first;
     private final int last;
