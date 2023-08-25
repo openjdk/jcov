@@ -60,6 +60,9 @@ public class SingleHTMLReport extends HightlightFilteredReport {
             out.write("<html><head>"); out.newLine();
             out.write("<title>" + title + "</title>"); out.newLine();
             out.write("<style>\n" +
+                    ".context {\n" +
+                    "  font-weight: lighter;\n" +
+                    "}\n" +
                     ".highlight {\n" +
                     "  font-weight: bold;\n" +
                     "}\n" +
@@ -133,7 +136,8 @@ public class SingleHTMLReport extends HightlightFilteredReport {
                     out.write(" class=\"uncovered\"");
             } else if (highlight) {
                 out.write(" class=\"highlight\"");
-            }
+            } else
+                out.write(" class=\"context\"");
             out.write(">");
             out.write((lineNo + 1) + ": ");
             out.write(line.replaceAll("</?\\s*pre\\s*>", ""));
