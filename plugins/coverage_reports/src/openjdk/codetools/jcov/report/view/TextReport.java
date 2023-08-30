@@ -39,7 +39,7 @@ import java.nio.file.Path;
  * Implements a hierarchical report in a single text file.
  */
 public class TextReport extends HightlightFilteredReport {
-
+    private static final String SEPARATOR_LINE = "-".repeat(80);
     private String header;
 
     public TextReport(SourceHierarchy source, FileSet files, FileCoverage coverage, String header, SourceFilter filter) {
@@ -68,7 +68,7 @@ public class TextReport extends HightlightFilteredReport {
                 public void startFile(String file) throws Exception {
                     out.write("file:" + file + " " + coverage().get(file));
                     out.newLine();
-                    out.write("--------------------------------------------------------------------------");
+                    out.write(SEPARATOR_LINE);
                     out.newLine();
                 }
 
@@ -84,7 +84,7 @@ public class TextReport extends HightlightFilteredReport {
 
                 @Override
                 public void endLineRange(LineRange range) throws Exception {
-                    out.write("--------------------------------------------------------------------------");
+                    out.write(SEPARATOR_LINE);
                     out.newLine();
                 }
 
