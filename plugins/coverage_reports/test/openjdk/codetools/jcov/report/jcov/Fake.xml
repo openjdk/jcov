@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<coverage
+        xmlns='http://java.sun.com/jcov/namespace'
+        xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+        xsi:schemaLocation='http://java.sun.com/jcov/namespace coverage.xsd'>
+
+	<head>
+		<property name='coverage.generator.args' val=''/>
+		<property name='coverage.generator.mode' val='BRANCH'/>
+		<property name='coverage.generator.internal' val='include'/>
+		<property name='coverage.generator.include' val=''/>
+		<property name='coverage.generator.exclude' val='**\roxy*|java.lang.Object|jdk.internal.org.objectweb.**|jdk.test.Main'/>
+		<property name='coverage.generator.caller_include' val='.*'/>
+		<property name='coverage.generator.caller_exclude' val=''/>
+		<property name='coverage.created.date' val='2023-06-12'/>
+		<property name='coverage.created.time' val='22:07:57'/>
+		<property name='coverage.generator.fullversion' val=' 3.0_14 (os.ea) January 05, 2023'/>
+		<property name='coverage.generator.name' val='jcov'/>
+		<property name='coverage.generator.version' val='3.0'/>
+		<property name='coverage.spec.version' val='1.3'/>
+		<property name='java.runtime.version' val='20+36-2344'/>
+		<property name='java.version' val='20'/>
+		<property name='os.arch' val='amd64'/>
+		<property name='os.name' val='Linux'/>
+		<property name='os.version' val='5.15.0-1030-oracle'/>
+		<property name='user.name' val='ubuntu'/>
+		<property name='dynamic.collected' val='false'/>
+		<property name='id.count' val='1034203'/>
+	</head>
+	<package name="my.package" moduleName="my.module">
+		<class name="AB" checksum="1" source="AB.java" flags=''>
+			<meth name="a" vmsig="()V" flags='' access="2" signature="()V" length="2">
+				<bl s="0" e="1">
+					<methenter s="0" e="1" id="1" count="1"/>
+				</bl>
+				<lt>0=1;1=1;</lt>
+			</meth>
+			<meth name="b" vmsig="()V" flags='' access="2" signature="()V" length="2">
+				<bl s="2" e="3">
+					<methenter s="2" e="3" id="2" count="0"/>
+				</bl>
+				<lt>2=1;3=1;</lt>
+			</meth>
+		</class>
+	</package>
+</coverage>
