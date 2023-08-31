@@ -51,6 +51,14 @@
 
     <property name="jcov.jtobserver.classes" location="${tmp.dir}/jcov_jtobserver_classes"/>
 
+    <condition property="include.reports.plugin" value="yes">
+        <contains string="${include.plugins}" substring="coverage_reports"/>
+    </condition>
+
+    <condition property="include.simple.methods.plugin" value="yes">
+        <contains string="${include.plugins}" substring="simple_methods_anc"/>
+    </condition>
+
     <patternset id="jcov.files">
         <include name="com/sun/tdk/jcov/**"/>
         <include name="resources/**"/>
@@ -90,7 +98,19 @@
         <include name="org/objectweb/asm/**"/>
     </patternset>
 
-    <target name="clean" description="clean build data">
+    <target name="clean-reports-plugin" if="include.reports.plugin">
+        <ant dir="../plugins/coverage_reports" target="clean">
+            <property name="jcov.classpath" value="${jcov.classes}"/>
+        </ant>
+    </target>
+
+    <target name="clean-simple-methods-plugin" if="include.simple.methods.plugin">
+        <ant dir="../plugins/simple_methods_anc" target="clean">
+            <property name="jcov.classpath" value="${jcov.classes}"/>
+        </ant>
+    </target>
+
+    <target name="clean" depends="clean-reports-plugin,clean-simple-methods-plugin" description="clean build data">
 
         <delete dir="${build.dir}"/>
         <delete dir="${tmp.dir}"/>
@@ -161,7 +181,7 @@
 
     </target>
 
-    <target name="compile"  depends="prepare, build-date"
+    <target name="compile-jcov"  depends="prepare, build-date"
             description="compile main tools">
 
         <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="8" source="8"
@@ -181,6 +201,31 @@
             <fileset refid="jcov.resources.files"/>
         </copy>
     </target>
+
+    <target name="compile-reports-plugin" depends="compile-jcov" if="include.reports.plugin">
+        <ant dir="../plugins/coverage_reports" target="compile">
+            <property name="jcov.classpath" value="${jcov.classes}"/>
+        </ant>
+        <copy todir="${jcov.classes}">
+            <fileset dir="../plugins/coverage_reports/build/classes">
+                <include name="**/*.class"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="compile-simple-methods-plugin" depends="compile-jcov" if="include.simple.methods.plugin">
+        <ant dir="../plugins/simple_methods_anc" target="compile">
+            <property name="jcov.classpath" value="${jcov.classes}"/>
+            <property name="asm.classpath" value="${basedir}/${asm.jar}:${basedir}/${asm.util.jar}:${basedir}/${asm.tree.jar}"/>
+        </ant>
+        <copy todir="${jcov.classes}">
+            <fileset dir="../plugins/simple_methods_anc/build/classes">
+                <include name="**/*.class"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="compile" depends="compile-jcov,compile-reports-plugin,compile-simple-methods-plugin"/>
 
     <patternset id="jcov.services">
         <include name="META-INF/services/**"/>
@@ -330,7 +375,7 @@ MILESTONE="${build.milestone}"
         </echo>
     </target>
 
-    <target name="test" depends="build-jcov,build-network.saver,download-test-dependencies">
+    <target name="test-jcov" depends="build-jcov,build-network.saver,download-test-dependencies">
         <mkdir dir="${result.dir}/test/classes" />
         <javac includeantruntime="false" encoding="iso-8859-1"
                debug="no"
@@ -352,4 +397,21 @@ MILESTONE="${build.milestone}"
             </classpath>
         </testng>
     </target>
+
+    <target name="test-reports-plugin" depends="build-jcov" if="include.reports.plugin">
+        <ant dir="../plugins/coverage_reports" target="test">
+            <property name="jcov.classpath" value="${jcov.classes}"/>
+            <property name="testng.classpath" value="${basedir}/${testngjar}:${basedir}/${jcommanderjar}"/>
+        </ant>
+    </target>
+
+    <target name="test-simple-methods-plugin" depends="build-jcov" if="include.simple.methods.plugin">
+        <ant dir="../plugins/simple_methods_anc" target="test">
+            <property name="jcov.classpath" value="${jcov.classes}"/>
+            <property name="asm.classpath" value="${basedir}/${asm.jar}:${basedir}/${asm.util.jar}:${basedir}/${asm.tree.jar}"/>
+            <property name="testng.classpath" value="${basedir}/${testngjar}:${basedir}/${jcommanderjar}"/>
+        </ant>
+    </target>
+
+    <target name="test" depends="test-jcov,test-reports-plugin,test-simple-methods-plugin"/>
 </project>
