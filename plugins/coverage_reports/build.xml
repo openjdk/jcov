@@ -34,17 +34,22 @@
   <property name="test.jar" location="${build}/tests.jar"/>
   <property name="jar" location="${build}/CoverageReports.jar"/>
   <property name="test.results" location="${build}/test_results"/>
-  <property name="jcov.classpath" location="../../JCOV_BUILD/jcov_3.0/jcov.jar"/>
+  <property name="jcov.jar.dir" location="../../JCOV_BUILD/jcov_3.0"/>
+  <property name="jcov.classpath" location="${jcov.jar.dir}/jcov.jar"/>
 
   <target name="compile">
-    <!--available file="${jcov.jar}" property="jcov-jar-exists"/>
-    <fail unless="jcov-jar-exists" message="There is no ${jcov.jar}"/-->
+    <available file="${jcov.classpath}" property="jcov-jar-exists"/>
+    <fail unless="jcov-jar-exists" message="There is no ${jcov.jar}"/>
     <mkdir dir="${classes}"/>
     <javac srcdir="${src}" classpath="${jcov.classpath}" destdir="${classes}"/>
   </target>
 
   <target name="jar" depends="compile">
     <jar jarfile="${jar}" basedir="${classes}"/>
+  </target>
+
+  <target name="dist" depends="jar">
+    <copy file="${jar}" todir="${jcov.jar.dir}"/>
   </target>
 
   <target name="clean">
