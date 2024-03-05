@@ -89,6 +89,9 @@ public class MultiHTMLReport {
         className += "/" + fileName;
         try (var in = MultiHTMLReport.class.getResourceAsStream(className)) {
             Files.write(dest.resolve(fileName), in.readAllBytes());
+        } catch (Exception e) {
+            System.err.printf("Failed to extract %s to %s/%s\n", className, dest.toString(), fileName);
+            throw e;
         }
     }
 
