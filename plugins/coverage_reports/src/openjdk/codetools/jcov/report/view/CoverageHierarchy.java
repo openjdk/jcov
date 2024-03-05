@@ -43,8 +43,10 @@ public class CoverageHierarchy {
     private final FileCoverage coverage;
     private final SourceFilter filter;
     private final SourceHierarchy source;
+    private final Collection<String> files;
 
-    public CoverageHierarchy(Collection<String> files, SourceHierarchy source, FileCoverage coverage, SourceFilter filter) {
+    public CoverageHierarchy(Collection<String> files, SourceHierarchy source, FileCoverage coverage,
+                             SourceFilter filter) {
         data = new HashMap<>();
         lineCoverage = new HashMap<>();
         this.source = source;
@@ -59,33 +61,48 @@ public class CoverageHierarchy {
         }
         this.coverage = coverage;
         this.filter = filter;
+        this.files = files;
     }
 
     public Map<Integer, CoveredLineRange> getLineRanges(String file) {
+        if(!files.contains(file)) return Map.of();
         if (lineCoverage.containsKey(file) && lineCoverage.get(file) != null)
             return lineCoverage.get(file);
-        String className = source.toClass(file);
+        String className = source.toClassFile(file);
         if (className == null) return null;
-        var coverage = this.coverage.ranges(className);
-        var coverageIt = coverage.iterator();
-        CoveredLineRange lastCoverageRange = null;
-        var fileCoverage = new HashMap<Integer, CoveredLineRange>();
-        var used = new HashSet<CoveredLineRange>();
-        for (var range : filter.ranges(file)) {
-            for (int line = range.first(); line <= range.last() ; line++) {
-                if (lastCoverageRange == null || lastCoverageRange.last() < line) {
-                    while (coverageIt.hasNext() && (lastCoverageRange == null || lastCoverageRange.last() < line))
-                        lastCoverageRange = coverageIt.next();
+        var coverage = this.coverage.ranges(file);
+        if(coverage == null) {
+            System.err.println("No coverage for " + className);
+            return Map.of();
+        } else {
+            var coverageIt = coverage.iterator();
+            CoveredLineRange lastCoverageRange = null;
+            var fileCoverage = new HashMap<Integer, CoveredLineRange>();
+            var used = new HashSet<CoveredLineRange>();
+            if (filter != null)
+                for (var range : filter.ranges(file)) {
+                    for (int line = range.first(); line <= range.last(); line++) {
+                        if (lastCoverageRange == null || lastCoverageRange.last() < line) {
+                            while (coverageIt.hasNext() && (lastCoverageRange == null || lastCoverageRange.last() < line))
+                                lastCoverageRange = coverageIt.next();
+                        }
+                        if (lastCoverageRange != null && lastCoverageRange.last() >= line && lastCoverageRange.first() <= line) {
+                            fileCoverage.put(line, lastCoverageRange);
+                            used.add(lastCoverageRange);
+                        }
+                    }
                 }
-                if (lastCoverageRange != null && lastCoverageRange.last() >= line && lastCoverageRange.first() <= line) {
-                    fileCoverage.put(line, lastCoverageRange);
-                    used.add(lastCoverageRange);
+            else
+                while (coverageIt.hasNext()) {
+                    var nextCov = coverageIt.next();
+                    for (int line = nextCov.first(); line <= nextCov.last(); line++)
+                        fileCoverage.put(line, nextCov);
+                    used.add(nextCov);
                 }
-            }
+            data.put(file, Coverage.sum(used.stream().map(CoveredLineRange::coverage).collect(Collectors.toList())));
+            lineCoverage.put(file, fileCoverage);
+            return fileCoverage;
         }
-        data.put(file, Coverage.sum(used.stream().map(CoveredLineRange::coverage).collect(Collectors.toList())));
-        lineCoverage.put(file, fileCoverage);
-        return fileCoverage;
     }
 
     public Coverage get(String fileOrDir) {

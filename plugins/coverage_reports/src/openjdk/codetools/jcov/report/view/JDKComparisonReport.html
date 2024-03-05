@@ -1,0 +1,49 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>JDK coverage comparison report</title>
+    <link rel="stylesheet" type="text/css" href="coverage.css" title="Style">
+</head>
+<body>
+<h1>JDK coverage comparison report</h1>
+<p>The reports shows difference in coverage between two JDK code coverage collections. For simplicity, let's
+    call the two coverage collections as <b>first</b> and <b>second</b>.</p>
+<p>Examples of use cases:</p>
+<ul>
+    <li>Comparing change in coverage over time.</li>
+    <li>Comparing coverage from different test sets.</li>
+</ul>
+<h2>The report</h2>
+The report simultaneously compares coverage for the methods and the source code. Only methods and the code which
+are present in the second collection are displayed in the report. Color coding is used to indicate coverage differences.
+Next coloring is used (same coloring used for methods and source lines unless otherwise specified):
+<ul>
+    <li><a class="item_good">Green, a.k.a covered</a> - exists in both versions and covered in the second version.</li>
+    <li><a class="item_so_so">Yellow a.k.a. uncovered</a> - exists in both versions and covered in neither version.</li>
+    <li><a class="item_not_so_good">Red a.k.a. lost</a> - exists in both versions, covered in the first but not is the second.</li>
+    <li><a class="item_ignore">Grey a.k.a. new</a> - only exists in the second version. This is only used for methods,
+        code which is only present in the second version has no color highlight.</li>
+</ul>
+
+<h3>Views</h3>
+There are two views in the report:
+<h4>Folder view</h4>
+<p>In the folder view, at the top there are  stats on method coverage for all four groups: covered, uncovered, lost and new.</p>
+<p>Following that, there is an information on line coverage for the files in that folder (recursively).</p>
+<p>Following that, there is a table of sub-folders for each of which there are stats on method coverage for all four groups
+and line coverage for every sub-folder. Clicking on a column header allows to sort the list by this column values in a
+    descending or an ascending order. Clicking on a folder name takes to the next level.
+<p>Finally there is a table with files located in this folder. It displays the same information for every file: all four
+kinds of method coverage plus line coverage for every method. Clicking on a file name takes to a file view</p>
+
+<h4>File view</h4>
+<p>At the top of the file view there is a list of methods in alphabetical order colored according to the method
+coverage status. (Please note that VM method signatures are used). Clicking on a method name takes to the first
+line of the source code corresponding to this method.</p>
+<p>Following that there is line coverage information for the file.</p>
+<p>Following that there is file source, colored according to the coverage status. Left to every line of code which
+is a code line and is not new, there is one or more "_" clickable links which take to the method in the list at the top
+    of the view. Mouse hovering over a "_" link brings a tooltip with the signature of the method.</p>
+</body>
+</html>

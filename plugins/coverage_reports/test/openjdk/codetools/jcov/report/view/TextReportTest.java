@@ -49,18 +49,13 @@ public class TextReportTest {
     static Path reportFile;
     @BeforeClass
     static void init() throws IOException {
-        Path root = SingleFiletReportTest.createFiles();
+        Path root = SingleFileReportTest.createFiles();
         source = new SourcePath(root, root);
-        coverage = new FileCoverage() {
-            @Override
-            public List<CoveredLineRange> ranges(String file) {
-                return file.equals(SingleFiletReportTest.FILE_11) ? List.of(
-                        new CoveredLineRange(1, 1, Coverage.COVERED),
-                        new CoveredLineRange(3, 4, Coverage.UNCOVERED),
-                        new CoveredLineRange(6, 8, Coverage.COVERED)
-                ) : List.of();
-            }
-        };
+        coverage = file -> file.equals(SingleFileReportTest.FILE_11) ? List.of(
+                new CoveredLineRange(1, 1, Coverage.COVERED),
+                new CoveredLineRange(3, 4, Coverage.UNCOVERED),
+                new CoveredLineRange(6, 8, Coverage.COVERED)
+        ) : List.of();
         reportFile = Files.createTempFile("report", "txt");
     }
     @Test
@@ -71,14 +66,15 @@ public class TextReportTest {
                 new LineRange(6, 6),
                 new LineRange(8, 8)
         );
-        var files = new FileSet(Set.of(SingleFiletReportTest.FILE_11, SingleFiletReportTest.FILE_12,
-                SingleFiletReportTest.FILE_21, SingleFiletReportTest.FILE_22));
-        var report = new TextReport(source, files, coverage, "HEADER", filter);
+        var files = new FileSet(Set.of(SingleFileReportTest.FILE_11, SingleFileReportTest.FILE_12,
+                SingleFileReportTest.FILE_21, SingleFileReportTest.FILE_22));
+        var report = new TextReport.Builder().setSource(source).setFiles(files).setCoverage(coverage)
+                .setHeader("HEADER").setFilter(filter).report();
         report.report(reportFile);
         var content = Files.readAllLines(reportFile);
         assertTrue(content.contains("HEADER"));
-        assertTrue(content.stream().anyMatch("total 1/2"::equals));
-        assertTrue(content.stream().anyMatch("4:-4"::equals));
-        assertTrue(content.stream().anyMatch("6:+6"::equals));
+        assertTrue(content.stream().anyMatch("total 50.00%(1/2)"::equals));
+        assertTrue(content.stream().anyMatch("4:-source line #4"::equals));
+        assertTrue(content.stream().anyMatch("6:+source line #6"::equals));
     }
 }
