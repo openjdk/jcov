@@ -35,6 +35,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -42,8 +43,29 @@ import static java.util.stream.Collectors.toMap;
 
 public class JCovMethodCoverageComparison implements FileItems {
     private final Map<String, List<FileItem>> items = new HashMap<>();
+    static final BiFunction<Boolean, Boolean, Quality> DEFAULT_COLORING = (left, right) -> {
+        if (right) return Quality.GOOD;
+        else if (left) return Quality.BAD;
+        else return Quality.SO_SO;
+    };
+    static final Map<Quality, String> DEFAULT_LEFEND = Map.of(
+            Quality.GOOD, "Covered",
+            Quality.BAD, "Lost",
+            Quality.SO_SO, "Uncovered",
+            Quality.IGNORE, "New"
+    );
 
-    public JCovMethodCoverageComparison(DataRoot oldCoverage, DataRoot newCoverage, Function<String, String> fileResolver) {
+    private final Map<Quality, String> legend;
+
+    public JCovMethodCoverageComparison(DataRoot oldCoverage, DataRoot newCoverage,
+                                        Function<String, String> fileResolver) {
+        this(oldCoverage, newCoverage, fileResolver, DEFAULT_LEFEND, DEFAULT_COLORING);
+    }
+    public JCovMethodCoverageComparison(DataRoot oldCoverage, DataRoot newCoverage,
+                                        Function<String, String> fileResolver,
+                                        Map<Quality, String> legend,
+                                        BiFunction<Boolean, Boolean, Quality> coloring) {
+        this.legend = legend;
         var oldCache = oldCoverage.getClasses().stream().flatMap(c -> c.getMethods().stream())
                 .collect(toMap(m -> methodID(m), m -> m));
         for (var newClass : newCoverage.getClasses()) {
@@ -59,10 +81,7 @@ public class JCovMethodCoverageComparison implements FileItems {
                 FileItem toAdd;
                 if (oldCache.containsKey(id)) {
                     var oldMethod = oldCache.get(id);
-                    Quality quality;
-                    if (newMethod.wasHit()) quality = Quality.GOOD;
-                    else if (oldMethod.wasHit()) quality = Quality.BAD;
-                    else quality = Quality.SO_SO;
+                    Quality quality = coloring.apply(oldMethod.wasHit(), newMethod.wasHit());
                     toAdd = new MethodItem(newMethod, methodName, quality);
                 } else {
                     toAdd = new MethodItem(newMethod, methodName, Quality.IGNORE);
@@ -146,11 +165,6 @@ public class JCovMethodCoverageComparison implements FileItems {
 
     @Override
     public Map<Quality, String> legend() {
-        return Map.of(
-                Quality.GOOD, "Covered",
-                Quality.BAD, "Lost",
-                Quality.SO_SO, "Uncovered",
-                Quality.IGNORE, "New"
-        );
+        return legend;
     }
 }

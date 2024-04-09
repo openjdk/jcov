@@ -34,8 +34,7 @@ import openjdk.codetools.jcov.report.CoveredLineRange;
 import openjdk.codetools.jcov.report.FileCoverage;
 import openjdk.codetools.jcov.report.FileItems;
 import openjdk.codetools.jcov.report.source.SourceHierarchy;
-import openjdk.codetools.jcov.report.source.SourcePath;
-import openjdk.codetools.jcov.report.view.JDKDiffCoverageReport;
+import openjdk.codetools.jcov.report.view.jdk.JDKDiffCoverageReport;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -45,9 +44,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toMap;
+import static openjdk.codetools.jcov.report.jcov.JCovMethodCoverageComparison.DEFAULT_COLORING;
 
 public class JCovCoverageComparison implements FileCoverage {
     private final Map<String, List<CoveredLineRange>> cache = new HashMap<>();
@@ -55,6 +57,11 @@ public class JCovCoverageComparison implements FileCoverage {
 
     public JCovCoverageComparison(DataRoot oldCoverage, SourceHierarchy oldSource,
                                   DataRoot newCoverage, SourceHierarchy newSource) throws IOException {
+        this(oldCoverage, oldSource, newCoverage, newSource, DEFAULT_COLORING);
+    }
+    public JCovCoverageComparison(DataRoot oldCoverage, SourceHierarchy oldSource,
+                                  DataRoot newCoverage, SourceHierarchy newSource,
+                                  BiFunction<Boolean, Boolean, FileItems.Quality> coloring) throws IOException {
         this.newSource = newSource;
         Set<String> oldClasses =  oldCoverage.getClasses().stream().map(dc -> dc.getFullname())
                 .collect(Collectors.toSet());
@@ -71,7 +78,7 @@ public class JCovCoverageComparison implements FileCoverage {
                 var newFileSource = newSource.readFile(newFile);
                 List<String> oldFileSource;
                 if(isOld) {
-                    oldFileSource = oldSource.readFile(newFile);
+                    oldFileSource = oldSource != null ? oldSource.readFile(newFile) : newFileSource;
                     if (oldFileSource == null) {
                         System.err.println("Warning: no reference source for " + newClass.getFullname());
 //                        continue;
@@ -93,7 +100,7 @@ public class JCovCoverageComparison implements FileCoverage {
                             cache.put(className, ranges);
                         }
                         String id = className + "#" + methodName;
-                        var isOldMethod = oldMethodsCache.containsKey(id);
+                        var isOldMethod = oldSource == null || oldMethodsCache.containsKey(id);
                         DataMethod oldMethod = isOldMethod ? oldMethodsCache.get(id) : null;
                         var newLineCoverage = new MethodCoverage(newMethod, true).getLineCoverage();
                         var oldLineCoverage = isOld && isOldMethod ?
@@ -105,7 +112,9 @@ public class JCovCoverageComparison implements FileCoverage {
                         } else {
                             var newMethodSource = methodSource(newFileSource, newLineCoverage);
                             int[] repeatedLines;
-                            if (oldFileSource != null) {
+                            if (oldSource == null) {
+                                repeatedLines = IntStream.range(0, newMethodSource.size()).toArray();
+                            } else if (oldFileSource != null) {
                                 var oldMethodSource = isOld && isOldMethod ? methodSource(oldFileSource,
                                         new MethodCoverage(oldMethod, true).getLineCoverage()) : null;
                                 repeatedLines = repeatedLines(oldMethodSource, newMethodSource, newLineCoverage);
@@ -116,11 +125,7 @@ public class JCovCoverageComparison implements FileCoverage {
                                     if (isOld && isOldMethod) {
                                         var oldLC = oldLineCoverage.isLineCovered(oldLineCoverage.firstLine() + ln);
                                         var newLC = newLineCoverage.isLineCovered(newLineCoverage.firstLine() + ln);
-                                        if (newLC) rangeCoverage = FileItems.Quality.GOOD;
-                                        else {
-                                            if (oldLC) rangeCoverage = FileItems.Quality.BAD;
-                                            else rangeCoverage = FileItems.Quality.SO_SO;
-                                        }
+                                        rangeCoverage = coloring.apply(oldLC, newLC);
                                     } else rangeCoverage = FileItems.Quality.NONE;
                                     ranges.add(new CoveredLineRange(
                                             (int) (ln + newLineCoverage.firstLine()),

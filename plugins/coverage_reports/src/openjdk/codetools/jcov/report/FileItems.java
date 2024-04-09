@@ -96,7 +96,8 @@ public interface FileItems {
      * likely to be red in the report.
      */
     enum Quality {
-        GOOD, SO_SO, BAD, IGNORE, NONE
+        VERY_GOOD, GOOD, SO_SO, BAD, IGNORE, NONE,
+        LEFT, RIGHT, BOTH
     }
 
     class ItemsCache {

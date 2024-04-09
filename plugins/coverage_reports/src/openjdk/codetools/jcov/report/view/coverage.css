@@ -38,13 +38,24 @@
   font-weight: bold;
   background-color: yellow;
 }
-.uncovered {
+.left {
   font-weight: bold;
-  background-color: lightsalmon;
+  background-color: lightgreen;
+}
+.right {
+  font-weight: bold;
+  background-color: lightblue;
+}
+.both {
+  font-weight: bold;
+  background-color: lightgrey;
 }
 .filename {
   font-weight: bold;
   font-size: larger;
+}
+.item_very_good {
+  background-color: lightgreen;
 }
 .item_good {
   background-color: palegreen;
@@ -59,4 +70,13 @@
   background-color: lightgrey;
 }
 .item_none {
+}
+.item_left {
+  background-color: lightgreen;
+}
+.item_right {
+  background-color: lightblue;
+}
+.item_both {
+  background-color: lightgrey;
 }

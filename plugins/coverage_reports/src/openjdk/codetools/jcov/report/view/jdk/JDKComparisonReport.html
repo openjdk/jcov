@@ -7,29 +7,27 @@
 </head>
 <body>
 <h1>JDK coverage comparison report</h1>
-<p>The reports shows difference in coverage between two JDK code coverage collections. For simplicity, let's
-    call the two coverage collections as <b>first</b> and <b>second</b>.</p>
-<p>Examples of use cases:</p>
-<ul>
-    <li>Comparing change in coverage over time.</li>
-    <li>Comparing coverage from different test sets.</li>
-</ul>
+<p>The reports shows difference in coverage between two code coverage collections done on the same build.
+    For simplicity, let's call the two coverage collections as <b>left</b> and <b>right</b>. An example of a use case
+would be comparing coverage of two groups of tests targeting the same code.</p>
+
 <h2>The report</h2>
-The report simultaneously compares coverage for the methods and the source code. Only methods and the code which
-are present in the second collection are displayed in the report. Color coding is used to indicate coverage differences.
+<p>The report simultaneously compares coverage for the methods and the source code. Only methods and the code which
+    are present in the <b>right</b> collection are displayed in the report. Color coding is used to indicate coverage differences.</p>
+
 Next coloring is used (same coloring used for methods and source lines unless otherwise specified):
 <ul>
-    <li><a class="item_good">Green, a.k.a covered</a> - exists in both versions and covered in the second version.</li>
-    <li><a class="item_so_so">Yellow a.k.a. uncovered</a> - exists in both versions and covered in neither version.</li>
-    <li><a class="item_not_so_good">Red a.k.a. lost</a> - exists in both versions, covered in the first but not is the second.</li>
-    <li><a class="item_ignore">Grey a.k.a. new</a> - only exists in the second version. This is only used for methods,
-        code which is only present in the second version has no color highlight.</li>
+    <li><a class="item_both">Both</a> - Code covered by both <b>left</b> and <b>right</b> code coverage collections.</li>
+    <li><a class="item_left">Left</a> - Code only covered by <b>left</b>.</li>
+    <li><a class="item_right">Right</a> - Code only covered by <b>right</b>.</li>
+    <li><a class="item_none">None</a> - Code not covered by either <b>left</b> or <b>right</b>.</li>
 </ul>
 
 <h3>Views</h3>
 There are two views in the report:
 <h4>Folder view</h4>
-<p>In the folder view, at the top there are  stats on method coverage for all four groups: covered, uncovered, lost and new.</p>
+<p>At the top of the view, with the esception of the root view, there is a navgation bar, which takes back up the hierarchy.</p>
+<p>Following that there are stats on method coverage for all four groups: covered, uncovered, lost and new.</p>
 <p>Following that, there is an information on line coverage for the files in that folder (recursively).</p>
 <p>Following that, there is a table of sub-folders for each of which there are stats on method coverage for all four groups
 and line coverage for every sub-folder. Clicking on a column header allows to sort the list by this column values in a
@@ -38,7 +36,8 @@ and line coverage for every sub-folder. Clicking on a column header allows to so
 kinds of method coverage plus line coverage for every method. Clicking on a file name takes to a file view</p>
 
 <h4>File view</h4>
-<p>At the top of the file view there is a list of methods in alphabetical order colored according to the method
+<p>At the top of the view, with the esception of the root view, there is a navgation bar, which takes back up the hierarchy.</p>
+<p>Following that there is a list of methods in alphabetical order colored according to the method
 coverage status. (Please note that VM method signatures are used). Clicking on a method name takes to the first
 line of the source code corresponding to this method.</p>
 <p>Following that there is line coverage information for the file.</p>

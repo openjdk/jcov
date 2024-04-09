@@ -36,6 +36,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -82,15 +83,21 @@ public class MultiHTMLReport {
         }
     }
 
-    static void toReport(String fileName, Path dest) throws IOException {
+    static void toReport(String resourceName, Path dest) throws IOException {
+        toReport(resourceName, resourceName, dest);
+    }
+    static void toReport(String resourceName, String fileName, Path dest) throws IOException {
         var className = MultiHTMLReport.class.getName();
         className = className.substring(0, className.lastIndexOf('.')).replace('.', '/');
         className = "/" + className;
-        className += "/" + fileName;
-        try (var in = MultiHTMLReport.class.getResourceAsStream(className)) {
+        className += "/" + resourceName;
+        copyToReport(MultiHTMLReport.class, className, fileName, dest);
+    }
+    public static void copyToReport(Class loaderClass, String resourceName, String fileName, Path dest) throws IOException {
+        try (var in = loaderClass.getResourceAsStream(resourceName)) {
             Files.write(dest.resolve(fileName), in.readAllBytes());
         } catch (Exception e) {
-            System.err.printf("Failed to extract %s to %s/%s\n", className, dest.toString(), fileName);
+            System.err.printf("Failed to extract %s to %s/%s\n", resourceName, dest.toString(), fileName);
             throw e;
         }
     }
@@ -99,8 +106,12 @@ public class MultiHTMLReport {
             FileItems.Quality.BAD, "item_not_so_good",
             FileItems.Quality.SO_SO, "item_so_so",
             FileItems.Quality.GOOD, "item_good",
+            FileItems.Quality.VERY_GOOD, "item_very_good",
             FileItems.Quality.IGNORE, "item_ignore",
-            FileItems.Quality.NONE, "item_none"
+            FileItems.Quality.NONE, "item_none",
+            FileItems.Quality.LEFT, "item_left",
+            FileItems.Quality.RIGHT, "item_right",
+            FileItems.Quality.BOTH, "item_both"
     );
 
     private class HtmlOut implements FilteredReport.FileOut, AutoCloseable {
@@ -124,6 +135,30 @@ public class MultiHTMLReport {
             out.write(header + "\n"); out.newLine();
         }
 
+        private String navbarRef(String s) {
+            StringBuilder line = new StringBuilder("<a href=\"");
+            line.append(s.isEmpty() ? "index.html" : reportFile(s));
+            line.append("\">");
+            line.append(s.isEmpty() ? "root" : s.substring(s.lastIndexOf('/') + 1));
+            line.append("</a>");
+            return line.toString();
+        }
+
+        private String navbar(String s) {
+            if (s.isEmpty()) return "";
+            StringBuilder line = new StringBuilder("<p>");
+            line.append(navbarRef(""));
+            int slashInd = 0;
+            while ((slashInd = s.indexOf('/', slashInd + 1)) > -1) {
+                line.append(" / ");
+                line.append(navbarRef(s.substring(0, slashInd)));
+            }
+            line.append("<a> / ");
+            line.append(s.substring(s.lastIndexOf('/') + 1));
+            line.append("</a></p>");
+            return line.toString();
+        }
+
         private String reportFile(String folderOrFile) {
             return folderOrFile.replace('/', '_') + ".html";
         }
@@ -134,6 +169,7 @@ public class MultiHTMLReport {
             else folderFile = "index.html";
             try(BufferedWriter out = Files.newBufferedWriter(dest.resolve(folderFile))) {
                 init(title, folderHeader.apply(s), out);
+                out.write(navbar(s)); out.newLine();
                 var colors = theReport.itemsCache().count(s);
                 out.write("<table><tr><th>" + theReport.items().kind() + "</th><th>Count</th></tr>");
                 out.newLine();
@@ -207,6 +243,7 @@ public class MultiHTMLReport {
             this.file = file;
             fileOut = Files.newBufferedWriter(dest.resolve(reportFile(file)));
             init(title, fileHeader.apply(file), fileOut);
+            fileOut.write(navbar(file)); fileOut.newLine();
         }
 
         @Override
@@ -249,6 +286,12 @@ public class MultiHTMLReport {
                         return "uncovered";
                     case SO_SO:
                         return "so_so";
+                    case LEFT:
+                        return "left";
+                    case RIGHT:
+                        return "right";
+                    case BOTH:
+                        return "both";
                     default:
                         return "context";
                 }
@@ -269,7 +312,7 @@ public class MultiHTMLReport {
                 fileOut.write("</pre></td>");
             }
             fileOut.write("<td><pre>" + (lineNo + 1) + "</pre></td>");
-            fileOut.write("<td><pre><a class=\""+coveredClass(coverage)+"\">");
+            fileOut.write("<td><pre><a class=\"" + coveredClass(coverage) + "\">");
             fileOut.write(line.replaceAll("</?\\s*pre\\s*>", ""));
             fileOut.write("</a></pre></td></tr>");
             fileOut.newLine();

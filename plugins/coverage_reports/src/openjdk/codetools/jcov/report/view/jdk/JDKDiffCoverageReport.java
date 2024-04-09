@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package openjdk.codetools.jcov.report.view;
+package openjdk.codetools.jcov.report.view.jdk;
 
 import com.sun.tdk.jcov.instrument.DataRoot;
 import openjdk.codetools.jcov.report.FileSet;
@@ -30,6 +30,8 @@ import openjdk.codetools.jcov.report.filter.GitDiffFilter;
 import openjdk.codetools.jcov.report.jcov.JCovLineCoverage;
 import openjdk.codetools.jcov.report.source.ContextFilter;
 import openjdk.codetools.jcov.report.source.SourcePath;
+import openjdk.codetools.jcov.report.view.SingleHTMLReport;
+import openjdk.codetools.jcov.report.view.TextReport;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

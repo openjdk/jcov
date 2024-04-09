@@ -134,9 +134,11 @@ public class MultiFilesReportTest {
         assertTrue(content.stream().anyMatch(s -> s.contains("Line coverage:") && s.contains("2/3")));
         content = Files.readAllLines(reportFile.resolve("dir1.html"));
         assertTrue(content.contains("FOLDER dir1"));
+        assertTrue(content.contains("<p><a href=\"index.html\">root</a><a> / dir1</a></p>"));
         content = Files.readAllLines(reportFile.resolve(FILE_11.replace('/', '_') + ".html"));
         assertTrue(content.contains("FILE dir1/file1.java"));
         assertTrue(content.stream().anyMatch(s -> s.contains("class=\"uncovered\"") && s.contains("source line #4")));
         assertTrue(content.stream().anyMatch(s -> s.contains("class=\"covered\"") && s.contains("source line #6")));
+        assertTrue(content.contains("<p><a href=\"index.html\">root</a> / <a href=\"dir1.html\">dir1</a><a> / file1.java</a></p>"));
     }
 }
