@@ -31,7 +31,8 @@ import static java.lang.classfile.Opcode.*;
 
 public class Utils {
     private final static Opcode[] SIMPLE_INSTRUCTIONS = new Opcode[]{
-            DUP, LDC,
+            DUP,
+            LDC, LDC_W, LDC2_W,
             BALOAD, CALOAD, AALOAD, DALOAD, FALOAD, IALOAD, SALOAD,
             ACONST_NULL,
             ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5, ICONST_M1,
