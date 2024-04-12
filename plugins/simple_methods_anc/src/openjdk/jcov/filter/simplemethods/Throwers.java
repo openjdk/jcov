@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,58 +24,31 @@
  */
 package openjdk.jcov.filter.simplemethods;
 
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.instruction.InvokeInstruction;
 import java.util.function.BiPredicate;
 
-public class Throwers implements BiPredicate<ClassNode, MethodNode> {
+import static openjdk.jcov.filter.simplemethods.Utils.isSimpleInstruction;
+
+public class Throwers implements BiPredicate<ClassModel, MethodModel> {
     @Override
-    public boolean test(ClassNode cnode, MethodNode m) {
-        int index = 0;
-        int opCode = -1;
-        //find first instruction
-        for(; index < m.instructions.size(); index++) {
-            opCode = m.instructions.get(index).getOpcode();
-            if(opCode >=0) {
-                    break;
-            }
-        }
-        //should be NEW
-        if(opCode != Opcodes.NEW) {
-            return false;
-        }
-        //next is DUP
-        index++;
-        opCode = m.instructions.get(index).getOpcode();
-        if(opCode != Opcodes.DUP) {
-            return false;
-        }
-        //some more simple code
-        for(index++; index < m.instructions.size(); index++) {
-            opCode = m.instructions.get(index).getOpcode();
-            if(opCode >=0) {
-                if (!Utils.isSimpleInstruction(opCode)) {
-                    break;
-                }
-            }
-        }
-        //should be a constructor
-        if(opCode != Opcodes.INVOKESPECIAL) {
-            return false;
-        }
-        AbstractInsnNode node = m.instructions.get(index);
-        if(!(node instanceof MethodInsnNode)) {
-            return false;
-        }
-        if(!((MethodInsnNode)node).name.equals("<init>")) {
-            return false;
-        }
-        index++;
-        opCode = m.instructions.get(index).getOpcode();
-        return opCode == Opcodes.ATHROW;
+    public boolean test(ClassModel cnode, MethodModel m) {
+        if (m.code().isPresent()) {
+            var iter = new InstructionIterator(m.code().get());
+            //first should be NEW
+            if(iter.next(i -> true).opcode() != Opcode.NEW) return false;
+            //next is DUP
+            if(iter.next(i -> true).opcode() != Opcode.DUP) return false;
+            //next is a constructor call
+            var next = iter.next(i -> !isSimpleInstruction(i.opcode()));
+            if (next.opcode() != Opcode.INVOKESPECIAL) return false;
+            if (next instanceof InvokeInstruction call) {
+                if (!call.name().toString().equals("<init>")) return false;
+            } else return false;
+            //finally a throw
+            return iter.next(i -> true).opcode() == Opcode.ATHROW;
+        } else return false;
     }
 }

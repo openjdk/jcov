@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
 package openjdk.jcov.filter.simplemethods;
 
 import com.sun.tdk.jcov.util.Utils;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.FileSystem;
@@ -53,33 +52,27 @@ import static java.util.stream.Collectors.joining;
 
 public class Scanner {
     private static String USAGE =
-            "java -classpath jcov.jar:SimpleMethods.jar " + Scanner.class.getName() + " --usage\n" +
-                    "\n" +
-                    "java -classpath jcov.jar:SimpleMethods.jar " + Scanner.class.getName() +
-                    " [--include|-i <include patern>] [--exclude|-e <exclude pattern>] \\\n" +
-                    "[--getters <output file name>] " +
-                    "[--setters <output file name>] " +
-                    "[--delegators <output file name>] " +
-                    "[--throwers <output file name>] " +
-                    "[--empty <output file name>] \\\n" +
-                    "jrt:/ | jar:file:/<jar file> | file:/<class hierarchy>\n" +
-                    "\n" +
-                    "    Options\n" +
-                    "        --include - what classes to scan for simple methods.\n" +
-                    "        --exclude - what classes to exclude from scanning.\n" +
-                    "    Next options specify file names where to collect this or that type of methods. " +
-                    "Only those which specified are detected. At least one kind of methods should be requested. " +
-                    "Please consult the source code for exact details.\n" +
-                    "        --getters - methods which are just returning a value.\n" +
-                    "        --setters - methods which are just setting a field.\n" +
-                    "        --delegators - methods which are just calling another method.\n" +
-                    "        --throwers - methods which are just throwing an exception.\n" +
-                    "        --empty - methods with an empty body.\n" +
-                    "\n" +
-                    "    Parameters define where to look for classes which are to be scanned.\n" +
-                    "        jrt:/ - scan JDK classes\n" +
-                    "        jar:file:/ - scan a jar file\n" +
-                    "        file:/ - scan a directory containing compiled classes.";
+            STR."""
+java -classpath jcov.jar:SimpleMethods.jar \{Scanner.class.getName()} --usage
+
+java -classpath jcov.jar:SimpleMethods.jar \{Scanner.class.getName()} [--include|-i <include patern>] [--exclude|-e <exclude pattern>] \\
+[--getters <output file name>] [--setters <output file name>] [--delegators <output file name>] [--throwers <output file name>] [--empty <output file name>] \\
+jrt:/ | jar:file:/<jar file> | file:/<class hierarchy>
+
+    Options
+        --include - what classes to scan for simple methods.
+        --exclude - what classes to exclude from scanning.
+    Next options specify file names where to collect this or that type of methods. Only those which specified are detected. At least one kind of methods should be requested. Please consult the source code for exact details.
+        --getters - methods which are just returning a value.
+        --setters - methods which are just setting a field.
+        --delegators - methods which are just calling another method.
+        --throwers - methods which are just throwing an exception.
+        --empty - methods with an empty body.
+
+    Parameters define where to look for classes which are to be scanned.
+        jrt:/ - scan JDK classes
+        jar:file:/ - scan a jar file
+        file:/ - scan a directory containing compiled classes.""";
 
     private Utils.Pattern[] includes;
     private Utils.Pattern[] excludes;
@@ -188,26 +181,14 @@ public class Scanner {
     }
 
     private void visitClass(Path root, Path file) throws IOException {
-        try (InputStream in = Files.newInputStream(file)) {
-            ClassReader reader;
-            reader = new ClassReader(in);
-            if (included(reader.getClassName())) {
-                ClassNode clazz = new ClassNode();
-                reader.accept(clazz, 0);
-                for (Object methodObject : clazz.methods) {
-                    MethodNode method = (MethodNode) methodObject;
-                    for (Filter f : filters) {
-                        if (f.filter.test(clazz, method)) {
-                            f.add(clazz.name + "#" + method.name + method.desc);
-                        }
-                    }
+        var cm = ClassFile.of().parse(file);
+        if (included(cm.thisClass().name().toString()))
+            for (var mm : cm.methods()) {
+                for (var f : filters) {
+                    if (f.filter.test(cm, mm))
+                        f.add(STR."\{cm.thisClass().name()}#\{mm.methodName()}\{mm.methodType()}");
                 }
             }
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Exception while parsing file " + file + " from " + root, e);
-        }
     }
 
     private boolean included(String clazz) {
@@ -222,11 +203,11 @@ public class Scanner {
         throwers("simple thrower", new Throwers()),
         empty("empty methods", new EmptyMethods());
         private String description;
-        private BiPredicate<ClassNode, MethodNode> filter;
+        private BiPredicate<ClassModel, MethodModel> filter;
         private String outputFile;
         private BufferedWriter output;
 
-        Filter(String description, BiPredicate<ClassNode, MethodNode> filter) {
+        Filter(String description, BiPredicate<ClassModel, MethodModel> filter) {
             this.description = description;
             this.filter = filter;
         }

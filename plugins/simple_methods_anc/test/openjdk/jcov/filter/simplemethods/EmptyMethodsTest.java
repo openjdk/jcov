@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,19 @@
  */
 package openjdk.jcov.filter.simplemethods;
 
-import org.objectweb.asm.tree.ClassNode;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.lang.classfile.ClassModel;
 
 import static org.testng.Assert.assertEquals;
 
 public class EmptyMethodsTest {
 
     EmptyMethods tested;
-    ClassNode cls;
+    ClassModel cls;
 
     @BeforeTest
     public void init() throws IOException {

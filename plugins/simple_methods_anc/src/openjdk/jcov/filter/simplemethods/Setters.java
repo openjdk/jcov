@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,48 +24,27 @@
  */
 package openjdk.jcov.filter.simplemethods;
 
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
-
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Opcode;
 import java.util.function.BiPredicate;
 
-import static org.objectweb.asm.Opcodes.PUTFIELD;
-import static org.objectweb.asm.Opcodes.PUTSTATIC;
-import static org.objectweb.asm.Opcodes.RETURN;
+import static openjdk.jcov.filter.simplemethods.Utils.isSimpleInstruction;
 
 /**
  * Identifies simple setters. A simple setter is a method obtaining a value with a "simple" code and
  * assigning a field with it.
- * @see Utils#isSimpleInstruction(int)
+ * @see Utils#isSimpleInstruction(java.lang.classfile.Opcode)
  */
-public class Setters implements BiPredicate<ClassNode, MethodNode> {
+public class Setters implements BiPredicate<ClassModel, MethodModel> {
     @Override
-    public boolean test(ClassNode clazz, MethodNode m) {
-        int index = 0;
-        int opCode = -1;
-        //skip all instructions allowed to get values
-        for(; index < m.instructions.size(); index++) {
-            opCode = m.instructions.get(index).getOpcode();
-            if(opCode >=0) {
-                if (!Utils.isSimpleInstruction(opCode)) {
-                    break;
-                }
-            }
-        }
-        //that should be an instruction setting a field
-        if(opCode != PUTFIELD && opCode != PUTSTATIC) {
-            return false;
-        }
-        //find next
-        for(index++; index < m.instructions.size(); index++) {
-            opCode = m.instructions.get(index).getOpcode();
-            if(opCode >=0) {
-                if (!Utils.isSimpleInstruction(opCode)) {
-                    break;
-                }
-            }
-        }
-        //and that should be a return
-        return opCode == RETURN;
+    public boolean test(ClassModel clazz, MethodModel m) {
+        if (m.code().isPresent()) {
+            var iter = new InstructionIterator(m.code().get());
+            var next = iter.next(i -> !isSimpleInstruction(i.opcode()));
+            if (next.opcode() != Opcode.PUTFIELD && next.opcode() != Opcode.PUTSTATIC) return false;
+            next = iter.next(i -> !isSimpleInstruction(i.opcode()));
+            return next.opcode() == Opcode.RETURN;
+        } else return false;
     }
 }

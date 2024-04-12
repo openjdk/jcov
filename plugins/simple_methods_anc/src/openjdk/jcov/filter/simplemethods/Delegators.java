@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,17 @@
  */
 package openjdk.jcov.filter.simplemethods;
 
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InvokeDynamicInsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
 import java.util.function.BiPredicate;
 
-import static java.util.Arrays.binarySearch;
 import static openjdk.jcov.filter.simplemethods.Utils.isInvokeInstruction;
 import static openjdk.jcov.filter.simplemethods.Utils.isReturnInstruction;
 import static openjdk.jcov.filter.simplemethods.Utils.isSimpleInstruction;
 
-public class Delegators implements BiPredicate<ClassNode, MethodNode> {
+public class Delegators implements BiPredicate<ClassModel, MethodModel> {
 
     private final boolean sameNameDelegationOnly;
 
@@ -52,48 +49,22 @@ public class Delegators implements BiPredicate<ClassNode, MethodNode> {
     /**
      * Identifies simple delegation. A simple delegator is a method obtaining any number of values with a "simple" code
      * and then calling a method with the obtained values.
-     * @see Utils#isSimpleInstruction(int)
+     * @see Utils#isSimpleInstruction(java.lang.classfile.Opcode)
      */
     @Override
-    public boolean test(ClassNode clazz, MethodNode m) {
-        int index = 0;
-        int opCode = -1;
-        //skip all instructions allowed to get values
-        for(; index < m.instructions.size(); index++) {
-            opCode = m.instructions.get(index).getOpcode();
-            if(opCode >=0) {
-                if (!isSimpleInstruction(opCode)) {
-                    break;
-                }
+    public boolean test(ClassModel clazz, MethodModel m) {
+        if (m.code().isPresent()) {
+            var iter = new InstructionIterator(m.code().get());
+            var next = iter.next(i -> !isSimpleInstruction(i.opcode()));
+            if (next == null || !isInvokeInstruction(next.opcode())) return false;
+            if(sameNameDelegationOnly) {
+                String name;
+                if (next instanceof InvokeInstruction ii) name = ii.name().toString();
+                else if (next instanceof InvokeDynamicInstruction idi) name = idi.name().toString();
+                else throw new IllegalStateException(STR."Unknown node type: \{next.getClass().getName()}");
+                if (!m.methodName().toString().equals(name)) return false;
             }
-        }
-        //that should be an invocation instruction
-        if(!isInvokeInstruction(opCode)) {
-            return false;
-        }
-        if(sameNameDelegationOnly) {
-            //check name
-            AbstractInsnNode node = m.instructions.get(index);
-            String name;
-            if (node instanceof MethodInsnNode) {
-                name = ((MethodInsnNode) node).name;
-            } else if (node instanceof InvokeDynamicInsnNode) {
-                name = ((InvokeDynamicInsnNode) node).name;
-            } else {
-                throw new IllegalStateException("Unknown node type: " + node.getClass().getName());
-            }
-            if(!m.name.equals(name)) {
-                return false;
-            }
-        }
-        //scroll to next instruction
-        for(index++; index < m.instructions.size(); index++) {
-            opCode = m.instructions.get(index).getOpcode();
-            if(opCode >=0) {
-                break;
-            }
-        }
-        //that should be a return instruction
-        return isReturnInstruction(opCode);
+            return isReturnInstruction(iter.next(i -> true).opcode());
+        } else return false;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,26 @@
  */
 package openjdk.jcov.filter.simplemethods;
 
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.Opcode;
-import java.util.function.BiPredicate;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.Instruction;
+import java.util.Iterator;
+import java.util.function.Predicate;
 
-import static openjdk.jcov.filter.simplemethods.Utils.isSimpleInstruction;
+public class InstructionIterator {
+    private final Iterator<CodeElement> elements;
 
-public class EmptyMethods implements BiPredicate<ClassModel, MethodModel> {
-    @Override
-    public boolean test(ClassModel node, MethodModel m) {
-        if (m.code().isPresent()) {
-            var next = new InstructionIterator(m.code().get()).next(i -> !isSimpleInstruction(i.opcode()));
-            return next.opcode() == Opcode.RETURN;
-        } else return false;
+    public InstructionIterator(CodeModel model) {
+        elements = model.elements().iterator();
+    }
+
+    public Instruction next(Predicate<Instruction> criteria) {
+        while (elements.hasNext()) {
+            var next = elements.next();
+            if (next instanceof Instruction i) {
+                if(criteria.test(i)) return i;
+            }
+        }
+        return null;
     }
 }
