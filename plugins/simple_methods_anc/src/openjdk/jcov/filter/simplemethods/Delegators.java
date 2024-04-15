@@ -25,6 +25,7 @@
 package openjdk.jcov.filter.simplemethods;
 
 import java.lang.classfile.ClassModel;
+import java.lang.classfile.Instruction;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.instruction.InvokeDynamicInstruction;
 import java.lang.classfile.instruction.InvokeInstruction;
@@ -55,13 +56,14 @@ public class Delegators implements BiPredicate<ClassModel, MethodModel> {
     public boolean test(ClassModel clazz, MethodModel m) {
         if (m.code().isPresent()) {
             var iter = new InstructionIterator(m.code().get());
-            var next = iter.next(i -> !isSimpleInstruction(i.opcode()));
+            Instruction next = iter.next(i -> !isSimpleInstruction(i.opcode()));
             if (next == null || !isInvokeInstruction(next.opcode())) return false;
             if(sameNameDelegationOnly) {
-                String name;
-                if (next instanceof InvokeInstruction ii) name = ii.name().toString();
-                else if (next instanceof InvokeDynamicInstruction idi) name = idi.name().toString();
-                else throw new IllegalStateException(STR."Unknown node type: \{next.getClass().getName()}");
+                String name = switch (next) {
+                    case InvokeInstruction ii -> ii.name().toString();
+                    case InvokeDynamicInstruction idi -> idi.name().toString();
+                    default -> throw new IllegalStateException(STR."Unknown node type: \{next.getClass().getName()}");
+                };
                 if (!m.methodName().toString().equals(name)) return false;
             }
             return isReturnInstruction(iter.next(i -> true).opcode());

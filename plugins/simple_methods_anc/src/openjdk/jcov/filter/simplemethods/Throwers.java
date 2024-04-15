@@ -25,6 +25,7 @@
 package openjdk.jcov.filter.simplemethods;
 
 import java.lang.classfile.ClassModel;
+import java.lang.classfile.Instruction;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.instruction.InvokeInstruction;
@@ -42,7 +43,7 @@ public class Throwers implements BiPredicate<ClassModel, MethodModel> {
             //next is DUP
             if(iter.next(i -> true).opcode() != Opcode.DUP) return false;
             //next is a constructor call
-            var next = iter.next(i -> !isSimpleInstruction(i.opcode()));
+            Instruction next = iter.next(i -> !isSimpleInstruction(i.opcode()));
             if (next.opcode() != Opcode.INVOKESPECIAL) return false;
             if (next instanceof InvokeInstruction call) {
                 if (!call.name().toString().equals("<init>")) return false;

@@ -25,6 +25,7 @@
 package openjdk.jcov.filter.simplemethods;
 
 import java.lang.classfile.ClassModel;
+import java.lang.classfile.Instruction;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.Opcode;
 import java.util.function.BiPredicate;
@@ -39,7 +40,7 @@ public class Getters implements BiPredicate<ClassModel, MethodModel> {
     @Override
     public boolean test(ClassModel clazz, MethodModel m) {
         if (m.code().isPresent()) {
-            var next = new InstructionIterator(m.code().get()).next(i -> !isSimpleInstruction(i.opcode()));
+            Instruction next = new InstructionIterator(m.code().get()).next(i -> !isSimpleInstruction(i.opcode()));
             return next != null && Utils.isReturnInstruction(next.opcode()) && next.opcode() != Opcode.RETURN;
         } else return false;
     }

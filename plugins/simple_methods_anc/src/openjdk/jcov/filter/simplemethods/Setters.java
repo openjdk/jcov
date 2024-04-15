@@ -25,6 +25,7 @@
 package openjdk.jcov.filter.simplemethods;
 
 import java.lang.classfile.ClassModel;
+import java.lang.classfile.Instruction;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.Opcode;
 import java.util.function.BiPredicate;
@@ -41,7 +42,7 @@ public class Setters implements BiPredicate<ClassModel, MethodModel> {
     public boolean test(ClassModel clazz, MethodModel m) {
         if (m.code().isPresent()) {
             var iter = new InstructionIterator(m.code().get());
-            var next = iter.next(i -> !isSimpleInstruction(i.opcode()));
+            Instruction next = iter.next(i -> !isSimpleInstruction(i.opcode()));
             if (next.opcode() != Opcode.PUTFIELD && next.opcode() != Opcode.PUTSTATIC) return false;
             next = iter.next(i -> !isSimpleInstruction(i.opcode()));
             return next.opcode() == Opcode.RETURN;

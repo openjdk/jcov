@@ -39,7 +39,7 @@ public class InstructionIterator {
 
     public Instruction next(Predicate<Instruction> criteria) {
         while (elements.hasNext()) {
-            var next = elements.next();
+            CodeElement next = elements.next();
             if (next instanceof Instruction i) {
                 if(criteria.test(i)) return i;
             }
