@@ -43,7 +43,8 @@ public class Setters implements BiPredicate<ClassModel, MethodModel> {
         if (m.code().isPresent()) {
             var iter = new InstructionIterator(m.code().get());
             Instruction next = iter.next(i -> !isSimpleInstruction(i.opcode()));
-            if (next.opcode() != Opcode.PUTFIELD && next.opcode() != Opcode.PUTSTATIC) return false;
+            if (next.opcode() != Opcode.PUTFIELD && next.opcode() != Opcode.PUTSTATIC)
+                return false;
             next = iter.next(i -> !isSimpleInstruction(i.opcode()));
             return next.opcode() == Opcode.RETURN;
         } else return false;

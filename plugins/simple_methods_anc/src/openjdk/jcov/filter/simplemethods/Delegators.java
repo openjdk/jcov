@@ -57,16 +57,20 @@ public class Delegators implements BiPredicate<ClassModel, MethodModel> {
         if (m.code().isPresent()) {
             var iter = new InstructionIterator(m.code().get());
             Instruction next = iter.next(i -> !isSimpleInstruction(i.opcode()));
-            if (next == null || !isInvokeInstruction(next.opcode())) return false;
+            if (next == null || !isInvokeInstruction(next.opcode()))
+                return false;
             if(sameNameDelegationOnly) {
                 String name = switch (next) {
                     case InvokeInstruction ii -> ii.name().toString();
                     case InvokeDynamicInstruction idi -> idi.name().toString();
                     default -> throw new IllegalStateException(STR."Unknown node type: \{next.getClass().getName()}");
                 };
-                if (!m.methodName().toString().equals(name)) return false;
+                if (!m.methodName().toString().equals(name))
+                    return false;
             }
             return isReturnInstruction(iter.next(i -> true).opcode());
-        } else return false;
+        } else {
+            return false;
+        }
     }
 }

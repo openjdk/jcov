@@ -38,6 +38,8 @@ public class EmptyMethods implements BiPredicate<ClassModel, MethodModel> {
         if (m.code().isPresent()) {
             Instruction next = new InstructionIterator(m.code().get()).next(i -> !isSimpleInstruction(i.opcode()));
             return next.opcode() == Opcode.RETURN;
-        } else return false;
+        } else {
+            return false;
+        }
     }
 }

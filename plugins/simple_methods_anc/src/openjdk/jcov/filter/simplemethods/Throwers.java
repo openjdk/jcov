@@ -39,15 +39,20 @@ public class Throwers implements BiPredicate<ClassModel, MethodModel> {
         if (m.code().isPresent()) {
             var iter = new InstructionIterator(m.code().get());
             //first should be NEW
-            if(iter.next(i -> true).opcode() != Opcode.NEW) return false;
+            if(iter.next(i -> true).opcode() != Opcode.NEW)
+                return false;
             //next is DUP
-            if(iter.next(i -> true).opcode() != Opcode.DUP) return false;
+            if(iter.next(i -> true).opcode() != Opcode.DUP)
+                return false;
             //next is a constructor call
             Instruction next = iter.next(i -> !isSimpleInstruction(i.opcode()));
-            if (next.opcode() != Opcode.INVOKESPECIAL) return false;
+            if (next.opcode() != Opcode.INVOKESPECIAL)
+                return false;
             if (next instanceof InvokeInstruction call) {
                 if (!call.name().toString().equals("<init>")) return false;
-            } else return false;
+            } else {
+                return false;
+            }
             //finally a throw
             return iter.next(i -> true).opcode() == Opcode.ATHROW;
         } else return false;

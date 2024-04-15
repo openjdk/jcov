@@ -41,7 +41,8 @@ public class InstructionIterator {
         while (elements.hasNext()) {
             CodeElement next = elements.next();
             if (next instanceof Instruction i) {
-                if(criteria.test(i)) return i;
+                if(criteria.test(i))
+                    return i;
             }
         }
         return null;
