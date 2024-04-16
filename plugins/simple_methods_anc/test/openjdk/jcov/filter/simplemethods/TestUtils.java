@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018,2024  Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,20 @@
  */
 package openjdk.jcov.filter.simplemethods;
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
-
 import java.io.IOException;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
 
 public class TestUtils {
-    static ClassNode findTestClass(Class cls) throws IOException {
-        ClassNode result = new ClassNode();
-        ClassReader reader = new ClassReader(cls.getClassLoader().
-                getResourceAsStream(cls.getName().replace('.','/') + ".class"));
-        reader.accept(result, 0);
-        return result;
+    static ClassModel findTestClass(Class cls) throws IOException {
+        return ClassFile.of().parse(cls.getClassLoader().
+                getResourceAsStream(cls.getName().replace('.','/') + ".class").readAllBytes());
     }
 
-    static MethodNode findTestMethod(ClassNode cls, String methodSig)  {
-        for(Object mo: cls.methods) {
-            MethodNode m = (MethodNode) mo;
-            if((m.name + m.desc).equals(methodSig)) {
-                return m;
-            }
-        }
-        throw new IllegalStateException("Method does not exist: " + methodSig + " in class " + cls.name);
+    static MethodModel findTestMethod(ClassModel cls, String methodSig)  {
+        return cls.methods().stream()
+                .filter(m -> (m.methodName().toString() + m.methodType().toString()).equals(methodSig))
+                .findAny().get();
     }
 }

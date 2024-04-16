@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,32 +24,26 @@
  */
 package openjdk.jcov.filter.simplemethods;
 
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
-
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Opcode;
 import java.util.function.BiPredicate;
 
-import static org.objectweb.asm.Opcodes.RETURN;
+import static openjdk.jcov.filter.simplemethods.Utils.isSimpleInstruction;
 
-public class Getters implements BiPredicate<ClassNode, MethodNode> {
+public class Getters implements BiPredicate<ClassModel, MethodModel> {
     /**
      * Identifies simple getters. A simple getter is a method obtaining a value with a "simple" code and returning it.
-     * @see Utils#isSimpleInstruction(int)
+     * @see Utils#isSimpleInstruction(java.lang.classfile.Opcode)
      */
     @Override
-    public boolean test(ClassNode clazz, MethodNode m) {
-        int index = 0;
-        int opCode = -1;
-        //skip all instructions allowed to get values
-        for(; index < m.instructions.size(); index++) {
-            opCode = m.instructions.get(index).getOpcode();
-            if(opCode >=0) {
-                if (!Utils.isSimpleInstruction(opCode)) {
-                    break;
-                }
-            }
+    public boolean test(ClassModel clazz, MethodModel m) {
+        if (m.code().isPresent()) {
+            Instruction next = new InstructionIterator(m.code().get()).next(i -> !isSimpleInstruction(i.opcode()));
+            return next != null && Utils.isReturnInstruction(next.opcode()) && next.opcode() != Opcode.RETURN;
+        } else {
+            return false;
         }
-        //that should be a return instruction, but returning a value
-        return Utils.isReturnInstruction(opCode) && opCode != RETURN;
     }
 }

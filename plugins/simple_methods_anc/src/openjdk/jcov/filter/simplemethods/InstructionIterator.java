@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,42 +24,27 @@
  */
 package openjdk.jcov.filter.simplemethods;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.Instruction;
+import java.util.Iterator;
+import java.util.function.Predicate;
 
-import java.io.IOException;
-import java.lang.classfile.ClassModel;
+public class InstructionIterator {
+    private final Iterator<CodeElement> elements;
 
-import static org.testng.Assert.assertEquals;
-
-public class EmptyMethodsTest {
-
-    EmptyMethods tested;
-    ClassModel cls;
-
-    @BeforeTest
-    public void init() throws IOException {
-        tested = new EmptyMethods();
-        cls = TestUtils.findTestClass(this.getClass());
+    public InstructionIterator(CodeModel model) {
+        elements = model.elements().iterator();
     }
 
-    @DataProvider(name = "cases")
-    public Object[][] cases() {
-        return new Object[][] {
-                {"empty()V", true, "Empty"},
-                {"get()I", false, "A getter"},
-                {"init()V", false, "init()"}
-        };
+    public Instruction next(Predicate<Instruction> criteria) {
+        while (elements.hasNext()) {
+            CodeElement next = elements.next();
+            if (next instanceof Instruction i) {
+                if(criteria.test(i))
+                    return i;
+            }
+        }
+        return null;
     }
-    @Test(dataProvider = "cases")
-    public void test(String method, boolean result, String description) {
-        assertEquals(tested.test(cls, TestUtils.findTestMethod(cls, method)), result, description);
-    }
-
-    //test data
-    void empty() {
-        //doing nothing
-    }
-    int get(){return 0;}
 }

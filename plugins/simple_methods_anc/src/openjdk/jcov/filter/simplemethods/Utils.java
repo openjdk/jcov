@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,24 +24,31 @@
  */
 package openjdk.jcov.filter.simplemethods;
 
+import java.lang.classfile.Opcode;
 import java.util.Arrays;
 
-import static org.objectweb.asm.Opcodes.*;
+import static java.lang.classfile.Opcode.*;
 
 public class Utils {
-    private final static int[] SIMPLE_INSTRUCTIONS = new int[]{DUP, LDC,
+    private final static Opcode[] SIMPLE_INSTRUCTIONS = new Opcode[]{
+            DUP,
+            LDC, LDC_W, LDC2_W,
             BALOAD, CALOAD, AALOAD, DALOAD, FALOAD, IALOAD, SALOAD,
             ACONST_NULL,
             ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5, ICONST_M1,
             LCONST_0, LCONST_1,
             FCONST_0, FCONST_1, FCONST_2,
             DCONST_0, DCONST_1,
-            ALOAD, ILOAD, FLOAD, LLOAD, DLOAD,
+            ALOAD, ALOAD_0, ALOAD_1, ALOAD_2, ALOAD_3, ALOAD_W,
+            ILOAD, ILOAD_0, ILOAD_1, ILOAD_2, ILOAD_3, ILOAD_W,
+            FLOAD, FLOAD_0, FLOAD_1, FLOAD_2, FLOAD_3, FLOAD_W,
+            LLOAD, LLOAD_0, LLOAD_1, LLOAD_2, LLOAD_3, LLOAD_W,
+            DLOAD, DLOAD_0, DLOAD_1, DLOAD_2, DLOAD_3, DLOAD_W,
             GETFIELD, GETSTATIC,
             BIPUSH, SIPUSH};
-    private final static int[] INVOKE_INSTRUCTIONS = new int[]{INVOKEVIRTUAL, INVOKEINTERFACE, INVOKESTATIC,
+    private final static Opcode[] INVOKE_INSTRUCTIONS = new Opcode[]{INVOKEVIRTUAL, INVOKEINTERFACE, INVOKESTATIC,
             INVOKEDYNAMIC, INVOKESPECIAL};
-    private final static int[] RETURN_INSTRUCTIONS = new int[]{RETURN, ARETURN, IRETURN, FRETURN, LRETURN, DRETURN};
+    private final static Opcode[] RETURN_INSTRUCTIONS = new Opcode[]{RETURN, ARETURN, IRETURN, FRETURN, LRETURN, DRETURN};
 
     static {
         Arrays.sort(SIMPLE_INSTRUCTIONS);
@@ -54,13 +61,14 @@ public class Utils {
      * @param opCode
      * @return
      */
-    public static boolean isSimpleInstruction(int opCode) {
+    public static boolean isSimpleInstruction(Opcode opCode) {
         return Arrays.binarySearch(SIMPLE_INSTRUCTIONS, opCode) >= 0;
     }
-    public static boolean isReturnInstruction(int opCode) {
+    public static boolean isReturnInstruction(Opcode opCode) {
         return Arrays.binarySearch(RETURN_INSTRUCTIONS, opCode) >= 0;
     }
-    public static boolean isInvokeInstruction(int opCode) {
+    public static boolean isInvokeInstruction(Opcode opCode) {
         return Arrays.binarySearch(INVOKE_INSTRUCTIONS, opCode) >= 0;
     }
+
 }
