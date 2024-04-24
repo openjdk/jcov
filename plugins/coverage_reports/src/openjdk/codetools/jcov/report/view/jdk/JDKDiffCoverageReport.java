@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,14 @@ package openjdk.codetools.jcov.report.view.jdk;
 
 import com.sun.tdk.jcov.instrument.DataRoot;
 import openjdk.codetools.jcov.report.FileSet;
+import openjdk.codetools.jcov.report.commandline.CommandLine;
+import openjdk.codetools.jcov.report.commandline.Option;
+import openjdk.codetools.jcov.report.commandline.Parameter;
 import openjdk.codetools.jcov.report.filter.GitDiffFilter;
 import openjdk.codetools.jcov.report.jcov.JCovLineCoverage;
 import openjdk.codetools.jcov.report.source.ContextFilter;
 import openjdk.codetools.jcov.report.source.SourcePath;
+import openjdk.codetools.jcov.report.view.MultiHTMLReport;
 import openjdk.codetools.jcov.report.view.SingleHTMLReport;
 import openjdk.codetools.jcov.report.view.TextReport;
 
@@ -45,35 +49,63 @@ import java.util.stream.Collectors;
  * This is a utility class to generate report for openjdk.
  */
 public class JDKDiffCoverageReport {
+    private static final Option FORMAT = new Option.Builder().option("--format").name("format")
+            .description("single|multi|text for single|multi html report or a text report").create();
+    private static final Option SOURCE = new Option.Builder().option("--source").name("source")
+            .description("JDK source root").create();
+    public static final Option COVERAGE = new Option.Builder().option("--coverage").name("coverage")
+            .description("JCov coverage file").create();
+    public static final Option DIFF = new Option.Builder().option("--diff").name("diff")
+            .description("Git diff file from the tip to a revision in the past produced with -U0 option").create();
+    public static final Option REPORT = new Option.Builder().option("--report").name("report")
+            .description("Report output").create();
+    public static final Option TITLE = new Option.Builder().option("--title").name("title").optional(true)
+            .description("Report title").create();
+    public static final Option HEADER = new Option.Builder().option("--header").name("header").optional(true)
+            .description("Report header").create();
+    private static final CommandLine commandLine = new CommandLine.Builder()
+            .option(FORMAT)
+            .option(SOURCE)
+            .option(COVERAGE)
+            .option(DIFF)
+            .option(REPORT)
+            .option(TITLE)
+            .option(HEADER)
+            .create();
     public static void main(String[] args) throws Exception {
         try {
-            var source = jdkSource(List.of(Path.of(args[1])));
-            var coverage = new JCovLineCoverage(DataRoot.read(args[0]), source);
-            var diff = GitDiffFilter.parseDiff(Path.of(args[2])/*, source.roots(List.of(Path.of(args[1])))*/);
-            String reportFile = args[3];
-            boolean isHTML = reportFile.endsWith("html");
-            String title = args.length >= 5 ? args[4] : "";
-            String header = args.length >= 6 ? args[5] : "";
-            if (isHTML)
-                new SingleHTMLReport.Builder().setSource(source).setFiles(new FileSet(diff.files()))
-                        .setCoverage(coverage).setTitle(title).setHeader(header).setHighlight(diff)
-                        .setInclude(new ContextFilter(diff, 10)).report()
-                        .report(Path.of(reportFile));
-//                new MultiHTMLReport.Builder().setSource(source).setFiles(new FileSet(diff.files()))
-//                        .setCoverage(coverage).setTitle(title).setHeader(header).setHighlight(diff)
-//                        .setInclude(new ContextFilter(diff, 10)).report()
-//                        .report(Path.of(reportFile));
-            else
-                new TextReport.Builder().setSource(source).setFiles(new FileSet(diff.files())).setCoverage(coverage)
-                        .setHeader(header).setFilter(diff).report()
-                        .report(Path.of(reportFile));
+            var command = commandLine.parse(args);
+            var source = jdkSource(List.of(Path.of(command.get(SOURCE))));
+            var coverage = new JCovLineCoverage(DataRoot.read(command.get(COVERAGE)), source);
+            var diff = GitDiffFilter.parseDiff(Path.of(command.get(DIFF))/*, source.roots(List.of(Path.of(args[1])))*/);
+            String reportFile = command.get(REPORT);
+            String title = command.getOrElse(TITLE, "");
+            String header = command.getOrElse(HEADER, "");
+            switch (command.get(FORMAT)) {
+                case "single":
+                    new SingleHTMLReport.Builder().setSource(source).setFiles(new FileSet(diff.files()))
+                            .setCoverage(coverage).setTitle(title).setHeader(header).setHighlight(diff)
+                            .setInclude(new ContextFilter(diff, 10)).report()
+                            .report(Path.of(reportFile));
+                    break;
+                case "multi":
+                    new MultiHTMLReport.Builder().setSource(source).setFiles(new FileSet(diff.files()))
+                            .setCoverage(coverage).setTitle(title)
+                            .setFolderHeader(s -> header).setFileHeader(s -> header)
+                            .setHighlight(diff)
+                            .setInclude(new ContextFilter(diff, 10)).report()
+                            .report(Path.of(reportFile));
+                    break;
+                case "text":
+                    new TextReport.Builder().setSource(source).setFiles(new FileSet(diff.files())).setCoverage(coverage)
+                            .setHeader(header).setFilter(diff).report()
+                            .report(Path.of(reportFile));
+                    break;
+            }
         } catch (Throwable e) {
-            System.out.println("Usage: java ... openjdk.codetools.jcov.report.view.JDKReport \\");
-            System.out.println("    <JCov coderage file produced for the tip of the repository> \\");
-            System.out.println("    <JDK source hierarchy> \\");
-            System.out.println("    <git diff file from the tip to a revision in the past produced with -U0 option> \\");
-            System.out.println("    <output file> \\");
-            System.out.println("    <report title> <report header>");
+            System.out.println("Usage: java ... openjdk.codetools.jcov.report.view.JDKReport " +
+                    commandLine.usageLine() + "\n");
+            System.out.println(commandLine.usageList("    "));
             throw e;
         }
     }

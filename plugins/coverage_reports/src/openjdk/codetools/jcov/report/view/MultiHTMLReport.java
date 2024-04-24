@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,21 +49,25 @@ public class MultiHTMLReport {
     private final Function<String, String> folderHeader;
     private final Function<String, String> fileHeader;
     private final FilteredReport theReport;
+    private final SourceFilter highlight;
+    private final SourceHierarchy source;
 
     protected MultiHTMLReport(SourceHierarchy source, FileSet files, FileCoverage coverage,
                               FileItems items, String title,
                               Function<String, String> folderHeader, Function<String, String> fileHeader,
-                              SourceFilter include) {
+                              SourceFilter highlight, SourceFilter include) {
         theReport = new FilteredReport.Builder()
                 .setSource(source)
                 .setFiles(files)
                 .setItems(items)
-                .setCoverage(new CoverageHierarchy(files.files(), source, coverage, include))
+                .setCoverage(new CoverageHierarchy(files.files(), source, coverage, highlight))
                 .setInclude(include)
                 .report();
+        this.source = source;
         this.title = title;
         this.folderHeader = folderHeader;
         this.fileHeader = fileHeader;
+        this.highlight = highlight;
     }
 
     public void report(Path dest) throws Exception {
@@ -119,8 +123,10 @@ public class MultiHTMLReport {
         private BufferedWriter folderOut = null;
         private BufferedWriter fileOut = null;
         private String file;
+        private final FilteredReport.FilterHighlighter highlighter;
 
         private HtmlOut(Path dest) throws IOException {
+            this.highlighter = new FilteredReport.FilterHighlighter(source, highlight);
             this.dest = dest;
         }
 
@@ -171,26 +177,31 @@ public class MultiHTMLReport {
                 init(title, folderHeader.apply(s), out);
                 out.write(navbar(s)); out.newLine();
                 var colors = theReport.itemsCache().count(s);
-                out.write("<table><tr><th>" + theReport.items().kind() + "</th><th>Count</th></tr>");
-                out.newLine();
-                for (var c : FileItems.Quality.values()) {
-                    if (theReport.items().legend().containsKey(c)) {
-                        out.write("<tr><td><a class=\"" + HTML_COLOR_CLASSES.get(c) + "\">" +
-                                theReport.items().legend().get(c) + "</a></td>");
-                        out.write("<td>" + colors.get(c) + "</td></tr>");
-                        out.newLine();
+                if (!colors.isEmpty()) {
+                    out.write("<table><tr><th>" + theReport.items().kind() + "</th><th>Count</th></tr>");
+                    out.newLine();
+                    for (var c : FileItems.Quality.values()) {
+                        if (theReport.items().legend().containsKey(c)) {
+                            out.write("<tr><td><a class=\"" + HTML_COLOR_CLASSES.get(c) + "\">" +
+                                    theReport.items().legend().get(c) + "</a></td>");
+                            out.write("<td>" + colors.get(c) + "</td></tr>");
+                            out.newLine();
+                        }
                     }
+                    out.write("</table>");
+                    out.newLine();
                 }
-                out.write("</table>"); out.newLine();
                 out.write("Line coverage: " + theReport.coverage().get(s).toString());
                 out.newLine();
                 Collection<String> folders = theReport.files().folders(s);
                 if (!folders.isEmpty()) {
                     out.write("<table id=\"folders\" class=\"sortable\"><tr><th>Folder</th>");
                     out.newLine();
-                    for (var c : FileItems.Quality.values()) {
-                        if (theReport.items().legend().containsKey(c)) {
-                            out.write("<th>" + theReport.items().legend().get(c) + "</th>");
+                    if (!colors.isEmpty()) {
+                        for (var c : FileItems.Quality.values()) {
+                            if (theReport.items().legend().containsKey(c)) {
+                                out.write("<th>" + theReport.items().legend().get(c) + "</th>");
+                            }
                         }
                     }
                     out.write("<th>Line coverage</th></tr>");
@@ -198,10 +209,12 @@ public class MultiHTMLReport {
                     for (String subFolder : folders) {
                         out.write("<tr><td><a href=\"" + reportFile(subFolder) + "\"</a>" + subFolder + "</a></td>");
                         colors = theReport.itemsCache().count(subFolder);
-                        for (var c : FileItems.Quality.values()) {
-                            if (theReport.items().legend().containsKey(c)) {
-                                out.write("<td><a class=\"" + HTML_COLOR_CLASSES.get(c) + "\">" +
-                                        colors.get(c) + "</a></td>");
+                        if (!colors.isEmpty()) {
+                            for (var c : FileItems.Quality.values()) {
+                                if (theReport.items().legend().containsKey(c)) {
+                                    out.write("<td><a class=\"" + HTML_COLOR_CLASSES.get(c) + "\">" +
+                                            colors.get(c) + "</a></td>");
+                                }
                             }
                         }
                         out.write("<td>" + theReport.coverage().get(subFolder) + "</td></tr>");
@@ -213,9 +226,11 @@ public class MultiHTMLReport {
                 Collection<String> files = theReport.files().files(s);
                 if (!files.isEmpty()) {
                     out.write("<table id=\"files\" class=\"sortable\"><tr><th>File</th>");
-                    for (var c : FileItems.Quality.values()) {
-                        if (theReport.items().legend().containsKey(c)) {
-                            out.write("<th>" + theReport.items().legend().get(c) + "</th>");
+                    if (!colors.isEmpty()) {
+                        for (var c : FileItems.Quality.values()) {
+                            if (theReport.items().legend().containsKey(c)) {
+                                out.write("<th>" + theReport.items().legend().get(c) + "</th>");
+                            }
                         }
                     }
                     out.write("<th>Line coverage</th></tr>");
@@ -223,10 +238,12 @@ public class MultiHTMLReport {
                     for (String file : files) {
                         out.write("<tr><td><a href=\"" + reportFile(file) + "\"</a>" + file + "</a></td>");
                         colors = theReport.itemsCache().count(file);
-                        for (var c : FileItems.Quality.values()) {
-                            if (theReport.items().legend().containsKey(c)) {
-                                out.write("<td><a class=\"" + HTML_COLOR_CLASSES.get(c) + "\">" +
-                                        colors.get(c) + "</a></td>");
+                        if (!colors.isEmpty()) {
+                            for (var c : FileItems.Quality.values()) {
+                                if (theReport.items().legend().containsKey(c)) {
+                                    out.write("<td><a class=\"" + HTML_COLOR_CLASSES.get(c) + "\">" +
+                                            colors.get(c) + "</a></td>");
+                                }
                             }
                         }
                         out.write("<td>" + theReport.coverage().get(file) + "</td></tr>");
@@ -249,8 +266,7 @@ public class MultiHTMLReport {
         @Override
         public void startItems() throws Exception {
             fileOut.write("<table>"); fileOut.newLine();
-            fileOut.write("<tr><th>"+theReport.items().kind()+"</th>");
-            fileOut.write("</tr>");
+            fileOut.write("<tr><th>"+theReport.items().kind()+"</th></tr>");
         }
 
         @Override
@@ -270,11 +286,13 @@ public class MultiHTMLReport {
         public void endItems() throws Exception {
             fileOut.write("</table>"); fileOut.newLine();
             fileOut.write("Line coverage " + theReport.coverage().get(file)); fileOut.newLine();
-            fileOut.write("<table>"); fileOut.newLine();
         }
 
         @Override
         public void startLineRange(LineRange range) throws IOException {
+            if (highlight != null)
+                fileOut.write("<hr/>"); fileOut.newLine();
+            fileOut.write("<table>"); fileOut.newLine();
         }
 
         private String coveredClass(Coverage coverage) {
@@ -312,7 +330,11 @@ public class MultiHTMLReport {
                 fileOut.write("</pre></td>");
             }
             fileOut.write("<td><pre>" + (lineNo + 1) + "</pre></td>");
-            fileOut.write("<td><pre><a class=\"" + coveredClass(coverage) + "\">");
+            fileOut.write("<td><pre><a class=\"" +
+                    (coverage != null ? coveredClass(coverage) :
+                        (highlight != null && highlighter.isHighlighted(file, lineNo + 1) ?
+                                "highlight" : "context")) +
+                    "\">");
             fileOut.write(line.replaceAll("</?\\s*pre\\s*>", ""));
             fileOut.write("</a></pre></td></tr>");
             fileOut.newLine();
@@ -320,22 +342,18 @@ public class MultiHTMLReport {
 
         @Override
         public void endLineRange(LineRange range) throws IOException {
-//            fileOut.write("<hr/>"); fileOut.newLine();
+            fileOut.write("</table>"); fileOut.newLine();
         }
 
         @Override
         public void endFile(String s) throws IOException {
-            fileOut.write("</table>"); fileOut.newLine();
+            if (highlight != null)
+                fileOut.write("<hr/>"); fileOut.newLine();
             fileOut.close();
         }
 
         public void endFolder(String s) {
         }
-
-//        @Override
-//        public void end() throws Exception {
-//
-//        }
 
         @Override
         public void close() throws Exception {
@@ -345,6 +363,7 @@ public class MultiHTMLReport {
     public static class Builder {
         private FileSet files;
         private SourceHierarchy source;
+        private SourceFilter highlight;
         private SourceFilter include;
         private String title = "";
         private Function<String, String> folderHeader = s -> "";
@@ -367,6 +386,11 @@ public class MultiHTMLReport {
             return this;
         }
 
+        public Builder setHighlight(SourceFilter highlight) {
+            this.highlight = highlight;
+            return this;
+        }
+
         public Builder setTitle(String title) {
             this.title = title;
             return this;
@@ -380,7 +404,7 @@ public class MultiHTMLReport {
         public MultiHTMLReport report() {
             return new MultiHTMLReport(source, files, coverage, items,
                     title,
-                    folderHeader, fileHeader, include);
+                    folderHeader, fileHeader, highlight,include);
         }
 
         public Builder setFolderHeader(Function<String, String> prefix) {

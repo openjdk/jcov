@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import openjdk.codetools.jcov.report.filter.SourceFilter;
 import openjdk.codetools.jcov.report.source.ContextFilter;
 import openjdk.codetools.jcov.report.source.SourceHierarchy;
 import openjdk.codetools.jcov.report.source.SourcePath;
+import openjdk.codetools.jcov.report.view.MultiHTMLReport;
 import openjdk.codetools.jcov.report.view.SingleHTMLReport;
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.instrument.DataRoot;
@@ -45,7 +46,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
+import static java.util.regex.Pattern.matches;
 import static org.testng.Assert.assertTrue;
 
 public class JCovReportTest {
@@ -68,7 +71,7 @@ public class JCovReportTest {
         rawCoverage = new JCovLineCoverage(DataRoot.read(GitDifFilterTest.cp(xmlName).toString()), source);
     }
     @Test
-    void report() throws Exception {
+    void txtReport() throws Exception {
         String diffPkg = "/" + JCovReportTest.class.getPackageName().replace('.', '/') + "/";
         var filter = GitDiffFilter.parseDiff(GitDifFilterTest.cp(diffPkg + "negative_array_size.diff")/*, Set.of("src")*/);
         Path textReport = Files.createTempFile("report", ".txt");
@@ -86,19 +89,43 @@ public class JCovReportTest {
         assertTrue(reportLines.contains("2142:+            throw new StreamCorruptedException(\"Array length is negative\");"));
         assertTrue(reportLines.contains("2143:         }"));
         assertTrue(reportLines.contains("2142:+            throw new StreamCorruptedException(\"Array length is negative\");"));
+    }
+    @Test
+    void singleReport() throws Exception {
+        String diffPkg = "/" + JCovReportTest.class.getPackageName().replace('.', '/') + "/";
+        var filter = GitDiffFilter.parseDiff(GitDifFilterTest.cp(diffPkg + "negative_array_size.diff")/*, Set.of("src")*/);
         Path htmlReport = Files.createTempFile("report", ".html");
         new SingleHTMLReport.Builder().setSource(new SourcePath(src, src.resolve("src"))).setFiles(files)
                 .setCoverage(rawCoverage).setTitle("negative array size fix").setHeader("negative array size fix")
                 .setHighlight(filter).setInclude(new ContextFilter(filter, 10)).report().report(htmlReport);
         System.out.println("Report: " + htmlReport);
-        reportLines = Files.readAllLines(htmlReport);
+        var reportLines = Files.readAllLines(htmlReport);
         assertTrue(reportLines.contains("<a class=\"highlight\">1454:      * @throws StreamCorruptedException if arrayLength is negative</a>"));
         assertTrue(reportLines.contains("<a class=\"highlight\">1457:     private void checkArray(Class<?> arrayType, int arrayLength) throws ObjectStreamException {</a>"));
         assertTrue(reportLines.contains("<a class=\"covered\">1463:             throw new StreamCorruptedException(\"Array length is negative\");</a>"));
         assertTrue(reportLines.contains("<a class=\"covered\">2141:         if (len < 0) {</a>"));
         assertTrue(reportLines.contains("<a class=\"covered\">2142:             throw new StreamCorruptedException(\"Array length is negative\");</a>"));
         assertTrue(reportLines.contains("<a class=\"highlight\">2143:         }</a>"));
-        assertTrue(reportLines.contains("<a class=\"covered\">2142:             throw new StreamCorruptedException(\"Array length is negative\");</a>"));
+    }
+    @Test
+    void multiReport() throws Exception {
+        String diffPkg = "/" + JCovReportTest.class.getPackageName().replace('.', '/') + "/";
+        var filter = GitDiffFilter.parseDiff(GitDifFilterTest.cp(diffPkg + "negative_array_size.diff")/*, Set.of("src")*/);
+        Path multiHtmlReport = Files.createTempDirectory("report");
+        new MultiHTMLReport.Builder().setSource(new SourcePath(src, src.resolve("src"))).setFiles(files)
+                .setCoverage(rawCoverage).setTitle("negative array size fix")
+                .setFolderHeader(x -> "negative array size fix")
+                .setFileHeader(x -> "negative array size fix")
+                .setHighlight(filter).setInclude(new ContextFilter(filter, 10)).report().report(multiHtmlReport);
+        System.out.println("Report: " + multiHtmlReport);
+        var reportLines = Files.readAllLines(multiHtmlReport.resolve("index.html"));
+        reportLines = Files.readAllLines(multiHtmlReport.resolve("src_java_io_ObjectInputStream.java.html"));
+        assertTrue(reportLines.stream().anyMatch(s -> matches(".*1454.*class=\"highlight\".*@throws StreamCorruptedException if arrayLength is negative.*", s)));
+        assertTrue(reportLines.stream().anyMatch(s -> matches(".*1457.*class=\"highlight\".*private void checkArray.*", s)));
+        assertTrue(reportLines.stream().anyMatch(s -> matches(".*1463.*class=\"covered\".*throw new StreamCorruptedException.*", s)));
+        assertTrue(reportLines.stream().anyMatch(s -> matches(".*2141.*class=\"covered\".*", s)));
+        assertTrue(reportLines.stream().anyMatch(s -> matches(".*2142.*class=\"covered\".*throw new StreamCorruptedException.*", s)));
+        assertTrue(reportLines.stream().anyMatch(s -> matches(".*2143.*lass=\"highlight\".*", s)));
     }
     @Test
     void innerClass() throws Exception {

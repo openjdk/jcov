@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,21 +114,18 @@ public class SingleHTMLReport {
             out.write(header + "\n"); out.newLine();
             out.write("<table><tbody>"); out.newLine();
 
-            theReport.report(new HtmlTOCOut(source, out));
+            theReport.report(new HtmlTOCOut(out));
             out.write("</tbody></table>"); out.newLine();
             out.write("<hr>"); out.newLine();
-            theReport.report(new HtmlOut(source, out));
+            theReport.report(new HtmlOut(out));
             out.write("<body></html>");out.newLine();
         }
     }
 
     private class HtmlTOCOut implements FilteredReport.FileOut {
         private final BufferedWriter out;
-        private final FilteredReport.FilterHighlighter highlighter;
-        private String lastFile;
 
-        private HtmlTOCOut(SourceHierarchy source, BufferedWriter out) {
-            this.highlighter = new FilteredReport.FilterHighlighter(source, highlight);
+        private HtmlTOCOut(BufferedWriter out) {
             this.out = out;
         }
 
@@ -178,7 +175,7 @@ public class SingleHTMLReport {
         private final FilteredReport.FilterHighlighter highlighter;
         private String lastFile;
 
-        private HtmlOut(SourceHierarchy source, BufferedWriter out) {
+        private HtmlOut(BufferedWriter out) {
             this.highlighter = new FilteredReport.FilterHighlighter(source, highlight);
             this.out = out;
         }
