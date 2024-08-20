@@ -40,6 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -47,7 +48,7 @@ import java.util.zip.ZipOutputStream;
 
 import static org.testng.Assert.assertEquals;
 
-public class ReadZipTest {
+public class ZipTest {
     Path test_dir;
     Path template;
     Path template_zip;
@@ -78,18 +79,24 @@ public class ReadZipTest {
         compare(Reader.readXML(template_zip.toString()), Reader.readXML(template.toString()));
     }
 
-    @Test(dependsOnMethods = "instrument")
-    void merge() throws FileFormatException {
-        var template_merge = test_dir.resolve("template_merge.xml");
+    private void merge(Collection<Path> input, Path output) {
         List<String> params = new ArrayList<>();
         params.add("-o");
-        params.add(template_merge.toString());
-        params.add(template_zip.toString());
-        params.add(template.toString());
+        params.add(output.toString());
+        input.forEach(i -> params.add(i.toString()));
         System.out.println("Running Merger with");
         params.forEach(System.out::println);
         new Merger().run(params.toArray(new String[0]));
+    }
+
+    @Test(dependsOnMethods = "instrument")
+    void merge() throws FileFormatException {
+        var template_merge = test_dir.resolve("template_merge.xml");
+        merge(List.of(template, template_zip), template_merge);
         compare(Reader.readXML(template_merge.toString()), Reader.readXML(template.toString()));
+        var template_merge_zip = test_dir.resolve("template_merge.xml.zip");
+        merge(List.of(template, template_zip), template_merge_zip);
+        compare(Reader.readXML(template_merge_zip.toString()), Reader.readXML(template.toString()));
     }
 
     private void compare(DataRoot one, DataRoot another) {

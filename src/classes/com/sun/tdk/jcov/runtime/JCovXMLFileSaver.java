@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,20 @@ import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.util.RuntimeUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 /**
  *
@@ -67,14 +74,27 @@ public class JCovXMLFileSaver extends FileSaver {
             for (int i = LOCK_REPEAT; i != 0; i--) {
                 try {
                     FileLock lock = channel.tryLock();
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    XmlContext ctx = new XmlContext(os, root.getParams());
-                    ctx.setSkipNotCoveredClasses(agentdata);
-                    root.xmlGen(ctx);
-                    ctx.close();
+
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    OutputStream os;
+                    if (filename.endsWith(".xml.zip")) {
+                        String xmlName = new File(filename).getName();
+                        xmlName = xmlName.substring(0, xmlName.length() - ".zip".length());
+                        ZipOutputStream zos = new ZipOutputStream(baos);
+                        zos.putNextEntry(new ZipEntry(xmlName));
+                        os = zos;
+                    } else os = baos;
+
+                    try (os) {
+                        XmlContext ctx = new XmlContext(os, root.getParams());
+                        ctx.setSkipNotCoveredClasses(agentdata);
+                        root.xmlGen(ctx);
+                        ctx.close();
+                    }
 
                     channel.truncate(0);
-                    channel.write(ByteBuffer.wrap(os.toByteArray()));
+                    channel.write(ByteBuffer.wrap(baos.toByteArray()));
+
                     lock.release();
                     channel.close();
                     return;
