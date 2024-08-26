@@ -63,8 +63,8 @@ public class ZipTest {
         template = test_dir.resolve("template.xml");
         template_zip = test_dir.resolve("template.xml.zip");
     }
-    @Test
-    public void instrument() throws IOException, InterruptedException, FileFormatException {
+
+    private void instrument(Path template) throws IOException {
         List<String> params = new ArrayList<>();
         params.add("-t");
         params.add(template.toString());
@@ -72,10 +72,12 @@ public class ZipTest {
         System.out.println("Running Instr with");
         params.forEach(System.out::println);
         new Instr().run(params.toArray(new String[0]));
-        try (var out = new ZipOutputStream(Files.newOutputStream(template_zip))) {
-            out.putNextEntry(new ZipEntry("template.xml"));
-            out.write(Files.readAllBytes(template));
-        }
+    }
+
+    @Test
+    public void instrument() throws IOException, InterruptedException, FileFormatException {
+        instrument(template);
+        instrument(template_zip);
         compare(Reader.readXML(template_zip.toString()), Reader.readXML(template.toString()));
     }
 
