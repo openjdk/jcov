@@ -85,11 +85,13 @@ public class JCovXMLFileSaver extends FileSaver {
                         os = zos;
                     } else os = baos;
 
-                    try (os) {
+                    try {
                         XmlContext ctx = new XmlContext(os, root.getParams());
                         ctx.setSkipNotCoveredClasses(agentdata);
                         root.xmlGen(ctx);
                         ctx.close();
+                    } finally {
+                        os.close();
                     }
 
                     channel.truncate(0);
