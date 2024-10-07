@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ public class JavapRepGen {
                 List<JavapLine> methodLines;
                 JavapClass javapClass = classes.get(dataClass.getName());
                 if (javapClass != null) {
-                    methodLines = javapClass.getMethod(dataMethod.getName() + dataMethod.getVmSignature());
+                    methodLines = javapClass.getMethod(dataMethod.getName(), dataMethod.getVmSignature());
                 if (methodLines != null) {
                     for (JavapLine javapLine : methodLines) {
                         if ((javapLine instanceof JavapCodeLine) && visitedBlocksNumbers.contains(((JavapCodeLine) javapLine).getCodeNumber())) {
