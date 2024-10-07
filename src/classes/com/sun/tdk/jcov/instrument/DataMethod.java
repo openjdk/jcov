@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,11 @@
  */
 package com.sun.tdk.jcov.instrument;
 
+import com.sun.tdk.jcov.data.Scale;
 import com.sun.tdk.jcov.instrument.asm.ASMModifiers;
 import com.sun.tdk.jcov.util.NaturalComparator;
-import com.sun.tdk.jcov.data.Scale;
 import com.sun.tdk.jcov.util.Utils;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -92,12 +93,12 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * @param differentiateMethods
      */
     DataMethod(final DataClass k,
-            final int access,
-            final String name,
-            final String desc,
-            final String signature,
-            final String[] exceptions,
-            final boolean differentiateMethods) {
+               final int access,
+               final String name,
+               final String desc,
+               final String signature,
+               final String[] exceptions,
+               final boolean differentiateMethods) {
         super(k.rootId);
 
         this.parent = k;
@@ -114,7 +115,6 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      * Creates new DataMethod instance<br> Warning, this constructor adds
      * created object to <b>k</b> DataClass. Do not use this constructor in
      * iterators.
-     *
      */
     protected DataMethod(DataMethod other) {
         super(other.rootId);
@@ -126,6 +126,17 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
         this.signature = other.signature;
         this.exceptions = other.exceptions;
         this.differentiateMethods = other.differentiateMethods; // always false at the moment
+    }
+
+    /**
+     * This method clears the LineTable associated with the method.
+     * It can be used when switching from Java source line coverage to javap output line coverage.
+     *
+     * @return  the instance
+     */
+    public DataMethod clearLineTable() {
+        lineTable.clear();
+        return this;
     }
 
     /**
@@ -180,14 +191,17 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
     }
 
     /**
-     * Get methods access code
-     * @return methods access code
+     * Get method's access code
+     *
+     * @return method's access code
      */
     public int getAccess() {
         return access.access();
     }
 
-    public Modifiers getModifiers() { return access; }
+    public Modifiers getModifiers() {
+        return access;
+    }
 
     /**
      * Get this method`s access flags as String array
@@ -201,8 +215,8 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
     /**
      * Check whether <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      *
-     * @see #getAccess()
      * @return true if <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
+     * @see #getAccess()
      */
     @Deprecated
     public boolean isPublic() {
@@ -212,8 +226,8 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
     /**
      * Check whether <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
      *
-     * @see #getAccess()
      * @return true if <b>access</b> field has ACC_PUBLIC or ACC_PROTECTED flag
+     * @see #getAccess()
      */
     public boolean isPublicAPI() {
         return access.isPublic() || access.isProtected();
@@ -222,8 +236,8 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
     /**
      * Check whether <b>access</b> field has ACC_ABSTRACT flag
      *
-     * @see #getAccess()
      * @return true if <b>access</b> field has ACC_ABSTRACT flag
+     * @see #getAccess()
      */
     @Deprecated
     public boolean isAbstract() {
@@ -304,7 +318,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
     /**
      * Check whether this method was hit. When DataMethod is attached - data is
      * directly gotten from Collect class<br/><br/>
-     *
+     * <p>
      * Don't use it directly with DataMethodWithBlocks - it contains several
      * block. Loop through it's blocks instead.
      *
@@ -315,7 +329,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
     /**
      * Check how many times this method was hit. When DataMethod is attached -
      * data is directly gotten from Collect class<br/><br/>
-     *
+     * <p>
      * Don't use it directly with DataMethodWithBlocks - it contains several
      * block. Loop through it's blocks instead. The first - MethEnter
      *
@@ -326,7 +340,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
     /**
      * Set count of hits. If DataMethod is attached - data is directly written
      * to Collect class<br/><br/>
-     *
+     * <p>
      * Don't use it directly with DataMethodWithBlocks - it contains several
      * block. Loop through it's blocks instead.
      *
@@ -337,7 +351,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
     /**
      * Get scales information of this method. It's a bit mask telling which
      * testrun hit this method<br/><br/>
-     *
+     * <p>
      * Don't use it directly with DataMethodWithBlocks - it contains several
      * block. Loop through it's blocks instead.
      *
@@ -375,7 +389,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
 
     @Override
     public String toString() {
-        return super.toString() + "-" + name;
+        return "0x%04x %s".formatted(access.access(), getFullName());
     }
 
     /**
@@ -465,7 +479,7 @@ public abstract class DataMethod extends DataAnnotated implements Comparable<Dat
      */
     public void addLineEntry(int bci, int line) {
         if (lineTable == null) {
-            lineTable = new ArrayList<LineEntry>();
+            lineTable = new ArrayList<>();
         }
         lineTable.add(new LineEntry(bci, line));
     }

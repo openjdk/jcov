@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014,2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014,2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,7 @@
  */
 package com.sun.tdk.jcov.report.javap;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,39 +41,31 @@ public class JavapClass {
 
     private String packageName;
     private String className;
-    // class as list of JavapLines
     private final ArrayList<JavapLine> lines = new ArrayList<>();
     // method in the class is list of lines numbers in the javap output
     private final HashMap<String, ArrayList<Integer>> methods = new HashMap<>();
 
     /**
-     * return method in the class like list of JavapLines
+     * Get a list of JavapLines associated with the method
      *
-     * @param nameAndVMSig name and VMsig string is needed to find method in the
-     * class
-     * @return method in the class like list of JavapLines
+     * @param methodName      the name of the method to find
+     * @param methodSignature the signature of the method to find
+     * @return a list of JavapLines associated with the method
      */
-    public List<JavapLine> getMethod(String nameAndVMSig) {
-
-        List<Integer> numbers = methods.get(nameAndVMSig);
-
-        if (numbers == null || numbers.isEmpty()) {
+    public List<JavapLine> getMethod(String methodName, String methodSignature) {
+        List<Integer> list = methods.get(methodName + methodSignature);
+        if (list == null || list.isEmpty()) {
             return null;
         }
-
-        return lines.subList(numbers.get(0), numbers.get(numbers.size() - 1) + 1);
+        return lines.subList(list.get(0), list.get(list.size() - 1) + 1);
     }
 
     public String getClassName() {
-        return className;
-    }
-
-    public String getPackageName() {
-        return packageName;
+        return className == null ? "" : className;
     }
 
     /**
-     * return javap result for class like list of JavapLines
+     * return a list of JavapLines associated with the class
      */
     public List<JavapLine> getLines() {
         return lines;
@@ -118,7 +105,6 @@ public class JavapClass {
                 }
                 // try to find method in javap output
                 if (textLine.contains("(") && (textLine.contains(");") || textLine.contains(") throws"))) {
-                    // check if it is constructor or not
                     if (!textLine.contains("." + className + "(")) {
                         lastMethodString = parseMethodString(textLine);
                     } else {
@@ -132,50 +118,63 @@ public class JavapClass {
                     }
                 }
                 // try to find code lines which could be covered
-                if (textLine.contains(":") && !textLine.contains("Code")
-                        && !textLine.contains("case") && !textLine.contains("default")
-                        && !textLine.contains("Exception table")) {
+                if (isCodeLine(textLine)) {
                     addCodeLine(lineNumber, textLine, lastMethodString);
                 } else {
                     addLine(lineNumber, textLine);
                 }
-
                 lineNumber++;
 
             }
             inStream.close();
-
         } catch (Exception e) {
             System.err.println("Error in parsing javap file:");
             e.printStackTrace();
         }
-
     }
 
-    final private static String[] JavaClassTokens = new String[] {"implements", "extends", "{"};
+    final private static Pattern codeLinePattern = Pattern.compile("^\\s*\\d+:.*");
+    final private static Pattern switchPattern = Pattern.compile("^\\s*\\d+:\\s+\\d+$");
+
+    /**
+     * Check whether the line is a code line
+     *
+     * @param textLine javap source line
+     * @return true if the line is the code line
+     */
+    private boolean isCodeLine(String textLine) {
+        if (codeLinePattern.matcher(textLine).find()) {
+            int ind = textLine.indexOf("//");
+            String line = ((ind != -1) ? textLine.substring(ind) : textLine).trim();
+            return !switchPattern.matcher(line).find();
+        }
+        return false;
+    }
+
+    final private static String[] JavaClassTokens = new String[]{"implements", "extends", "{"};
 
     private void parsePackageAndClassNames(String textLine) {
 
-         for( String s :  JavaClassTokens) {
-             if (textLine.contains(s)) {
-                 textLine = textLine.substring(0, textLine.indexOf(s));
+        for (String s : JavaClassTokens) {
+            if (textLine.contains(s)) {
+                textLine = textLine.substring(0, textLine.indexOf(s));
             }
         }
 
-         textLine = textLine.substring(textLine.indexOf("class")+5).trim();
+        textLine = textLine.substring(textLine.indexOf("class") + 5).trim();
 
-         int ind = textLine.indexOf('<');
-         if(ind != -1){
-             textLine = textLine.substring(0, ind);
-    }
+        int ind = textLine.indexOf('<');
+        if (ind != -1) {
+            textLine = textLine.substring(0, ind);
+        }
 
-         ind = textLine.lastIndexOf('.');
-         if( ind > 0 ) {
-             packageName = textLine.substring(0,ind);
-             className = textLine.substring(ind+1);
-         } else {
-             className = textLine;
-             packageName = "";
+        ind = textLine.lastIndexOf('.');
+        if (ind > 0) {
+            packageName = textLine.substring(0, ind);
+            className = textLine.substring(ind + 1);
+        } else {
+            className = textLine;
+            packageName = "";
         }
     }
 
@@ -189,13 +188,26 @@ public class JavapClass {
         return "<init>" + vmSig;
     }
 
+    /**
+     * Parses the method's name and signature from the Javap source.
+     * Since the constructor in the Javap output shares the same name as the class,
+     * the method substitutes it with &pt;init&gt; to ensure compatibility with the coverage report."
+     *
+     * @param textLine a line containing the method's name and signature
+     * @Returns the method name concatenated with the method's signature
+     */
     private String parseMethodString(String textLine) {
         textLine = removeGenericsInfo(textLine);
         String methodName = substringBetween(textLine, "\\ ", "\\(", true);
-        String returnType = substringBetween(textLine, "\\ ", " " + methodName, true);
-
-        String vmSig = encodeVmSignature(substringBetween(textLine, "\\(", "\\)", false), returnType);
-
+        String vmSig;
+        // Checks whether it is a constructor, according to javap notation
+        if (methodName.equals(className)) {
+            methodName = "<init>";
+            vmSig = encodeVmSignature(substringBetween(textLine, "\\(", "\\)", false), null);
+        } else {
+            String returnType = substringBetween(textLine, "\\ ", " " + methodName, true);
+            vmSig = encodeVmSignature(substringBetween(textLine, "\\(", "\\)", false), returnType);
+        }
         return methodName + vmSig;
     }
 

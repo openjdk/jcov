@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,23 @@ import java.util.List;
  */
 public class LineCoverage extends CoverageData {
 
-    final HashMap<Long, Boolean> lines_hits = new HashMap<Long, Boolean>();
-    final HashMap<Long, Boolean> lines_ancs = new HashMap<Long, Boolean>();
+    final HashMap<Long, Boolean>  lines_hits = new HashMap<>();
+    final HashMap<Long, Boolean> lines_ancs = new HashMap<>();
 
     public LineCoverage() {
+    }
+
+    /**
+     * This method removes all from this line coverage.
+     * It can be used when switching from Java source line coverage to javap output line coverage.
+     *
+     * @return  the instance
+     */
+    public LineCoverage clear() {
+        covered = anc = total = 0;
+        lines_hits.clear();
+        lines_ancs.clear();
+        return this;
     }
 
     /**
