@@ -135,8 +135,6 @@ public class LineCoverage extends CoverageData {
         if (wasHit != null) {
             if (!wasHit && isHit) {
                 ++covered;
-            } else if (wasHit && !isHit) {
-                --covered;
             }
             lines_hits.put(line, isHit || wasHit);
         } else {
