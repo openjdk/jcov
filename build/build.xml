@@ -334,8 +334,6 @@ MILESTONE="${build.milestone}"
         <mkdir dir="${result.dir}/test/classes" />
         <javac includeantruntime="false" encoding="iso-8859-1"
                debug="no"
-               target="8"
-               source="8"
                srcdir="${test.src.dir}"
                sourcepath="${test.src.dir}"
                classpath="${testngjar}:${build.dir}/jcov.jar"
