@@ -25,7 +25,7 @@
 package com.sun.tdk.jcov.report;
 
 import com.sun.tdk.jcov.RepGen;
-import org.testng.annotations.AfterClass;
+import com.sun.tdk.jcov.instrument.Util;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -35,46 +35,37 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
-public class BasicReportTest extends ReportTest {
-
+public class RecordContainerTest extends ReportTest {
     @BeforeClass
-    public void setup() throws Exception {
-        setup(BasicUserCode.class, BasicUserCode.class.getName());
+    void setup() throws Exception {
+        String[] copyClasses = {RecordContainer.class.getName(), RecordContainer.class.getName() + "$Point"};
+        setup(RecordContainer.class, copyClasses);
+        //prepare original bytecode
+        List<Path> classFiles = new Util(test_dir).copyBytecode(copyClasses);
     }
 
     @Test
     void textReport() throws IOException {
-        Path report = test_dir.resolve("report.txt");
+        Path report = test_dir.resolve("report.javap");
         List<String> params = new ArrayList<>();
-        params.add("-format");
-        params.add("text");
-        params.add("-o");
-        params.add(report.toString());
-        params.add(result.toString());
-        new RepGen().run(params.toArray(new String[0]));
-        assertTrue(Files.isRegularFile(report));
-        assertTrue(Files.readAllLines(report).contains(
-                "MTH+: main([Ljava/lang/String;)V hits: 1 blocks:  75% (3/4); branches:  50% (1/2); lines:  75% (3/4);"
-        ));
-    }
-
-    @Test
-    void htmlReport() throws IOException {
-        Path report = test_dir.resolve("report.html");
-        List<String> params = new ArrayList<>();
+        params.add("-javap");
+        params.add(test_dir.toString());
         params.add("-o");
         params.add(report.toString());
         params.add(result.toString());
         new RepGen().run(params.toArray(new String[0]));
         assertTrue(Files.isDirectory(report));
-        Path classHtml = report.resolve(BasicUserCode.class.getName().replace('.', '/') + ".html");
-        assertTrue(Files.readAllLines(classHtml).stream().anyMatch(l -> l.contains("<b>60</b>%(3/5)")));
-    }
-
-    @AfterClass
-    public void tearDown() throws IOException {
-        super.tearDown();
+        Path classHtml = report.resolve(RecordContainer.class.getName().replace('.', '/') +
+                "$Point.html");
+        assertFalse(Files.readAllLines(classHtml).stream().anyMatch(l -> {
+            if (l.matches(".*<b>-\\d*</b>%\\(-\\d*/\\d*\\).*")) {
+                System.err.println("Found some negative coverage:");
+                System.err.println(l);
+                return true;
+            } else return false;
+        }));
     }
 }
