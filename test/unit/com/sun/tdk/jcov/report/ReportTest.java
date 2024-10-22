@@ -71,6 +71,6 @@ public class ReportTest {
         DataRoot.getInstance(0).write(result.toString(), InstrumentationOptions.MERGE.OVERWRITE);
     }
     public void tearDown() throws IOException {
-//        Util.rmRF(test_dir);
+        Util.rmRF(test_dir);
     }
 }
