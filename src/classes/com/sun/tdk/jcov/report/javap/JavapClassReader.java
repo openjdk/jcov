@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,101 +24,28 @@
  */
 package com.sun.tdk.jcov.report.javap;
 
-import com.sun.tools.javap.Main;
-import java.io.File;
 import java.io.PrintWriter;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.util.NoSuchElementException;
+import java.util.spi.ToolProvider;
 
-/**
- * This class is used to run javap on class files
- *
- * @author Alexey Fedorchenko
- */
+import static java.util.spi.ToolProvider.findFirst;
+
 public class JavapClassReader {
-
-    private static URLClassLoader classLoader = null;
-    private static Method method;
-    private static Object instance;
-    private static File toolsJar;
-
     public static void read(String filePath, String jarPath, PrintWriter pw) {
-
-        // Note: if the RepGen is being started by JDK 9 and above then
-        // the option "--add-exports jdk.jdeps/com.sun.tools.javap=ALL-UNNAMED" should be added to the JVM command-line.
+        int rc = 0;
         try {
+            ToolProvider javap = findFirst("javap").orElseThrow();
             if (jarPath == null) {
-                Main.run(new String[]{"-c", "-p", filePath}, pw);
+                rc = javap.run(pw, new PrintWriter(System.err), "-c", "-p", filePath);
             } else {
-                Main.run(new String[]{"-c", "-p", "-classpath", jarPath, filePath}, pw);
+                rc = javap.run(pw, new PrintWriter(System.err), "-c", "-p", "-classpath", jarPath, filePath);
             }
-        } catch (NoClassDefFoundError error) {
-
-            if (classLoader == null) {
-
-                File javaHome = new File(System.getProperty("java.home"));
-
-                if (javaHome.getName().equals("jre")) {
-                    javaHome = javaHome.getParentFile();
-                    toolsJar = new File(new File(javaHome, "lib"), "tools.jar");
-
-                    if (toolsJar.exists()) {
-
-                        try {
-                            classLoader = new URLClassLoader(new URL[]{toolsJar.toURI().toURL()}, ClassLoader.getSystemClassLoader());
-                            Class classToLoad = Class.forName("com.sun.tools.javap.Main", true, classLoader);
-                            method = classToLoad.getDeclaredMethod("run", String[].class, PrintWriter.class);
-                            instance = classToLoad.getDeclaredConstructor().newInstance();
-
-                            String[] params;
-
-                            if (jarPath == null) {
-                                params = new String[]{"-c", "-p", filePath};
-                            } else {
-                                params = new String[]{"-c", "-p", "-classpath", jarPath, filePath};
-                            }
-                            try {
-                                Object result = method.invoke(instance, params, pw);
-                            } catch (Exception ex) {
-                                printToolsJarError();
-                            }
-
-                        } catch (Exception e) {
-                            printToolsJarError();
-                        }
-
-
-                    } else {
-                        printToolsJarError();
-                    }
-
-                } else {
-                    System.err.println("cannot execute javap, perhaps jdk8/lib/tools.jar is missing from the classpath");
-                    System.err.println("example: java -cp jcov.jar:tools.jar com.sun.tdk.jcov.RepGen -javap path_to_classes -o path_to_javap_output path_to_result.xml");
-                    return;
-                }
-            } else {
-
-                String[] params;
-
-                if (jarPath == null) {
-                    params = new String[]{"-c", "-p", filePath};
-                } else {
-                    params = new String[]{"-c", "-p", "-classpath", jarPath, filePath};
-                }
-                try {
-                    method.invoke(instance, params, pw);
-                } catch (Exception ex) {
-                    printToolsJarError();
-                }
-            }
+        } catch (NoSuchElementException ex) {
+            System.err.println("Cannot find the javap tool");
         }
-    }
-
-    private static void printToolsJarError() {
-        System.err.println("cannot execute javap, perhaps jdk8/lib/tools.jar is missing from the classpath and from java.home");
-        System.err.println("example: java -cp jcov.jar:tools.jar com.sun.tdk.jcov.RepGen -javap path_to_classes -o path_to_javap_output path_to_result.xml");
-        return;
+        if (rc != 0) {
+            System.err.println("Usage: java -cp jcov.jar com.sun.tdk.jcov.RepGen -javap path_to_classes " +
+                    "-o path_to_javap_output path_to_result.xml");
+        }
     }
 }

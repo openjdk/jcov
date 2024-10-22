@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1105,7 +1105,7 @@ public class CoverageReport implements ReportGenerator {
         String src = theClass.getSource();
         boolean isGenerate;
         File srcfile = null; // can be null
-        if (src == null || theClass.isJavapSource()) {
+        if (src == null || theClass.isJavapCoverage()) {
             isGenerate = false;
         } else {
             srcfile = new File(src);
@@ -1138,7 +1138,7 @@ public class CoverageReport implements ReportGenerator {
             }
         }
 
-        generateMemberTable(pw, theClass, "method", methodList, isGenerate, theClass.isJavapSource());
+        generateMemberTable(pw, theClass, "method", methodList, isGenerate, theClass.isJavapCoverage());
 
         List<FieldCoverage> fieldList = theClass.getFields();
         //Collections.sort((List) fieldList);
@@ -1149,7 +1149,7 @@ public class CoverageReport implements ReportGenerator {
                 methodsForLine.put(new Integer(startLine), fcov);
                 logger.log(Level.FINE, "{0}-{1}", new Object[]{fcov.getName(), startLine});
             }
-            generateMemberTable(pw, theClass, "field", fieldList, isGenerate, theClass.isJavapSource());
+            generateMemberTable(pw, theClass, "field", fieldList, isGenerate, theClass.isJavapCoverage());
         }
 
         if (isGenerate) {
@@ -1166,7 +1166,7 @@ public class CoverageReport implements ReportGenerator {
             pw.println(" </table>");
         }
 
-        if (theClass.isJavapSource()) {
+        if (theClass.isJavapCoverage()) {
             pw.println(" <table cellspacing=\"0\" cellpadding=\"0\" class=\"src\">");
             JavapClass javapClass = theClass.getJavapClass();
 
@@ -1176,7 +1176,7 @@ public class CoverageReport implements ReportGenerator {
 
                 methodsForLine = new HashMap<Integer, MemberCoverage>();
                 for (MethodCoverage mcov : methodList) {
-                    List<JavapLine> lines = javapClass.getMethod(mcov.getName() + mcov.getSignature());
+                    List<JavapLine> lines = javapClass.getMethod(mcov.getName(), mcov.getSignature());
                     if (lines != null) {
                         methodsForLine.put(lines.get(0).getLineNumber(), mcov);
                     }

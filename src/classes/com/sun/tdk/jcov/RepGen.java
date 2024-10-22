@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,48 +24,37 @@
  */
 package com.sun.tdk.jcov;
 
-import com.sun.tdk.jcov.instrument.DataMethod;
-import com.sun.tdk.jcov.instrument.DataClass;
-import com.sun.tdk.jcov.instrument.DataField;
-import com.sun.tdk.jcov.processing.DataProcessorSPI;
-import com.sun.tdk.jcov.report.AncFilter;
-import com.sun.tdk.jcov.report.ParameterizedAncFilter;
-import com.sun.tdk.jcov.report.AncFilterFactory;
-import com.sun.tdk.jcov.util.Utils;
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.data.Result;
-import com.sun.tdk.jcov.instrument.DataRoot;
-import com.sun.tdk.jcov.processing.ProcessingException;
-
-import com.sun.tdk.jcov.tools.EnvHandler;
-import com.sun.tdk.jcov.tools.OptionDescr;
-import com.sun.tdk.jcov.io.Reader;
 import com.sun.tdk.jcov.filter.ConveyerFilter;
-import com.sun.tdk.jcov.filter.MemberFilter;
 import com.sun.tdk.jcov.filter.FilterFactory;
-import com.sun.tdk.jcov.instrument.InstrumentationOptions;
+import com.sun.tdk.jcov.filter.MemberFilter;
+import com.sun.tdk.jcov.instrument.*;
 import com.sun.tdk.jcov.io.ClassSignatureFilter;
+import com.sun.tdk.jcov.io.Reader;
+import com.sun.tdk.jcov.processing.DataProcessorSPI;
 import com.sun.tdk.jcov.processing.DefaultDataProcessorSPI;
+import com.sun.tdk.jcov.processing.ProcessingException;
 import com.sun.tdk.jcov.processing.StubSpi;
-import com.sun.tdk.jcov.report.DefaultReportGeneratorSPI;
-import com.sun.tdk.jcov.report.ProductCoverage;
-import com.sun.tdk.jcov.report.ReportGenerator;
-import com.sun.tdk.jcov.report.ReportGeneratorSPI;
-import com.sun.tdk.jcov.report.SmartTestService;
+import com.sun.tdk.jcov.report.*;
 import com.sun.tdk.jcov.report.javap.JavapClass;
 import com.sun.tdk.jcov.report.javap.JavapRepGen;
+import com.sun.tdk.jcov.tools.EnvHandler;
 import com.sun.tdk.jcov.tools.JCovCMDTool;
+import com.sun.tdk.jcov.tools.OptionDescr;
 import com.sun.tdk.jcov.tools.SPIDescr;
+import com.sun.tdk.jcov.util.Utils;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.sun.tdk.jcov.tools.OptionDescr.*;
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
+import static com.sun.tdk.jcov.tools.OptionDescr.VAL_SINGLE;
 
 /**
  * <p> Report generation. </p>
@@ -85,6 +74,7 @@ public class RepGen extends JCovCMDTool {
         Utils.initLogger();
         logger = Logger.getLogger(RepGen.class.getName());
     }
+
     private final static Logger logger;
     /**
      * Consider or not enums. true - means ignore enum classes.
@@ -199,7 +189,7 @@ public class RepGen extends JCovCMDTool {
      * @param output
      * @param jcovResult
      * @param srcRootPath
-     * @param classes parsed javap classes
+     * @param classes     parsed javap classes
      * @throws ProcessingException
      * @throws FileFormatException
      * @throws Exception
@@ -233,7 +223,7 @@ public class RepGen extends JCovCMDTool {
             logger.fine("OK");
         }
 
-        if (ancfilters != null){
+        if (ancfilters != null) {
             ancfiltersClasses = new AncFilter[ancfilters.length];
             for (int i = 0; i < ancfilters.length; i++) {
                 try {
@@ -312,7 +302,7 @@ public class RepGen extends JCovCMDTool {
             sts = new SmartTestService(jcovResult.getTestList());
             if (file_image.getScaleOpts().getScaleSize() != sts.getTestCount()) {
                 logger.log(Level.SEVERE, "The sizes of tests in JCov file and in test list differ.\n"
-                        + "Datafile {0} contains {1} item(s).\nThe test list contains {2} item(s).",
+                                + "Datafile {0} contains {1} item(s).\nThe test list contains {2} item(s).",
                         new Object[]{jcovResult.getResultPath(), file_image.getScaleOpts().getScaleSize(), sts.getTestCount()});
                 throw new Exception("The sizes of tests in JCov file and in test list differ");
             }
@@ -344,10 +334,9 @@ public class RepGen extends JCovCMDTool {
     }
 
     private ReportGenerator findReportGenerator(String name) {
-        ReportGenerator rg = null;
         if (reportGeneratorSPIs != null) {
             for (ReportGeneratorSPI reportGeneratorSPI : reportGeneratorSPIs) {
-                rg = reportGeneratorSPI.getReportGenerator(name);
+                ReportGenerator rg = reportGeneratorSPI.getReportGenerator(name);
                 if (rg != null) {
                     return rg;
                 }
@@ -508,7 +497,7 @@ public class RepGen extends JCovCMDTool {
         return srcRootPath;
     }
 
-    public void setDataProcessorsSPIs(DataProcessorSPI[] dataProcessorSPIs){
+    public void setDataProcessorsSPIs(DataProcessorSPI[] dataProcessorSPIs) {
         this.dataProcessorSPIs = dataProcessorSPIs;
     }
 
@@ -534,24 +523,24 @@ public class RepGen extends JCovCMDTool {
     /**
      * Set all properties (except custorm report service provider)
      *
-     * @param include patterns for including data. Set null for default value -
-     * {".*"} (include all)
-     * @param exclude patterns for excluding data. Set null for default value -
-     * {""} (exclude nothing)
-     * @param classModifiers modifiers that should have a class to be included
-     * @param filter custom filter classname
+     * @param include             patterns for including data. Set null for default value -
+     *                            {".*"} (include all)
+     * @param exclude             patterns for excluding data. Set null for default value -
+     *                            {""} (exclude nothing)
+     * @param classModifiers      modifiers that should have a class to be included
+     * @param filter              custom filter classname
      * @param generateShortFormat should generate short format
-     * @param publicAPI should generate only public API (public and protected)
-     * @param hideAbstract should hide abstract data
-     * @param hideMethods should hide methods
-     * @param hideBlocks should hide blocks
-     * @param hideBranches should hide branches
-     * @param hideLines should hide lines
+     * @param publicAPI           should generate only public API (public and protected)
+     * @param hideAbstract        should hide abstract data
+     * @param hideMethods         should hide methods
+     * @param hideBlocks          should hide blocks
+     * @param hideBranches        should hide branches
+     * @param hideLines           should hide lines
      */
     public void configure(String[] include, String[] exclude, String[] classModifiers,
-            String filter, boolean generateShortFormat, boolean publicAPI, boolean hideAbstract,
-            boolean hideMethods, boolean hideBlocks, boolean hideBranches, boolean hideLines,
-            boolean hideFields) {
+                          String filter, boolean generateShortFormat, boolean publicAPI, boolean hideAbstract,
+                          boolean hideMethods, boolean hideBlocks, boolean hideBranches, boolean hideLines,
+                          boolean hideFields) {
         setFilters(include, exclude, classModifiers);
         setFilter(filter);
         this.isPublicAPI = publicAPI;
@@ -561,10 +550,10 @@ public class RepGen extends JCovCMDTool {
     /**
      * Set filtering properties for the report
      *
-     * @param include patterns for including data. Set null for default value -
-     * {".*"} (include all)
-     * @param exclude patterns for excluding data. Set null for default value -
-     * {""} (exclude nothing)
+     * @param include        patterns for including data. Set null for default value -
+     *                       {".*"} (include all)
+     * @param exclude        patterns for excluding data. Set null for default value -
+     *                       {""} (exclude nothing)
      * @param classModifiers modifiers that should have a class to be included
      */
     public void setFilters(String[] include, String[] exclude, String[] classModifiers) {
@@ -687,34 +676,34 @@ public class RepGen extends JCovCMDTool {
     @Override
     protected EnvHandler defineHandler() {
         EnvHandler envHandler = new EnvHandler(new OptionDescr[]{
-                    DSC_FMT,
-                    DSC_OUTPUT,
-                    //            DSC_STDOUT,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE_LIST,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE_LIST,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE_LIST,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE_LIST,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FM,
-                    com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FM_LIST,
-                    DSC_NO_ABSTRACT,
-                    DSC_SYNTHETIC_ON,
-                    DSC_PUBLIC_API,
-                    DSC_SRC_ROOT,
-                    DSC_VERBOSE,
-                    DSC_FILTER_PLUGIN,
-                    DSC_ANC_FILTER_PLUGINS,
-                    DSC_ANC_DEFAULT_FILTERS,
-                    DSC_TEST_LIST,
-                    DSC_ANONYM,
-                    DSC_JAVAP,
-                    DSC_TESTS_INFO,
-                    DSC_REPORT_TITLE_MAIN,
-                    DSC_REPORT_TITLE_OVERVIEW,
-                    DSC_REPORT_TITLE_ENTITIES,}, this);
+                DSC_FMT,
+                DSC_OUTPUT,
+                //            DSC_STDOUT,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_INCLUDE_LIST,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_EXCLUDE_LIST,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE_LIST,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE_LIST,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MINCLUDE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_MEXCLUDE,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FM,
+                com.sun.tdk.jcov.instrument.InstrumentationOptions.DSC_FM_LIST,
+                DSC_NO_ABSTRACT,
+                DSC_SYNTHETIC_ON,
+                DSC_PUBLIC_API,
+                DSC_SRC_ROOT,
+                DSC_VERBOSE,
+                DSC_FILTER_PLUGIN,
+                DSC_ANC_FILTER_PLUGINS,
+                DSC_ANC_DEFAULT_FILTERS,
+                DSC_TEST_LIST,
+                DSC_ANONYM,
+                DSC_JAVAP,
+                DSC_TESTS_INFO,
+                DSC_REPORT_TITLE_MAIN,
+                DSC_REPORT_TITLE_OVERVIEW,
+                DSC_REPORT_TITLE_ENTITIES,}, this);
         SPIDescr spiDescr = new SPIDescr(CUSTOM_REPORT_GENERATOR_SPI, ReportGeneratorSPI.class);
         spiDescr.setDefaultSPI(new DefaultReportGeneratorSPI());
         envHandler.registerSPI(spiDescr);
@@ -764,13 +753,13 @@ public class RepGen extends JCovCMDTool {
             srcRootPath = opts.getValue(DSC_SRC_ROOT);
         }
 
-        if (opts.isSet(DSC_REPORT_TITLE_MAIN)){
+        if (opts.isSet(DSC_REPORT_TITLE_MAIN)) {
             mainReportTitle = opts.getValue(DSC_REPORT_TITLE_MAIN);
         }
-        if (opts.isSet(DSC_REPORT_TITLE_OVERVIEW)){
+        if (opts.isSet(DSC_REPORT_TITLE_OVERVIEW)) {
             overviewListTitle = opts.getValue(DSC_REPORT_TITLE_OVERVIEW);
         }
-        if (opts.isSet(DSC_REPORT_TITLE_ENTITIES)){
+        if (opts.isSet(DSC_REPORT_TITLE_ENTITIES)) {
             entitiesTitle = opts.getValue(DSC_REPORT_TITLE_ENTITIES);
         }
 
@@ -833,30 +822,31 @@ public class RepGen extends JCovCMDTool {
             return true;
         }
     }
+
     final static OptionDescr DSC_FMT =
             new OptionDescr("format", new String[]{"fmt"},
-            "Report generation output.", VAL_SINGLE,
-            "Specifies the format of the report.\n"
-            + "Use \"text\" for generate text report and \"html\" for generate HTML report\n"
-            + "Text report in one file which contains method/block/branch coverage information.\n"
-            + "HTML report contains coverage information with marked-up sources.\n\n"
-            + "Custom reports can be specified with ReportGeneratorSPI interface.", "html");
+                    "Report generation output.", VAL_SINGLE,
+                    "Specifies the format of the report.\n"
+                            + "Use \"text\" for generate text report and \"html\" for generate HTML report\n"
+                            + "Text report in one file which contains method/block/branch coverage information.\n"
+                            + "HTML report contains coverage information with marked-up sources.\n\n"
+                            + "Custom reports can be specified with ReportGeneratorSPI interface.", "html");
     /**
      *
      */
     public final static OptionDescr DSC_OUTPUT =
             new OptionDescr("repgen.output", new String[]{"output", "o"}, "", OptionDescr.VAL_SINGLE,
-            "Output directory for generating text and HTML reports.", "report");
+                    "Output directory for generating text and HTML reports.", "report");
     /**
      *
      */
     public final static OptionDescr DSC_TEST_LIST =
             new OptionDescr("tests", "Test list", OptionDescr.VAL_SINGLE,
-            "Specify the path to the file containing test list. File should contain a list of tests\n"
-            + "with one name per line.");
+                    "Specify the path to the file containing test list. File should contain a list of tests\n"
+                            + "with one name per line.");
     final static OptionDescr DSC_FILTER_PLUGIN =
             new OptionDescr("filter", "", OptionDescr.VAL_SINGLE,
-            "Custom filtering plugin class");
+                    "Custom filtering plugin class");
 
     final static OptionDescr DSC_ANC_FILTER_PLUGINS =
             new OptionDescr("ancfilter", new String[]{"ancf"}, "Custom anc filtering plugin classes", OptionDescr.VAL_MULTI,
