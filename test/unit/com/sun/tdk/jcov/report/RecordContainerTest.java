@@ -44,11 +44,11 @@ public class RecordContainerTest extends ReportTest {
         String[] copyClasses = {RecordContainer.class.getName(), RecordContainer.class.getName() + "$Point"};
         setup(RecordContainer.class, copyClasses);
         //prepare original bytecode
-        List<Path> classFiles = new Util(test_dir).copyBytecode(copyClasses);
+        new Util(test_dir).copyBytecode(copyClasses);
     }
 
     @Test
-    void textReport() throws IOException {
+    void javapReport() throws IOException {
         Path report = test_dir.resolve("report.javap");
         List<String> params = new ArrayList<>();
         params.add("-javap");
@@ -60,6 +60,26 @@ public class RecordContainerTest extends ReportTest {
         assertTrue(Files.isDirectory(report));
         Path classHtml = report.resolve(RecordContainer.class.getName().replace('.', '/') +
                 "$Point.html");
+        assertFalse(Files.readAllLines(classHtml).stream().anyMatch(l -> {
+            if (l.matches(".*<b>-\\d*</b>%\\(-\\d*/\\d*\\).*")) {
+                System.err.println("Found some negative coverage:");
+                System.err.println(l);
+                return true;
+            } else return false;
+        }));
+    }
+
+    @Test
+    void plainReport() throws IOException {
+        Path report = test_dir.resolve("report.plain");
+        List<String> params = new ArrayList<>();
+        params.add("-o");
+        params.add(report.toString());
+        params.add(result.toString());
+        new RepGen().run(params.toArray(new String[0]));
+        assertTrue(Files.isDirectory(report));
+        Path classHtml = report.resolve(RecordContainer.class.getName().replace('.', '/') +
+                ".html");
         assertFalse(Files.readAllLines(classHtml).stream().anyMatch(l -> {
             if (l.matches(".*<b>-\\d*</b>%\\(-\\d*/\\d*\\).*")) {
                 System.err.println("Found some negative coverage:");
