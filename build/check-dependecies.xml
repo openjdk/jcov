@@ -31,8 +31,6 @@
 
     <target name="compare-asm-checksum">
         <available file="${asm.jar}" property="asm.present"/>
-        <fail unless="asm.present" message="Please, specify asm library"/>
-
         <checksum file="${asm.jar}" algorithm="sha1" property="${asm.checksum}" verifyproperty="asm.checksum.matches"/>
         <condition property="asm.checksum.differs">
             <equals arg1="${asm.checksum.matches}" arg2="false" />
@@ -74,6 +72,30 @@
         <echo message="warning: wrong checksum for ASM-util dependency" level="warning" />
     </target>
 
-    <target name="verify-dependencies" depends="verify-asm, verify-asm-tree, verify-asm-util"/>
+    <target name="verify-dependencies" depends="download-dependencies, download-javatest, verify-asm, verify-asm-tree, verify-asm-util"/>
+
+    <target name="download-dependencies">
+        <mkdir dir="${deps.dir}"/>
+        <basename property="asm.jar.filename" file="${asm.jar}"/>
+        <basename property="asm.tree.jar.filename" file="${asm.tree.jar}"/>
+        <basename property="asm.util.jar.filename" file="${asm.util.jar}"/>
+        <get src="https://repository.ow2.org/nexus/content/repositories/releases/org/ow2/asm/asm/${asm.version}/${asm.jar.filename}" dest="${asm.jar}" skipexisting="true"/>
+        <get src="https://repository.ow2.org/nexus/content/repositories/releases/org/ow2/asm/asm-tree/${asm.version}/${asm.tree.jar.filename}" dest="${asm.tree.jar}" skipexisting="true"/>
+        <get src="https://repository.ow2.org/nexus/content/repositories/releases/org/ow2/asm/asm-util/${asm.version}/${asm.util.jar.filename}" dest="${asm.util.jar}" skipexisting="true"/>
+    </target>
+
+   <target name="download-javatest" if="javatest.present" description="build jtobserver jar">
+        <mkdir dir="${deps.dir}"/>
+        <basename property="javatestjar.filename" file="${javatestjar}"/>
+       <get src="https://ci.adoptium.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtharness/${javatestjar.filename}" dest="${javatestjar}" skipexisting="true"/>
+   </target>
+
+    <target name="download-test-dependencies">
+        <mkdir dir="${deps.dir}"/>
+        <basename property="testngjar.filename" file="${testngjar}"/>
+        <basename property="jcommanderjar.filename" file="${jcommanderjar}"/>
+       <get src="https://repo1.maven.org/maven2/org/testng/testng/${testngver}/${testngjar.filename}" dest="${testngjar}" skipexisting="true"/>
+       <get src="https://repo1.maven.org/maven2/com/beust/jcommander/${jcommanderver}/${jcommanderjar.filename}" dest="${jcommanderjar}" skipexisting="true"/>
+   </target>
 
 </project>

@@ -26,13 +26,21 @@ package openjdk.codetools.jcov.report.jcov;
 
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.instrument.DataRoot;
+<<<<<<< HEAD
 import openjdk.codetools.jcov.report.filter.GitDifFilterTest;
 import openjdk.codetools.jcov.report.source.SourceHierarchy;
+=======
+import openjdk.codetools.jcov.report.CoveredLineRange;
+import openjdk.codetools.jcov.report.filter.GitDifFilterTest;
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+<<<<<<< HEAD
 import java.nio.file.Path;
+=======
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
 import java.util.List;
 
 import static org.testng.Assert.*;
@@ -44,6 +52,7 @@ public class SameLineMethods {
     static void init() throws FileFormatException, IOException {
         var xmlName = SameLineMethods.class.getName().replace('.', '/');
         xmlName = "/" + xmlName.substring(0, xmlName.lastIndexOf('/')) + "/Fake.xml";
+<<<<<<< HEAD
         coverage = new JCovLineCoverage(DataRoot.read(GitDifFilterTest.cp(xmlName).toString()), new SourceHierarchy() {
             @Override
             public List<String> readFile(String file) throws IOException {
@@ -57,6 +66,9 @@ public class SameLineMethods {
             @Override
             public String toFile(String classFileName) { return classFileName; }
         });
+=======
+        coverage = new JCovLineCoverage(DataRoot.read(GitDifFilterTest.cp(xmlName).toString()));
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
     }
 
     @Test

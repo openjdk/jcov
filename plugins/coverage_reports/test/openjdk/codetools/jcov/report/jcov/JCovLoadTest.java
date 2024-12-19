@@ -24,17 +24,31 @@
  */
 package openjdk.codetools.jcov.report.jcov;
 
+<<<<<<< HEAD
 import openjdk.codetools.jcov.report.CoveredLineRange;
 import openjdk.codetools.jcov.report.filter.GitDifFilterTest;
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.instrument.DataRoot;
 import openjdk.codetools.jcov.report.source.SourceHierarchy;
+=======
+import openjdk.codetools.jcov.report.Coverage;
+import openjdk.codetools.jcov.report.CoveredLineRange;
+import openjdk.codetools.jcov.report.LineRange;
+import openjdk.codetools.jcov.report.filter.GitDifFilterTest;
+import com.sun.tdk.jcov.data.FileFormatException;
+import com.sun.tdk.jcov.instrument.DataRoot;
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+<<<<<<< HEAD
 import java.nio.file.Path;
 import java.util.List;
+=======
+import java.util.List;
+import java.util.Map;
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
 
 import static org.testng.Assert.*;
 
@@ -45,6 +59,7 @@ public class JCovLoadTest {
     static void init() throws FileFormatException, IOException {
         var xmlName = JCovLoadTest.class.getName().replace('.', '/');
         xmlName = "/" + xmlName.substring(0, xmlName.lastIndexOf('/')) + "/ObjectInputStream.xml";
+<<<<<<< HEAD
         coverage = new JCovLineCoverage(DataRoot.read(GitDifFilterTest.cp(xmlName).toString()), new SourceHierarchy() {
             @Override
             public List<String> readFile(String file) throws IOException {
@@ -58,6 +73,9 @@ public class JCovLoadTest {
             @Override
             public String toFile(String classFileName) {return classFileName;}
         });
+=======
+        coverage = new JCovLineCoverage(DataRoot.read(GitDifFilterTest.cp(xmlName).toString()));
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
     }
 
     private static Boolean covered(List<CoveredLineRange> ranges, int line) {

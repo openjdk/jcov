@@ -1,6 +1,5 @@
-<<<<<<< HEAD
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-=======
->>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
-package openjdk.codetools.jcov.report.filter;
+package com.sun.tdk.jcov.report;
 
-import java.util.Set;
-
-/**
- * A source filter which is also aware of what files need to be included.
- */
-public interface SourceFileFilter extends SourceFilter {
-    Set<String> files();
+public class BasicUserCode {
+    public static void main(String[] args) {
+        if (args.length % 2 == 0)
+            System.out.println("even");
+        else
+            System.out.println("odd");
+    }
 }

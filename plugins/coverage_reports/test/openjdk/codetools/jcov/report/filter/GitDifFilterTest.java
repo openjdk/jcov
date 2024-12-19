@@ -98,6 +98,7 @@ public class GitDifFilterTest {
                 pkg + "ObjectInputStream.java.txt", "ObjectInputStream.java"));
         var files = new FileSet(Set.of("src/JavaObjectInputStreamAccess.java", "src/ObjectInputStream.java"));
         Path report = Files.createTempFile("report", ".txt");
+<<<<<<< HEAD
         new TextReport.Builder().setSource(new SourcePath(src, src.resolve("src"))).setFiles(files).setCoverage(file -> {
             var res = new ArrayList<CoveredLineRange>();
             var line = 0;
@@ -114,6 +115,27 @@ public class GitDifFilterTest {
                 .report(report);
         List<String> reportLines = Files.readAllLines(report);
         assertTrue(reportLines.contains("src/ObjectInputStream.java 50.00%(1/2)"));
+=======
+        new TextReport(new SourcePath(src, src.resolve("src")),
+                files,
+                file -> {
+                    var res = new ArrayList<CoveredLineRange>();
+                    var line = 0;
+                    var chunkSize = 1;
+                    while (line < 10000) {
+                        res.add(new CoveredLineRange(line, line + chunkSize - 1, Coverage.UNCOVERED));
+                        line += chunkSize;
+                        res.add(new CoveredLineRange(line, line + chunkSize - 1, Coverage.COVERED));
+                        line += chunkSize;
+                        line += chunkSize;
+                    }
+                    return res;
+                },
+                "ObjectInputStream coverage",
+                filter).report(report);
+        List<String> reportLines = Files.readAllLines(report);
+        assertTrue(reportLines.contains("src/ObjectInputStream.java 1/2"));
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
         assertTrue(reportLines.contains("2142:-            throw new StreamCorruptedException(\"Array length is negative\");"));
     }
 }

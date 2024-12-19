@@ -34,17 +34,23 @@
   <property name="test.jar" location="${build}/tests.jar"/>
   <property name="jar" location="${build}/SimpleMethods.jar"/>
   <property name="test.results" location="${build}/test_results"/>
-  <property name="jcov.jar" location="../../JCOV_BUILD/jcov_3.0/jcov.jar"/>
+  <property name="jcov.jar.dir" location="../../JCOV_BUILD/jcov_3.0"/>
+  <property name="jcov.classpath" location="${jcov.jar.dir}/jcov.jar"/>
+  <property name="asm.classpath" location=""/>
 
   <target name="compile">
-    <available file="${jcov.jar}" property="jcov-jar-exists"/>
+    <available file="${jcov.classpath}" property="jcov-jar-exists"/>
     <fail unless="jcov-jar-exists" message="There is no ${jcov.jar}"/>
     <mkdir dir="${classes}"/>
-    <javac srcdir="${src}" classpath="${jcov.jar}" destdir="${classes}"/>
+    <javac srcdir="${src}" classpath="${jcov.classpath}:${asm.classpath}" destdir="${classes}"/>
   </target>
 
   <target name="jar" depends="compile">
-    <jar jarfile="${jar}" basedir="${classes}"/>
+     <jar jarfile="${jar}" basedir="${classes}"/>
+  </target>
+
+  <target name="dist" depends="jar">
+    <copy file="${jar}" todir="${jcov.jar.dir}"/>
   </target>
 
   <target name="clean">
@@ -54,7 +60,7 @@
   <target name="compile-test">
     <fail unless="testng.classpath" message="Please specify testng.classpath"/>
     <mkdir dir="${test.classes}"/>
-    <javac srcdir="${test}" classpath="${classes}:${jcov.jar}:${testng.classpath}" destdir="${test.classes}"/>
+    <javac srcdir="${test}" classpath="${classes}:${jcov.classpath}:${asm.classpath}:${testng.classpath}" destdir="${test.classes}"/>
   </target>
 
   <target name="test" depends="compile,compile-test">
@@ -65,7 +71,7 @@
       <propertyref name="test.classes"/>
       <propertyref name="test.jar"/>
     </propertyset>
-    <testng classpath="${classes}:${jcov.jar}:${test.classes}:${testng.classpath}" outputDir="${test.results}">
+    <testng classpath="${classes}:${jcov.classpath}:${asm.classpath}:${test.classes}:${testng.classpath}" outputDir="${test.results}">
       <classfileset dir="${test.classes}" includes="**/*.class"/>
       <propertyset refid="test.bytecode"/>
     </testng>

@@ -26,7 +26,10 @@ package openjdk.codetools.jcov.report.view;
 
 import openjdk.codetools.jcov.report.Coverage;
 import openjdk.codetools.jcov.report.FileCoverage;
+<<<<<<< HEAD
 import openjdk.codetools.jcov.report.FileItems;
+=======
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
 import openjdk.codetools.jcov.report.FileSet;
 import openjdk.codetools.jcov.report.LineRange;
 import openjdk.codetools.jcov.report.filter.SourceFilter;
@@ -35,11 +38,15 @@ import openjdk.codetools.jcov.report.source.SourceHierarchy;
 import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+<<<<<<< HEAD
 import java.util.List;
+=======
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
 
 /**
  * Implements a hierarchical report in a single text file.
  */
+<<<<<<< HEAD
 public class TextReport {
     private static final String SEPARATOR_LINE = "-".repeat(80);
     private final String header;
@@ -55,20 +62,36 @@ public class TextReport {
                 .setCoverage(new CoverageHierarchy(files.files(), source, coverage, filter))
                 .setInclude(filter)
                 .report();
+=======
+public class TextReport extends HightlightFilteredReport {
+    private static final String SEPARATOR_LINE = "-".repeat(80);
+    private String header;
+
+    public TextReport(SourceHierarchy source, FileSet files, FileCoverage coverage, String header, SourceFilter filter) {
+        super(source, files, new CoverageHierarchy(files.files(), source, coverage, filter), filter, filter);
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
         this.header = header;
     }
 
     public void report(Path dest) throws Exception {
         try (BufferedWriter out = Files.newBufferedWriter(dest)) {
             out.write(header); out.newLine(); out.newLine();
+<<<<<<< HEAD
             theReport.report(new FilteredReport.FileOut() {
                 @Override
                 public void startFile(String file) throws Exception {
                     out.write(file + " " + theReport.coverage().get(file));
+=======
+            super.toc(new TOCOut() {
+                @Override
+                public void printFileLine(String file) throws Exception {
+                    out.write(file + " " + coverage().get(file));
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
                     out.newLine();
                 }
 
                 @Override
+<<<<<<< HEAD
                 public void startItems() throws Exception {
 
                 }
@@ -118,6 +141,17 @@ public class TextReport {
                 @Override
                 public void startFile(String file) throws Exception {
                     out.write("file:" + file + " " + theReport.coverage().get(file));
+=======
+                public void printFolderLine(String folder, Coverage cov) throws Exception {
+                    out.write((folder.isEmpty() ? "total" : folder) + " " + cov);
+                    out.newLine();
+                }
+            }, "");
+            code(new FileOut() {
+                @Override
+                public void startFile(String file) throws Exception {
+                    out.write("file:" + file + " " + coverage().get(file));
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
                     out.newLine();
                     out.write(SEPARATOR_LINE);
                     out.newLine();
@@ -128,8 +162,12 @@ public class TextReport {
                 }
 
                 @Override
+<<<<<<< HEAD
                 public void printSourceLine(int line, String s, Coverage coverage,
                                             List<FileItems.FileItem> items) throws Exception {
+=======
+                public void printSourceLine(int line, String s, boolean highlight, Coverage coverage) throws Exception {
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
                     out.write((line + 1) + ":" + (coverage == null ? " " : coverage.covered() > 0 ? "+" : "-") + s);
                     out.newLine();
                 }
@@ -146,6 +184,7 @@ public class TextReport {
                 }
 
                 @Override
+<<<<<<< HEAD
                 public void endFolder(String s) {
 
                 }
@@ -207,6 +246,12 @@ public class TextReport {
 
         public TextReport report() {
             return new TextReport(source, files, coverage, header, filter);
+=======
+                public void startDir(String s, Coverage cov) throws Exception {
+
+                }
+            }, "");
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.zip.ZipInputStream;
 
 /**
  * @author Dmitry Fazunenko
@@ -68,35 +69,38 @@ public class Reader {
         return readXML(is, true, null);
     }
 
+    private static final String ZIP_EXTENSION = ".xml.zip";
+    private static final String XML_EXTENSION = ".xml";
+
+    private static InputStream openZipOrXML(File zipOrXML) throws IOException {
+        if (zipOrXML.toString().endsWith(ZIP_EXTENSION)) {
+            //the assumption is that
+            //1. the zip will be having a special extension: ".xml.zip"
+            //2. the zip has one entry and that entry is the xml file
+            if (!zipOrXML.getName().endsWith(ZIP_EXTENSION))
+                throw new IllegalArgumentException("Unknown file format. Can be \".xml.zip\" or XML " + zipOrXML);
+            ZipInputStream res = new ZipInputStream(new FileInputStream(zipOrXML));
+            if (!res.getNextEntry().getName().endsWith(XML_EXTENSION))
+                throw new IllegalArgumentException("No XML file in " + zipOrXML);
+            return res;
+        } else return new FileInputStream(zipOrXML);
+    }
+
     public static DataRoot readXML(String fileName, boolean read_scales,
             MemberFilter filter) throws FileFormatException {
-        FileInputStream in = null;
-        try {
-            File f = new File(fileName);
-            if (!f.exists()) {
-                throw new FileFormatException("File " + fileName + " doesn''t exist");
-            }
-
-            in = new FileInputStream(f);
+        File f = new File(fileName);
+        if (!f.exists()) {
+            throw new FileFormatException("File " + fileName + " doesn''t exist");
+        }
+        try  (InputStream in = openZipOrXML(f)) {
             DataRoot dataRoot = readXML(in, read_scales, filter);
             dataRoot.setStorageFileName(fileName);
-            in.close();
-            in = null;
-
             return dataRoot;
         } catch (Exception e) {
             if (!(e instanceof FileFormatException)) {
                 throw new FileFormatException(e.getMessage(), e);
             } else {
                 throw (FileFormatException) e;
-            }
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException ex) {/*do nothing*/
-
-                }
             }
         }
     }

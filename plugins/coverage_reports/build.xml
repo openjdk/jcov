@@ -42,11 +42,14 @@
     <fail unless="jcov-jar-exists" message="There is no ${jcov.jar}"/>
     <mkdir dir="${classes}"/>
     <javac srcdir="${src}" classpath="${jcov.classpath}" destdir="${classes}"/>
+<<<<<<< HEAD
     <copy todir="${classes}">
       <fileset dir="${src}">
         <exclude name="**/*.java"/>
       </fileset>
     </copy>
+=======
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
   </target>
 
   <target name="jar" depends="compile">

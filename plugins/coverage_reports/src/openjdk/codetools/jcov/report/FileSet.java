@@ -56,10 +56,16 @@ public class FileSet {
 
     public Set<String> files(String parent) {
         return files.stream().filter(f ->
+<<<<<<< HEAD
                 parent.isEmpty  () && f.indexOf('/') < 0 ||
                         f.startsWith(parent + "/") &&
                                 f.substring(parent.length() + 1).indexOf('/') < 0)
                 .collect(toSet());
+=======
+                parent.isEmpty() && f.indexOf('/') < 0 ||
+                f.startsWith(parent + "/") &&
+                f.substring(parent.length() + 1).indexOf('/') < 0).collect(toSet());
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
     }
 
     public Set<String> folders(String parent) {

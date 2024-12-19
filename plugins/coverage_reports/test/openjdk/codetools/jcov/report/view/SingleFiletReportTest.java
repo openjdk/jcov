@@ -41,67 +41,60 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-public class TextReportTest {
+public class SingleFiletReportTest {
+    public static final String FILE_11 = "dir1/file1.java";
+    public static final String FILE_12 = "dir1/file2.java";
+    public static final String FILE_21 = "dir2/file1.java";
+    public static final String FILE_22 = "dir2/file2.java";
     static SourceHierarchy source;
     static FileCoverage coverage;
     static Path reportFile;
+    public static Path createFiles() throws IOException {
+        Path root = Files.createTempDirectory("source");
+        Files.createDirectories(root);
+        for (var dir : List.of("dir1", "dir2")) Files.createDirectories(root.resolve(dir));
+        for (var file : List.of(FILE_11, FILE_12, FILE_21, FILE_22))
+            Files.write(root.resolve(file), List.of("1", "2", "3", "4", "5", "6", "7", "8", "9", "0"));
+        return root;
+    }
     @BeforeClass
     static void init() throws IOException {
-<<<<<<< HEAD
-        Path root = SingleFileReportTest.createFiles();
-        source = new SourcePath(root, root);
-        coverage = file -> file.equals(SingleFileReportTest.FILE_11) ? List.of(
-                new CoveredLineRange(1, 1, Coverage.COVERED),
-                new CoveredLineRange(3, 4, Coverage.UNCOVERED),
-                new CoveredLineRange(6, 8, Coverage.COVERED)
-        ) : List.of();
-=======
-        Path root = SingleFiletReportTest.createFiles();
+        Path root = createFiles();
         source = new SourcePath(root, root);
         coverage = new FileCoverage() {
             @Override
             public List<CoveredLineRange> ranges(String file) {
-                return file.equals(SingleFiletReportTest.FILE_11) ? List.of(
+                return file.equals(FILE_11) ? List.of(
                         new CoveredLineRange(1, 1, Coverage.COVERED),
                         new CoveredLineRange(3, 4, Coverage.UNCOVERED),
                         new CoveredLineRange(6, 8, Coverage.COVERED)
                 ) : List.of();
             }
         };
->>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
-        reportFile = Files.createTempFile("report", "txt");
+        reportFile = Files.createTempFile("report", ".html");
     }
     @Test
     void everyOdd() throws Exception {
+        var fileSet = new FileSet(Set.of(FILE_11, FILE_12, FILE_21, FILE_22));
         SourceFilter filter = file -> List.of(
+//                new LineRange(0, 0),
                 new LineRange(2, 2),
                 new LineRange(4, 4),
                 new LineRange(6, 6),
                 new LineRange(8, 8)
         );
-<<<<<<< HEAD
-        var files = new FileSet(Set.of(SingleFileReportTest.FILE_11, SingleFileReportTest.FILE_12,
-                SingleFileReportTest.FILE_21, SingleFileReportTest.FILE_22));
-        var report = new TextReport.Builder().setSource(source).setFiles(files).setCoverage(coverage)
-                .setHeader("HEADER").setFilter(filter).report();
+        var report = new SingleHTMLReport(source, fileSet,
+                coverage, "TITLE", "<h1>HEADER</h1>", filter, filter);
         report.report(reportFile);
-        var content = Files.readAllLines(reportFile);
-        assertTrue(content.contains("HEADER"));
-        assertTrue(content.stream().anyMatch("total 50.00%(1/2)"::equals));
-        assertTrue(content.stream().anyMatch("4:-source line #4"::equals));
-        assertTrue(content.stream().anyMatch("6:+source line #6"::equals));
-=======
-        var files = new FileSet(Set.of(SingleFiletReportTest.FILE_11, SingleFiletReportTest.FILE_12,
-                SingleFiletReportTest.FILE_21, SingleFiletReportTest.FILE_22));
-        var report = new TextReport(source, files, coverage, "HEADER", filter);
-        report.report(reportFile);
-        var content = Files.readAllLines(reportFile);
-        assertTrue(content.contains("HEADER"));
-        assertTrue(content.stream().anyMatch("total 1/2"::equals));
-        assertTrue(content.stream().anyMatch("4:-4"::equals));
-        assertTrue(content.stream().anyMatch("6:+6"::equals));
->>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
+        System.out.println("Report: " + reportFile.toString());
+        List<String> content = Files.readAllLines(reportFile);
+        assertTrue(content.contains("<title>TITLE</title>"));
+        assertTrue(content.contains("<h1>HEADER</h1>"));
+        assertTrue(content.stream().anyMatch("<tr><td><a href=\"#total\">total</a></td><td>1/2</td></tr>"::equals));
+        assertTrue(content.stream().anyMatch("<a class=\"uncovered\">4: 4</a>"::equals));
+        assertTrue(content.stream().anyMatch("<a class=\"covered\">6: 6</a>"::equals));
     }
 }

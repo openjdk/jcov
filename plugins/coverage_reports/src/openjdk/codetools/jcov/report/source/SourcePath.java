@@ -35,24 +35,38 @@ import java.util.Map;
  */
 public class SourcePath implements SourceHierarchy {
     private final Map<Path, List<Path>> roots;
+<<<<<<< HEAD
     private final List<Path> repositories;
+=======
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
 
     /**
      * Single source repository, Single class hierarchy.
      */
+<<<<<<< HEAD
     public SourcePath(Path repositorY, Path root) {
         this(repositorY, List.of(root));
+=======
+    public SourcePath(Path srcRoot, Path classRoot) {
+        this(srcRoot, List.of(classRoot));
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
     }
 
     /**
      * Single source repository, multiple class hierarchies.
      */
+<<<<<<< HEAD
     public SourcePath(Path repository, List<Path> roots) {
         this(List.of(repository), Map.of(repository, roots));
+=======
+    public SourcePath(Path srcRoot, List<Path> classRoots) {
+        this(Map.of(srcRoot, classRoots));
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
     }
 
     /**
      * There could be multiple repositories which multiple class hierarchies within each.
+<<<<<<< HEAD
      * @param repositories List of source
      */
     public SourcePath(List<Path> repositories, Map<Path, List<Path>> roots) {
@@ -73,6 +87,11 @@ public class SourcePath implements SourceHierarchy {
                 if (Files.exists(file)) return source.relativize(file).toString();
             }
         return null;
+=======
+     */
+    public SourcePath(Map<Path, List<Path>> roots) {
+        this.roots = roots;
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
     }
 
     protected Path resolveFile(Path root, String file) {
@@ -82,8 +101,13 @@ public class SourcePath implements SourceHierarchy {
     @Override
     public List<String> readFile(String file) throws IOException {
         Path res;
+<<<<<<< HEAD
         for (var source : repositories) {
             res = source.resolve(file);
+=======
+        for (var root : roots.keySet()) {
+            res = resolveFile(root, file);
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
             if (Files.exists(res)) return Files.readAllLines(res);
         }
         return null;
@@ -91,9 +115,15 @@ public class SourcePath implements SourceHierarchy {
 
     public Path resolveClass(String file) {
         Path res;
+<<<<<<< HEAD
         for (var repository : repositories) {
             for (var root : roots.get(repository)) {
                 res = resolveFile(root, file);
+=======
+        for (var sourceRoot : roots.keySet()) {
+            for (var classRoot : roots.get(sourceRoot)) {
+                res = resolveFile(classRoot, file);
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
                 if (Files.exists(res)) return res;
             }
         }
@@ -101,6 +131,7 @@ public class SourcePath implements SourceHierarchy {
     }
 
     @Override
+<<<<<<< HEAD
     public String toClassFile(String file) {
         for (var sourceHierarchy : repositories) {
             var path = sourceHierarchy.resolve(file);
@@ -113,10 +144,20 @@ public class SourcePath implements SourceHierarchy {
                         }
                     }
                 } else return file;
+=======
+    public String toClass(String file) {
+        for (var sourceRoot : roots.keySet()) {
+            var path = sourceRoot.resolve(file);
+            if (Files.exists(path))  {
+                for (var classRoot : roots.get(sourceRoot))
+                    if (path.startsWith(classRoot))
+                        return classRoot.relativize(path).toString();
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
             }
         }
         return null;
     }
+<<<<<<< HEAD
 
     //    public static class SourceRepository {
 //        private final String name;
@@ -136,4 +177,6 @@ public class SourcePath implements SourceHierarchy {
 //            return name == null ? root.resolve(file) : name.resolve(root.resolve(file));
 //        }
 //    }
+=======
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
 }

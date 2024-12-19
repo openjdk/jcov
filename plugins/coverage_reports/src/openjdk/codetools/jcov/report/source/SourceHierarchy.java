@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -30,6 +31,17 @@ import java.util.List;
 
 public interface SourceHierarchy {
 
+=======
+package openjdk.codetools.jcov.report.source;
+
+import java.io.IOException;
+import java.util.List;
+
+/**
+ * An abstraction for source hierarchy.
+ */
+public interface SourceHierarchy {
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
     /**
      * Delivers the file source code.
      * @param file - file name within the source hierarchy.
@@ -41,6 +53,7 @@ public interface SourceHierarchy {
      * Example: <code>src/main/java/my/company/product/Main.hava</code> to <code>my/company/product/Main.hava</code>.
      * @param file - file name within the source hierarchy.
      */
+<<<<<<< HEAD
     String toClassFile(String file);
 
     /**
@@ -64,3 +77,7 @@ public interface SourceHierarchy {
 }
 
 
+=======
+    String toClass(String file);
+}
+>>>>>>> 05fd4cae6a4651a07ecf85903355142573484a5a
