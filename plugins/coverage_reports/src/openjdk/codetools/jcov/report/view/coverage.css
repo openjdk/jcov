@@ -22,13 +22,61 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package openjdk.codetools.jcov.report.filter;
-
-import java.util.Set;
-
-/**
- * A source filter which is also aware of what files need to be included.
- */
-public interface SourceFileFilter extends SourceFilter {
-    Set<String> files();
+.sortable {
+}
+.context {
+  font-weight: lighter;
+}
+.highlight {
+  font-weight: bold;
+}
+.covered {
+  font-weight: bold;
+  background-color: palegreen;
+}
+.so_so {
+  font-weight: bold;
+  background-color: yellow;
+}
+.left {
+  font-weight: bold;
+  background-color: lightgreen;
+}
+.right {
+  font-weight: bold;
+  background-color: lightblue;
+}
+.both {
+  font-weight: bold;
+  background-color: lightgrey;
+}
+.filename {
+  font-weight: bold;
+  font-size: larger;
+}
+.item_very_good {
+  background-color: lightgreen;
+}
+.item_good {
+  background-color: palegreen;
+}
+.item_so_so {
+  background-color: yellow;
+}
+.item_not_so_good {
+  background-color: lightsalmon;
+}
+.item_ignore {
+  background-color: lightgrey;
+}
+.item_none {
+}
+.item_left {
+  background-color: lightgreen;
+}
+.item_right {
+  background-color: lightblue;
+}
+.item_both {
+  background-color: lightgrey;
 }

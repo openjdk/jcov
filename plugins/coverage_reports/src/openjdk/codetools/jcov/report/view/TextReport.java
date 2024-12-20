@@ -26,6 +26,7 @@ package openjdk.codetools.jcov.report.view;
 
 import openjdk.codetools.jcov.report.Coverage;
 import openjdk.codetools.jcov.report.FileCoverage;
+import openjdk.codetools.jcov.report.FileItems;
 import openjdk.codetools.jcov.report.FileSet;
 import openjdk.codetools.jcov.report.LineRange;
 import openjdk.codetools.jcov.report.filter.SourceFilter;
@@ -34,39 +35,89 @@ import openjdk.codetools.jcov.report.source.SourceHierarchy;
 import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * Implements a hierarchical report in a single text file.
  */
-public class TextReport extends HightlightFilteredReport {
+public class TextReport {
     private static final String SEPARATOR_LINE = "-".repeat(80);
-    private String header;
+    private final String header;
+    private final FilteredReport theReport;
 
-    public TextReport(SourceHierarchy source, FileSet files, FileCoverage coverage, String header, SourceFilter filter) {
-        super(source, files, new CoverageHierarchy(files.files(), source, coverage, filter), filter, filter);
+    public TextReport(SourceHierarchy source, FileSet files,
+                      FileCoverage coverage,
+                      String header, SourceFilter filter) {
+        theReport = new FilteredReport.Builder()
+                .setSource(source)
+                .setFiles(files)
+                .setItems(null)
+                .setCoverage(new CoverageHierarchy(files.files(), source, coverage, filter))
+                .setInclude(filter)
+                .report();
         this.header = header;
     }
 
     public void report(Path dest) throws Exception {
         try (BufferedWriter out = Files.newBufferedWriter(dest)) {
             out.write(header); out.newLine(); out.newLine();
-            super.toc(new TOCOut() {
+            theReport.report(new FilteredReport.FileOut() {
                 @Override
-                public void printFileLine(String file) throws Exception {
-                    out.write(file + " " + coverage().get(file));
+                public void startFile(String file) throws Exception {
+                    out.write(file + " " + theReport.coverage().get(file));
                     out.newLine();
                 }
 
                 @Override
-                public void printFolderLine(String folder, Coverage cov) throws Exception {
-                    out.write((folder.isEmpty() ? "total" : folder) + " " + cov);
+                public void startItems() throws Exception {
+
+                }
+
+                @Override
+                public void printItem(FileItems.FileItem fi) throws Exception {
+
+                }
+
+                @Override
+                public void endItems() throws Exception {
+
+                }
+
+                @Override
+                public void startLineRange(LineRange range) throws Exception {
+
+                }
+
+                @Override
+                public void printSourceLine(int line, String s, Coverage coverage, List<FileItems.FileItem> items) throws Exception {
+
+                }
+
+                @Override
+                public void endLineRange(LineRange range) throws Exception {
+
+                }
+
+                @Override
+                public void endFile(String s) throws Exception {
+
+                }
+
+                @Override
+                public void endFolder(String s) {
+
+                }
+
+                @Override
+                public void startFolder(String folder) throws Exception {
+                    out.write((folder.isEmpty() ? "total" : folder) + " " + theReport.coverage().get(folder));
                     out.newLine();
                 }
-            }, "");
-            code(new FileOut() {
+            });
+            theReport.report(new FilteredReport.FileOut() {
                 @Override
                 public void startFile(String file) throws Exception {
-                    out.write("file:" + file + " " + coverage().get(file));
+                    out.write("file:" + file + " " + theReport.coverage().get(file));
                     out.newLine();
                     out.write(SEPARATOR_LINE);
                     out.newLine();
@@ -77,7 +128,8 @@ public class TextReport extends HightlightFilteredReport {
                 }
 
                 @Override
-                public void printSourceLine(int line, String s, boolean highlight, Coverage coverage) throws Exception {
+                public void printSourceLine(int line, String s, Coverage coverage,
+                                            List<FileItems.FileItem> items) throws Exception {
                     out.write((line + 1) + ":" + (coverage == null ? " " : coverage.covered() > 0 ? "+" : "-") + s);
                     out.newLine();
                 }
@@ -94,10 +146,67 @@ public class TextReport extends HightlightFilteredReport {
                 }
 
                 @Override
-                public void startDir(String s, Coverage cov) throws Exception {
+                public void endFolder(String s) {
 
                 }
-            }, "");
+
+                @Override
+                public void startFolder(String s) throws Exception {
+
+                }
+
+                @Override
+                public void startItems() {
+                    throw new RuntimeException("This shoudl not happen");
+                }
+
+                @Override
+                public void printItem(FileItems.FileItem fi) {
+                    throw new RuntimeException("This shoudl not happen");
+                }
+
+                @Override
+                public void endItems() {
+                    throw new RuntimeException("This shoudl not happen");
+                }
+            });
+        }
+    }
+
+    public static class Builder {
+        private SourceHierarchy source;
+        private FileSet files;
+        private FileCoverage coverage;
+        private String header;
+        private SourceFilter filter;
+
+        public Builder setSource(SourceHierarchy source) {
+            this.source = source;
+            return this;
+        }
+
+        public Builder setFiles(FileSet files) {
+            this.files = files;
+            return this;
+        }
+
+        public Builder setCoverage(FileCoverage coverage) {
+            this.coverage = coverage;
+            return this;
+        }
+
+        public Builder setHeader(String header) {
+            this.header = header;
+            return this;
+        }
+
+        public Builder setFilter(SourceFilter filter) {
+            this.filter = filter;
+            return this;
+        }
+
+        public TextReport report() {
+            return new TextReport(source, files, coverage, header, filter);
         }
     }
 }

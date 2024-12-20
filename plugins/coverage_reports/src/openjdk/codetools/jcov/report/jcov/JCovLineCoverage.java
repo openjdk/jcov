@@ -28,11 +28,11 @@ import com.sun.tdk.jcov.instrument.DataClass;
 import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.instrument.DataMethodWithBlocks;
 import com.sun.tdk.jcov.instrument.DataRoot;
-import com.sun.tdk.jcov.instrument.LocationRef;
 import com.sun.tdk.jcov.report.MethodCoverage;
 import openjdk.codetools.jcov.report.Coverage;
 import openjdk.codetools.jcov.report.CoveredLineRange;
 import openjdk.codetools.jcov.report.FileCoverage;
+import openjdk.codetools.jcov.report.source.SourceHierarchy;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,32 +49,33 @@ import static java.lang.Math.max;
  */
 public class JCovLineCoverage implements FileCoverage {
     private final DataRoot root;
-    private final Map<String, List<CoveredLineRange>> cache = new HashMap<>();
+    private final SourceHierarchy source;
 
-    public JCovLineCoverage(DataRoot root) {
+    public JCovLineCoverage(DataRoot root, SourceHierarchy source) {
         this.root = root;
+        this.source = source;
     }
 
     @Override
     public List<CoveredLineRange> ranges(String file) {
         var result = new ArrayList<CoveredLineRange>();
-        String className = file.substring(0, file.length() - ".java".length());
+        String className = source.toClassFile(file);//file.substring(0, file.length() - ".java".length());
         root.getClasses().stream()
                 .filter(dc -> dc.getFullname().equals(className) || dc.getFullname().startsWith(className + "$"))
                 .forEach(dc -> result.addAll(ranges(dc)));
         Collections.sort(result);
         return result;
     }
-    private List<CoveredLineRange> ranges(DataClass cls) {
+
+    private static List<CoveredLineRange> ranges(DataClass cls) {
         var result = new HashMap<Integer, Boolean>();
         for (DataMethod m : cls.getMethods()) if (m instanceof DataMethodWithBlocks) {
+            //TODO there is a copy-paste in other classes
             var lc = new MethodCoverage(m, true).getLineCoverage();
-//            boolean methodCovered = false;
             for (int i = (int)lc.firstLine(); i <= lc.lastLine(); i++) {
                 if (lc.isCode(i)) {
                     if (result.get(i) == null || !result.get(i).booleanValue())
                         result.put(i, lc.isLineCovered(i));
-//                    methodCovered |= lc.isLineCovered(i);
                 }
             }
             //mmm but also the method declaration
@@ -142,6 +143,7 @@ public class JCovLineCoverage implements FileCoverage {
                 .map(le -> new CoveredLineRange(le.getKey(), le.getKey(), le.getValue() ? Coverage.COVERED : Coverage.UNCOVERED))
                 .collect(Collectors.toList());
     }
+
 //    private static int getLine(List<DataMethod.LineEntry> lineTable, int bci) {
 //        int maxLine = 0;
 //        for (var le : lineTable) {

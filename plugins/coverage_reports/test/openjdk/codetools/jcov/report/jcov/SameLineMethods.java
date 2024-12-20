@@ -26,12 +26,13 @@ package openjdk.codetools.jcov.report.jcov;
 
 import com.sun.tdk.jcov.data.FileFormatException;
 import com.sun.tdk.jcov.instrument.DataRoot;
-import openjdk.codetools.jcov.report.CoveredLineRange;
 import openjdk.codetools.jcov.report.filter.GitDifFilterTest;
+import openjdk.codetools.jcov.report.source.SourceHierarchy;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.testng.Assert.*;
@@ -43,7 +44,19 @@ public class SameLineMethods {
     static void init() throws FileFormatException, IOException {
         var xmlName = SameLineMethods.class.getName().replace('.', '/');
         xmlName = "/" + xmlName.substring(0, xmlName.lastIndexOf('/')) + "/Fake.xml";
-        coverage = new JCovLineCoverage(DataRoot.read(GitDifFilterTest.cp(xmlName).toString()));
+        coverage = new JCovLineCoverage(DataRoot.read(GitDifFilterTest.cp(xmlName).toString()), new SourceHierarchy() {
+            @Override
+            public List<String> readFile(String file) throws IOException {
+                return null;
+            }
+
+            @Override
+            public String toClassFile(String file) {
+                return file.substring(0, file.indexOf(".java"));
+            }
+            @Override
+            public String toFile(String classFileName) { return classFileName; }
+        });
     }
 
     @Test
