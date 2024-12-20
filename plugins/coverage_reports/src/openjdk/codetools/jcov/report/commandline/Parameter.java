@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package openjdk.codetools.jcov.report.filter;
+package openjdk.codetools.jcov.report.commandline;
 
-import java.util.Set;
+public class Parameter {
+    private final String name;
+    private final String description;
 
-/**
- * A source filter which is also aware of what files need to be included.
- */
-public interface SourceFileFilter extends SourceFilter {
-    Set<String> files();
+    public Parameter(String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public String description() {
+        return description;
+    }
 }

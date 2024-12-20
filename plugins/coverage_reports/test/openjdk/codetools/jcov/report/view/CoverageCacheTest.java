@@ -64,8 +64,13 @@ public class CoverageCacheTest {
                     }
 
                     @Override
-                    public String toClass(String file) {
+                    public String toClassFile(String file) {
                         return file;
+                    }
+
+                    @Override
+                    public String toFile(String classFileName) {
+                        return classFileName;
                     }
                 },
                 coverage,
@@ -92,9 +97,11 @@ public class CoverageCacheTest {
                     }
 
                     @Override
-                    public String toClass(String file) {
+                    public String toClassFile(String file) {
                         return file;
                     }
+                    @Override
+                    public String toFile(String classFileName) { return classFileName; }
                 },
                 coverage,
                 file -> file.endsWith("file1") ?

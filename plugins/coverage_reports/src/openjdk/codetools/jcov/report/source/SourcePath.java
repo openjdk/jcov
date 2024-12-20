@@ -35,26 +35,44 @@ import java.util.Map;
  */
 public class SourcePath implements SourceHierarchy {
     private final Map<Path, List<Path>> roots;
+    private final List<Path> repositories;
 
     /**
      * Single source repository, Single class hierarchy.
      */
-    public SourcePath(Path srcRoot, Path classRoot) {
-        this(srcRoot, List.of(classRoot));
+    public SourcePath(Path repositorY, Path root) {
+        this(repositorY, List.of(root));
     }
 
     /**
      * Single source repository, multiple class hierarchies.
      */
-    public SourcePath(Path srcRoot, List<Path> classRoots) {
-        this(Map.of(srcRoot, classRoots));
+    public SourcePath(Path repository, List<Path> roots) {
+        this(List.of(repository), Map.of(repository, roots));
     }
 
     /**
      * There could be multiple repositories which multiple class hierarchies within each.
+     * @param repositories List of source
      */
-    public SourcePath(Map<Path, List<Path>> roots) {
+    public SourcePath(List<Path> repositories, Map<Path, List<Path>> roots) {
         this.roots = roots;
+        this.repositories = repositories;
+    }
+
+    /**
+     * Maps class-root-relative path to repository-root-relative.
+     * @param classFileName
+     * @return
+     */
+    @Override
+    public String toFile(String classFileName) {
+        for (var source : repositories)
+            for (var root : roots.get(source)) {
+                var file = root.resolve(classFileName);
+                if (Files.exists(file)) return source.relativize(file).toString();
+            }
+        return null;
     }
 
     protected Path resolveFile(Path root, String file) {
@@ -64,8 +82,8 @@ public class SourcePath implements SourceHierarchy {
     @Override
     public List<String> readFile(String file) throws IOException {
         Path res;
-        for (var root : roots.keySet()) {
-            res = resolveFile(root, file);
+        for (var source : repositories) {
+            res = source.resolve(file);
             if (Files.exists(res)) return Files.readAllLines(res);
         }
         return null;
@@ -73,9 +91,9 @@ public class SourcePath implements SourceHierarchy {
 
     public Path resolveClass(String file) {
         Path res;
-        for (var sourceRoot : roots.keySet()) {
-            for (var classRoot : roots.get(sourceRoot)) {
-                res = resolveFile(classRoot, file);
+        for (var repository : repositories) {
+            for (var root : roots.get(repository)) {
+                res = resolveFile(root, file);
                 if (Files.exists(res)) return res;
             }
         }
@@ -83,13 +101,18 @@ public class SourcePath implements SourceHierarchy {
     }
 
     @Override
-    public String toClass(String file) {
-        for (var sourceRoot : roots.keySet()) {
-            var path = sourceRoot.resolve(file);
-            if (Files.exists(path))  {
-                for (var classRoot : roots.get(sourceRoot))
-                    if (path.startsWith(classRoot))
-                        return classRoot.relativize(path).toString();
+    public String toClassFile(String file) {
+        for (var sourceHierarchy : repositories) {
+            var path = sourceHierarchy.resolve(file);
+            if (Files.exists(path)) {
+                if (file.endsWith(".java")) {
+                    for(var sourceRoot : roots.get(sourceHierarchy)) {
+                        if (path.startsWith(sourceRoot)) {
+                            var relPath = sourceRoot.relativize(path).toString();
+                            return relPath.substring(0, relPath.length() - ".java".length());
+                        }
+                    }
+                } else return file;
             }
         }
         return null;

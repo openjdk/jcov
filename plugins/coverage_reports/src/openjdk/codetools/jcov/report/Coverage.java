@@ -27,6 +27,8 @@ package openjdk.codetools.jcov.report;
 import java.util.Collection;
 import java.util.Objects;
 
+import static java.lang.String.format;
+
 /**
  * There is a fixed number of items of some sort. Some of those items can be covered.
  * @see CoveredLineRange
@@ -36,10 +38,20 @@ public class Coverage {
     public static final Coverage UNCOVERED = new Coverage(0, 1);
     private final int covered;
     private final int total;
+    private final FileItems.Quality quality;
 
     public Coverage(int covered, int total) {
+        this(covered, total, covered > 0 ? FileItems.Quality.GOOD : FileItems.Quality.BAD);
+    }
+
+    public Coverage(int covered, int total, FileItems.Quality quality) {
         this.covered = covered;
         this.total = total;
+        this.quality = quality;
+    }
+
+    public FileItems.Quality quality() {
+        return quality;
     }
 
     public int covered() {
@@ -74,6 +86,6 @@ public class Coverage {
 
     @Override
     public String toString() {
-        return covered + "/" + total;
+        return format("%2.2f%%(%d/%d)", Math.ceil((double) covered/(double)total * 100), covered,  total);
     }
 }

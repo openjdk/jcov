@@ -1,0 +1,70 @@
+<!--
+ Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="coverage.css" title="Style">
+</head>
+<body>
+<h1>Method coverage comparison report</h1>
+<p>This report compares method coverage between two code coverage collections. A <i>target</i>
+    coverage is compared to a <i>reference</i> coverage. Coverage of every method
+    from the <i>target</i> collection is then compared to coverage of the same method in the <i>reference</i> collection.</p>
+<p>A typical use for the report would be to investigate changes in method coverage
+    over time, in which case the <i>reference</i> collection would be performed in the past and
+    the <i>target</i> collection is recent.</p>
+<p>Every method in the report marked in one of four ways:</p>
+<ul>
+    <li><a class="item_good">Covered</a> - methods that are covered in the <i>target</i> coverage collection</li>
+    <li><a class="item_so_so">Uncovered</a> - methods that are not covered in either <i>target</i> or <i>reference</i> collections</li>
+    <li><a class="item_not_so_good">Lost</a> - methods that are covered in the <i>reference</i> collection but are not covered in the <i>target</i> collection</li>
+    <li><a class="item_ignore">New</a> - methods that are present in the <i>target</i> collection and missing in the <i>reference</i> collection</li>
+</ul>
+<p>In addition to the method coverage, the report provides line coverage from the <i>target</i> collection.</p>
+<h2>Folder view</h2>
+<p>A folder view lists total number of method for all four groups of methods for the files nested
+    hierarchically within this folders.</p>
+<p>Next the view shows direct <b>sub-folders</b> of this folder along with the totals for the groups of methods and
+    total line coverage. The table is sortable by any column. Clicking on a sub-folder name takes to a folder view
+    for that sub-folder. The table may be omitted altogether should tere be no direct sub-folders.</p>
+<p>Next the view shows direct <b>files</b> which are located directly in this folder along with the totals for the
+    groups of methods and total line coverage for the file. The table is sortable by any column. Clicking on a
+    file name takes to a file view for that file.</p>
+<h2>File view</h2>
+<p>A file view lists methods of the file, colored in accordance to the groups to which the methods belong.
+    Clicking on a method signature takes to the first line of the method, according to the line table
+    from the bytecode.</p>
+<p>Next there is the file source code. The source code is colored according to line coverage from the <i>target</i>
+    collection:</p>
+<ul>
+    <li><a class="covered">covered</a></li>
+    <li><a class="uncovered">uncovered</a></li>
+    <li>no information on the text</li>
+</ul>
+    <p>Every line of the source code, which, according to the line table, is nested within one or more method,
+        is prepended by one or more links, which lead to a corresponding method at the top of the file view.
+        Every such link is colored the same way as the method it links to. Hovering mouse over such link
+        displays method signature to which the link corresponds.</p>
+</body>
+</html>
