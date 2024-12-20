@@ -180,27 +180,27 @@ public class TextReport {
         private String header;
         private SourceFilter filter;
 
-        public Builder setSource(SourceHierarchy source) {
+        public Builder source(SourceHierarchy source) {
             this.source = source;
             return this;
         }
 
-        public Builder setFiles(FileSet files) {
+        public Builder files(FileSet files) {
             this.files = files;
             return this;
         }
 
-        public Builder setCoverage(FileCoverage coverage) {
+        public Builder coverage(FileCoverage coverage) {
             this.coverage = coverage;
             return this;
         }
 
-        public Builder setHeader(String header) {
+        public Builder header(String header) {
             this.header = header;
             return this;
         }
 
-        public Builder setFilter(SourceFilter filter) {
+        public Builder filter(SourceFilter filter) {
             this.filter = filter;
             return this;
         }

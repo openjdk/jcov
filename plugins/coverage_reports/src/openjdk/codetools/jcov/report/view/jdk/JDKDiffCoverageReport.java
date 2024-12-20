@@ -28,7 +28,6 @@ import com.sun.tdk.jcov.instrument.DataRoot;
 import openjdk.codetools.jcov.report.FileSet;
 import openjdk.codetools.jcov.report.commandline.CommandLine;
 import openjdk.codetools.jcov.report.commandline.Option;
-import openjdk.codetools.jcov.report.commandline.Parameter;
 import openjdk.codetools.jcov.report.filter.GitDiffFilter;
 import openjdk.codetools.jcov.report.jcov.JCovLineCoverage;
 import openjdk.codetools.jcov.report.source.ContextFilter;
@@ -83,9 +82,9 @@ public class JDKDiffCoverageReport {
             String header = command.getOrElse(HEADER, "");
             switch (command.get(FORMAT)) {
                 case "single":
-                    new SingleHTMLReport.Builder().setSource(source).setFiles(new FileSet(diff.files()))
-                            .setCoverage(coverage).setTitle(title).setHeader(header).setHighlight(diff)
-                            .setInclude(new ContextFilter(diff, 10)).report()
+                    new SingleHTMLReport.Builder().source(source).files(new FileSet(diff.files()))
+                            .coverage(coverage).title(title).header(header).highlight(diff)
+                            .include(new ContextFilter(diff, 10)).report()
                             .report(Path.of(reportFile));
                     break;
                 case "multi":
@@ -97,8 +96,8 @@ public class JDKDiffCoverageReport {
                             .report(Path.of(reportFile));
                     break;
                 case "text":
-                    new TextReport.Builder().setSource(source).setFiles(new FileSet(diff.files())).setCoverage(coverage)
-                            .setHeader(header).setFilter(diff).report()
+                    new TextReport.Builder().source(source).files(new FileSet(diff.files())).coverage(coverage)
+                            .header(header).filter(diff).report()
                             .report(Path.of(reportFile));
                     break;
             }

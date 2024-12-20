@@ -46,7 +46,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import static java.util.regex.Pattern.matches;
 import static org.testng.Assert.assertTrue;
@@ -76,10 +75,10 @@ public class JCovReportTest {
         var filter = GitDiffFilter.parseDiff(GitDifFilterTest.cp(diffPkg + "negative_array_size.diff")/*, Set.of("src")*/);
         Path textReport = Files.createTempFile("report", ".txt");
         new TextReport.Builder()
-                .setSource(new SourcePath(src, src.resolve("src")))
-                .setFiles(files)
-                .setCoverage(rawCoverage).setHeader("negative array size fix")
-                .setFilter(new ContextFilter(filter, 10)).report()
+                .source(new SourcePath(src, src.resolve("src")))
+                .files(files)
+                .coverage(rawCoverage).header("negative array size fix")
+                .filter(new ContextFilter(filter, 10)).report()
                 .report(textReport);
         List<String> reportLines = Files.readAllLines(textReport);
         assertTrue(reportLines.contains("1454:      * @throws StreamCorruptedException if arrayLength is negative"));
@@ -95,9 +94,9 @@ public class JCovReportTest {
         String diffPkg = "/" + JCovReportTest.class.getPackageName().replace('.', '/') + "/";
         var filter = GitDiffFilter.parseDiff(GitDifFilterTest.cp(diffPkg + "negative_array_size.diff")/*, Set.of("src")*/);
         Path htmlReport = Files.createTempFile("report", ".html");
-        new SingleHTMLReport.Builder().setSource(new SourcePath(src, src.resolve("src"))).setFiles(files)
-                .setCoverage(rawCoverage).setTitle("negative array size fix").setHeader("negative array size fix")
-                .setHighlight(filter).setInclude(new ContextFilter(filter, 10)).report().report(htmlReport);
+        new SingleHTMLReport.Builder().source(new SourcePath(src, src.resolve("src"))).files(files)
+                .coverage(rawCoverage).title("negative array size fix").header("negative array size fix")
+                .highlight(filter).include(new ContextFilter(filter, 10)).report().report(htmlReport);
         System.out.println("Report: " + htmlReport);
         var reportLines = Files.readAllLines(htmlReport);
         assertTrue(reportLines.contains("<a class=\"highlight\">1454:      * @throws StreamCorruptedException if arrayLength is negative</a>"));
@@ -136,7 +135,7 @@ public class JCovReportTest {
             }
         };
         Path textReport = Files.createTempFile("report", ".txt");
-        new TextReport.Builder().setSource(source).setFiles(files).setCoverage(rawCoverage).setHeader("negative array size fix").setFilter(filter).report().report(textReport);
+        new TextReport.Builder().source(source).files(files).coverage(rawCoverage).header("negative array size fix").filter(filter).report().report(textReport);
         List<String> reportLines = Files.readAllLines(textReport);
         assertTrue(reportLines.contains("3035:+            this.in = new PeekInputStream(in);"));
     }

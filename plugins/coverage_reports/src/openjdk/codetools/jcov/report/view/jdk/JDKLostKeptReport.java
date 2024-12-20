@@ -114,23 +114,18 @@ public class JDKLostKeptReport {
     public static void main(String[] args) throws Exception {
         try {
             long start = System.currentTimeMillis();
-            JDKComparisonReportBuilder builder = new JDKComparisonReportBuilder()
-                    .setOldSource(jdkSourceHierarchy(args[1]))
-                    .setNewSource(jdkSourceHierarchy(args[3]))
-                    .setDir(Path.of(args[4]));
-            //data reading seems to be fundamentally thread unsafe
-//            DataRoot[] coverage = new DataRoot[2];
-//            var oldSourceThread = startFileLoading(args[0], d -> coverage[0] = d);
-//            var newSourceThread = startFileLoading(args[2], d -> coverage[1] = d);
-//            oldSourceThread.join(); newSourceThread.join();
-            builder.setOldCov(DataRoot.read(args[0])).setNewCov(DataRoot.read(args[2]));
-            builder.setItems(new JCovMethodCoverageComparison(
+            Builder builder = new Builder()
+                    .oldSource(jdkSourceHierarchy(args[1]))
+                    .newSource(jdkSourceHierarchy(args[3]))
+                    .dir(Path.of(args[4]));
+            builder.oldCov(DataRoot.read(args[0])).newCov(DataRoot.read(args[2]));
+            builder.items(new JCovMethodCoverageComparison(
                     builder.oldCov, builder.newCov,
                     f -> builder.newSource.toFile(f)));
-            builder.setComparison(new JCovCoverageComparison(
+            builder.comparison(new JCovCoverageComparison(
                     builder.oldCov, builder.oldSource,
                     builder.newCov, builder.newSource));
-            builder.createJDKComparisonReport().report();
+            builder.report().report();
          } catch (Exception e) {
             System.err.println(USAGE);
             throw e;
@@ -157,86 +152,75 @@ public class JDKLostKeptReport {
         });
         return new SourceHierarchyUnion(roots, names);
     }
-//    private static Thread startFileLoading(String file, Consumer<DataRoot> consumer) {
-//        var result = new Thread(() -> {
-//            try {
-//                System.out.println("Reading " + file);
-//                consumer.accept(DataRoot.read(file));
-//            } catch (FileFormatException e) {
-//                throw new RuntimeException(e);
-//            }
-//        });
-//        result.start();
-//        return result;
-//    }
-public static class JDKComparisonReportBuilder {
-    private DataRoot oldCov;
-    private DataRoot newCov;
-    private SourceHierarchy oldSource;
-    private SourceHierarchy newSource;
-    private Path dir;
-    private JCovMethodCoverageComparison items;
-    JCovCoverageComparison comparison;
-    private BiFunction<Boolean, Boolean, FileItems.Quality> coloring;
 
-    public DataRoot getOldCov() {
-        return oldCov;
-    }
+    public static class Builder {
+        private DataRoot oldCov;
+        private DataRoot newCov;
+        private SourceHierarchy oldSource;
+        private SourceHierarchy newSource;
+        private Path dir;
+        private JCovMethodCoverageComparison items;
+        JCovCoverageComparison comparison;
+        private BiFunction<Boolean, Boolean, FileItems.Quality> coloring;
 
-    public DataRoot getNewCov() {
-        return newCov;
-    }
+        public DataRoot oldCov() {
+            return oldCov;
+        }
 
-    public SourceHierarchy getOldSource() {
-        return oldSource;
-    }
+        public DataRoot newCov() {
+            return newCov;
+        }
 
-    public SourceHierarchy getNewSource() {
-        return newSource;
-    }
+        public SourceHierarchy oldSource() {
+            return oldSource;
+        }
 
-    public JDKComparisonReportBuilder setOldCov(DataRoot cov) {
-        this.oldCov = cov;
-        return this;
-    }
+        public SourceHierarchy newSource() {
+            return newSource;
+        }
 
-    public JDKComparisonReportBuilder setColoring(BiFunction<Boolean, Boolean, FileItems.Quality> coloring) {
-        this.coloring = coloring;
-        return this;
-    }
+        public Builder oldCov(DataRoot cov) {
+            this.oldCov = cov;
+            return this;
+        }
 
-    public JDKComparisonReportBuilder setNewCov(DataRoot cov) {
-        this.newCov = cov;
-        return this;
-    }
+        public Builder coloring(BiFunction<Boolean, Boolean, FileItems.Quality> coloring) {
+            this.coloring = coloring;
+            return this;
+        }
 
-    public JDKComparisonReportBuilder setOldSource(SourceHierarchy source) {
-        this.oldSource = source;
-        return this;
-    }
+        public Builder newCov(DataRoot cov) {
+            this.newCov = cov;
+            return this;
+        }
 
-    public JDKComparisonReportBuilder setNewSource(SourceHierarchy source) {
-        this.newSource = source;
-        return this;
-    }
+        public Builder oldSource(SourceHierarchy source) {
+            this.oldSource = source;
+            return this;
+        }
 
-    public JDKComparisonReportBuilder setDir(Path dir) {
-        this.dir = dir;
-        return this;
-    }
+        public Builder newSource(SourceHierarchy source) {
+            this.newSource = source;
+            return this;
+        }
 
-    public JDKComparisonReportBuilder setItems(JCovMethodCoverageComparison items) {
-        this.items = items;
-        return this;
-    }
+        public Builder dir(Path dir) {
+            this.dir = dir;
+            return this;
+        }
 
-    public JDKComparisonReportBuilder setComparison(JCovCoverageComparison comparison) {
-        this.comparison = comparison;
-        return this;
-    }
+        public Builder items(JCovMethodCoverageComparison items) {
+            this.items = items;
+            return this;
+        }
 
-    public JDKLostKeptReport createJDKComparisonReport() {
-        return new JDKLostKeptReport(oldCov, newCov, oldSource, newSource, dir, coloring, items, comparison);
+        public Builder comparison(JCovCoverageComparison comparison) {
+            this.comparison = comparison;
+            return this;
+        }
+
+        public JDKLostKeptReport report() {
+            return new JDKLostKeptReport(oldCov, newCov, oldSource, newSource, dir, coloring, items, comparison);
+        }
     }
-}
 }

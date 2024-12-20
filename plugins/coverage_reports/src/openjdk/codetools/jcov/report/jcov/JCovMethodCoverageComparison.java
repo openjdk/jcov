@@ -69,7 +69,6 @@ public class JCovMethodCoverageComparison implements FileItems {
         var oldCache = oldCoverage.getClasses().stream().flatMap(c -> c.getMethods().stream())
                 .collect(toMap(m -> methodID(m), m -> m));
         for (var newClass : newCoverage.getClasses()) {
-//            if(!newClass.getFullname().equals("jdk/internal/reflect/Label")) continue;
             for (var newMethod : newClass.getMethods()) {
                 String className = newClass.getFullname();
                 String methodName = newMethod.getName() + newMethod.getVmSignature();
@@ -134,7 +133,6 @@ public class JCovMethodCoverageComparison implements FileItems {
             var lt = method.getLineTable();
             var mc = new MethodCoverage(method, true);
             ranges = methodRanges(method);
-//            range = lt != null ? new LineRange(lt.get(0).line, lt.get(lt.size() - 1).line) : null;
         }
 
         @Override

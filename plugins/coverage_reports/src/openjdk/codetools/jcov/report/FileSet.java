@@ -57,8 +57,8 @@ public class FileSet {
     public Set<String> files(String parent) {
         return files.stream().filter(f ->
                 parent.isEmpty  () && f.indexOf('/') < 0 ||
-                        f.startsWith(parent + "/") &&
-                                f.substring(parent.length() + 1).indexOf('/') < 0)
+                f.startsWith(parent + "/") &&
+                f.substring(parent.length() + 1).indexOf('/') < 0)
                 .collect(toSet());
     }
 

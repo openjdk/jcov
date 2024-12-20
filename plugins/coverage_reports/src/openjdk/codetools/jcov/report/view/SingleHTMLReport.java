@@ -242,7 +242,6 @@ public class SingleHTMLReport {
 
         @Override
         public void printItem(FileItems.FileItem fi) throws IOException, Exception {
-//            out.write(format("<tr><td>%s</td></tr>", fi.item())); out.newLine();
             out.write(format("<tr><td><pre><a id=\"item_%s\" class=\"%s\">%s</a></pre></td>",
                     fi.item(), MultiHTMLReport.HTML_COLOR_CLASSES.get(fi.quality()), fi.item()));
             out.write("</tr>");
@@ -265,42 +264,42 @@ public class SingleHTMLReport {
         private SourceFilter include;
         private FileItems items;
 
-        public Builder setSource(SourceHierarchy source) {
+        public Builder source(SourceHierarchy source) {
             this.source = source;
             return this;
         }
 
-        public Builder setFiles(FileSet files) {
+        public Builder files(FileSet files) {
             this.files = files;
             return this;
         }
 
-        public Builder setCoverage(FileCoverage coverage) {
+        public Builder coverage(FileCoverage coverage) {
             this.coverage = coverage;
             return this;
         }
 
-        public Builder setTitle(String title) {
+        public Builder title(String title) {
             this.title = title;
             return this;
         }
 
-        public Builder setHeader(String header) {
+        public Builder header(String header) {
             this.header = header;
             return this;
         }
 
-        public Builder setHighlight(SourceFilter highlight) {
+        public Builder highlight(SourceFilter highlight) {
             this.highlight = highlight;
             return this;
         }
 
-        public Builder setInclude(SourceFilter include) {
+        public Builder include(SourceFilter include) {
             this.include = include;
             return this;
         }
 
-        public Builder setItems(FileItems items) {
+        public Builder items(FileItems items) {
             this.items = items;
             return this;
         }

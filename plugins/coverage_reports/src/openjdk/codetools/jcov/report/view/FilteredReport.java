@@ -104,7 +104,6 @@ public class FilteredReport {
                             }
                         }
                     }
-//                    var source = this.source.readFile(file);
                     var source = this.source.readFile(file);
                     List<LineRange> ranges = include != null ?
                             include.ranges(file) : List.of(new LineRange(1, source.size() + 1));

@@ -68,9 +68,7 @@ public class JCovCoverageComparison implements FileCoverage {
         Map<String, DataMethod> oldMethodsCache = oldCoverage.getClasses().stream().flatMap(c -> c.getMethods().stream())
                 .collect(toMap(m -> methodID(m), m -> m));
         for (var newClass : newCoverage.getClasses()) {
-//            if(!newClass.getFullname().equals("jdk/internal/reflect/Label")) continue;
             boolean isOld = oldClasses.contains(newClass.getFullname());
-//            var newFile = newSource.findFile(newClass.getFullname() + ".java");
             var newClassName = newClass.getFullname();
             newClassName = newClassName.contains("$") ? newClassName.substring(0, newClassName.indexOf("$")) : newClassName;
             var newFile =newSource.toFile( newClassName + ".java");
@@ -81,13 +79,12 @@ public class JCovCoverageComparison implements FileCoverage {
                     oldFileSource = oldSource != null ? oldSource.readFile(newFile) : newFileSource;
                     if (oldFileSource == null) {
                         System.err.println("Warning: no reference source for " + newClass.getFullname());
-//                        continue;
                     }
                 } else oldFileSource = null;
                 for (var newMethod : newClass.getMethods()) {
                     //no code for synthetic methods - no way to compare the code
                     //TODO are there non-synthetic generated methods with no code? enum methods?
-//                    if (!newMethod.getModifiers().isSynthetic()) {
+                    if (!newMethod.getModifiers().isSynthetic()) {
                         String className = newClass.getFullname();
                         String methodName = newMethod.getName() + newMethod.getVmSignature();
                         if (className.contains("$")) {
@@ -133,7 +130,7 @@ public class JCovCoverageComparison implements FileCoverage {
                                             new Coverage(newLineCoverage.getCovered() > 0 ? 1 : 0, 1, rangeCoverage)));
                                 }
                         }
-//                    }
+                    }
                 }
             }
 

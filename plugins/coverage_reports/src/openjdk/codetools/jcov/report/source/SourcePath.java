@@ -117,23 +117,4 @@ public class SourcePath implements SourceHierarchy {
         }
         return null;
     }
-
-    //    public static class SourceRepository {
-//        private final String name;
-//        private final Path root;
-//
-//        public SourceRepository(String name, Path root) {
-//            this.name = name;
-//            this.root = root;
-//        }
-//
-//        public Path relativize(Path file) {
-//            var realPath = name == null ? file : name.relativize(file);
-//            var res = root.relativize(realPath);
-//            return name == null ? res : name.resolve(file);
-//        }
-//        public Path resolve(String file) {
-//            return name == null ? root.resolve(file) : name.resolve(root.resolve(file));
-//        }
-//    }
 }

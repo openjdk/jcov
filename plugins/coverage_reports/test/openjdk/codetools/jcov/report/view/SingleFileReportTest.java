@@ -113,10 +113,10 @@ public class SingleFileReportTest {
                 new LineRange(6, 6),
                 new LineRange(8, 8)
         );
-        var report = new SingleHTMLReport.Builder().setSource(source).setFiles(fileSet)
-                .setCoverage(coverage).setItems(items)
-                .setTitle("TITLE").setHeader("<h1>HEADER</h1>").setHighlight(filter)
-                .setInclude(filter).report();
+        var report = new SingleHTMLReport.Builder().source(source).files(fileSet)
+                .coverage(coverage).items(items)
+                .title("TITLE").header("<h1>HEADER</h1>").highlight(filter)
+                .include(filter).report();
         report.report(reportFile);
         System.out.println("Report: " + reportFile.toString());
         List<String> content = Files.readAllLines(reportFile);

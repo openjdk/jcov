@@ -98,7 +98,7 @@ public class GitDifFilterTest {
                 pkg + "ObjectInputStream.java.txt", "ObjectInputStream.java"));
         var files = new FileSet(Set.of("src/JavaObjectInputStreamAccess.java", "src/ObjectInputStream.java"));
         Path report = Files.createTempFile("report", ".txt");
-        new TextReport.Builder().setSource(new SourcePath(src, src.resolve("src"))).setFiles(files).setCoverage(file -> {
+        new TextReport.Builder().source(new SourcePath(src, src.resolve("src"))).files(files).coverage(file -> {
             var res = new ArrayList<CoveredLineRange>();
             var line = 0;
             var chunkSize = 1;
@@ -110,7 +110,7 @@ public class GitDifFilterTest {
                 line += chunkSize;
             }
             return res;
-        }).setHeader("ObjectInputStream coverage").setFilter(filter).report()
+        }).header("ObjectInputStream coverage").filter(filter).report()
                 .report(report);
         List<String> reportLines = Files.readAllLines(report);
         assertTrue(reportLines.contains("src/ObjectInputStream.java 50.00%(1/2)"));

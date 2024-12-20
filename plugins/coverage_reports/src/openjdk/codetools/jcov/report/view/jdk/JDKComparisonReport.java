@@ -96,36 +96,5 @@ public class JDKComparisonReport {
     public static void main(String[] args) throws Exception {
         new JDKComparisonReport(DataRoot.read(args[0]), DataRoot.read(args[1]),
                 JDKLostKeptReport.jdkSourceHierarchy(args[2]), Path.of(args[3])).report();
-//        SourceHierarchy source = JDKLostKeptReport.jdkSourceHierarchy(args[2]);
-//        Path repoDir = Path.of(args[3]);
-//        JDKLostKeptReport.JDKComparisonReportBuilder builder = new JDKLostKeptReport.JDKComparisonReportBuilder()
-//                .setOldSource(null).setNewSource(source)
-//                .setDir(repoDir);
-//        builder.setOldCov(DataRoot.read(args[0])).setNewCov(DataRoot.read(args[1]));
-//        var legend =  Map.of(
-//                FileItems.Quality.LEFT, "left",
-//                FileItems.Quality.RIGHT, "right",
-//                FileItems.Quality.BOTH, "both",
-//                FileItems.Quality.NONE, "neither");
-//        BiFunction<Boolean, Boolean, FileItems.Quality> coloring = (o, n) -> {
-//            if (o)
-//                if (n) return FileItems.Quality.BOTH;
-//                else return FileItems.Quality.LEFT;
-//            else
-//            if (n) return FileItems.Quality.RIGHT;
-//            else return FileItems.Quality.NONE;
-//        };
-//        builder.setItems(new JCovMethodCoverageComparison(
-//                builder.getOldCov(), builder.getNewCov(),
-//                f -> builder.getNewSource().toFile(f),
-//                legend,
-//                coloring));
-//        builder.setComparison(new JCovCoverageComparison(
-//                builder.getOldCov(), builder.getOldSource(),
-//                builder.getNewCov(), builder.getNewSource(),
-//                coloring));
-//        builder.createJDKComparisonReport().report();
-//        MultiHTMLReport.copyToReport(JDKComparisonReport.class, "/test/CompRep.html",
-//                DESCRIPTION_HTML, repoDir);
     }
 }
