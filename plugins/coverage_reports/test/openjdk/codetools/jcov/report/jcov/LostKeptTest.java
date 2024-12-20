@@ -31,7 +31,6 @@ import openjdk.codetools.jcov.report.CoveredLineRange;
 import openjdk.codetools.jcov.report.FileCoverage;
 import openjdk.codetools.jcov.report.FileItems;
 import openjdk.codetools.jcov.report.FileSet;
-import openjdk.codetools.jcov.report.source.SourceHierarchy;
 import openjdk.codetools.jcov.report.source.SourcePath;
 import openjdk.codetools.jcov.report.view.MultiHTMLReport;
 import org.testng.annotations.BeforeMethod;
@@ -60,7 +59,7 @@ public class LostKeptTest {
         Map.of("src0",
             Map.of(
                 STILL_EXISTS_JAVA_FILE, """
-        package p.a; 
+        package p.a;
         public class StillExists {
             public static void still_covered_same_code() {
                 System.out.println("still_covered_same_code");
