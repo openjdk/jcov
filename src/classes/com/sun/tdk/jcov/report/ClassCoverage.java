@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,10 @@ import com.sun.tdk.jcov.instrument.DataField;
 import com.sun.tdk.jcov.instrument.DataMethod;
 import com.sun.tdk.jcov.instrument.Modifiers;
 import com.sun.tdk.jcov.report.javap.JavapClass;
+import com.sun.tdk.jcov.report.javap.JavapCodeLine;
+import com.sun.tdk.jcov.report.javap.JavapLine;
 import com.sun.tdk.jcov.util.Utils;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,23 +49,22 @@ import java.util.List;
  * <code>getMethodCoverageList()</code> and
  * <code>getFieldCoverageList()</code> methods </p>
  *
+ * @author Dmitry Fazunenko
+ * @author Alexey Fedorchenko
  * @see ProductCoverage
  * @see DataType
  * @see CoverageData
- *
- * @author Dmitry Fazunenko
- * @author Alexey Fedorchenko
  */
 public class ClassCoverage extends AbstractCoverage {
 
     private String source;
-    private boolean javapSource = false;
+    private boolean javapCoverage = false;
     private JavapClass javapClass;
     private List<MethodCoverage> methods = new ArrayList<MethodCoverage>();
     private List<FieldCoverage> fields = new ArrayList<FieldCoverage>();
     private LineCoverage lineCoverage = new LineCoverage();
     private DataType[] supportedColumns = {DataType.CLASS, DataType.METHOD, DataType.FIELD,
-        DataType.BLOCK, DataType.BRANCH, DataType.LINE};
+            DataType.BLOCK, DataType.BRANCH, DataType.LINE};
     private final int access;
     private final String fullname;
     private final String name;
@@ -75,9 +77,9 @@ public class ClassCoverage extends AbstractCoverage {
     /**
      * <p> Creates new ClassCoverage instance. </p>
      *
-     * @param clz DataClass to read data from
+     * @param clz          DataClass to read data from
      * @param srcRootPaths Paths for sources
-     * @param filter Allows to filter read data
+     * @param filter       Allows to filter read data
      */
     public ClassCoverage(DataClass clz, String srcRootPaths[], MemberFilter filter) {
         this(clz, srcRootPaths, null, filter);
@@ -95,11 +97,24 @@ public class ClassCoverage extends AbstractCoverage {
         modulename = clz.getModuleName();
         modifiers = clz.getModifiers();
 
-        if (ancFilters != null){
-            for (AncFilter ancFilter : ancFilters){
-                if (ancFilter.accept(clz)){
+        if (ancFilters != null) {
+            for (AncFilter ancFilter : ancFilters) {
+                if (ancFilter.accept(clz)) {
                     isInAnc = true;
                     setAncInfo(ancFilter.getAncReason());
+                    break;
+                }
+            }
+        }
+
+        // Checks the mode of the line coverage: either Java or Javap
+        if (javapClasses == null) {
+            this.source = findBestSource(clz, srcRootPaths);
+        } else {
+            javapCoverage = true;
+            for (JavapClass jpClass : javapClasses) {
+                if (jpClass != null && jpClass.getClassName().equals(name)) {
+                    javapClass = jpClass;
                     break;
                 }
             }
@@ -111,28 +126,31 @@ public class ClassCoverage extends AbstractCoverage {
             }
 
             MethodCoverage methodCoverage = null;
-            if (ancFilters != null){
-                for (AncFilter ancFilter : ancFilters){
-                    if (isInAnc || ancFilter.accept(clz, method)){
-                        methodCoverage = new MethodCoverage(method, ancFilters, ancFilter.getAncReason());
+            if (ancFilters != null) {
+                for (AncFilter ancFilter : ancFilters) {
+                    if (isInAnc || ancFilter.accept(clz, method)) {
+                        methodCoverage = new MethodCoverage(method, javapCoverage, ancFilters, ancFilter.getAncReason());
                         methodCoverage.setAncInfo(ancFilter.getAncReason());
                         break;
                     }
                 }
             }
             if (methodCoverage == null) {
-                methodCoverage = new MethodCoverage(method, ancFilters, null);
+                methodCoverage = new MethodCoverage(method, javapCoverage, ancFilters, null);
             }
             methodCoverage.setAnonymOn(anonym);
             if (method.getName() != null && method.getName().matches("\\$\\d.*")) {
                 methodCoverage.setInAnonymClass(true);
             }
-            if (method.getModifiers().isSynthetic() && method.getName().startsWith("lambda$")){
+            if (method.getModifiers().isSynthetic() && method.getName().startsWith("lambda$")) {
                 methodCoverage.setLambdaMethod(true);
             }
 
             methods.add(methodCoverage);
-            lineCoverage.processLineCoverage(methodCoverage.getLineCoverage());
+            if (!javapCoverage) {
+                //Since Javap mode is selected, it doesn't make sense to calculate line coverage for Java sources.
+                lineCoverage.processLineCoverage(methodCoverage.getLineCoverage());
+            }
         }
         for (DataField field : clz.getFields()) {
             if (filter != null && !filter.accept(clz, field)) {
@@ -143,20 +161,9 @@ public class ClassCoverage extends AbstractCoverage {
             fields.add(fieldCoverage);
         }
 
-        if (javapClasses == null) {
-            this.source = findBestSource(clz, srcRootPaths);
-        } else {
-            javapSource = true;
-
-            for (JavapClass jpClass : javapClasses) {
-                if (jpClass != null
-                        && jpClass.getClassName() != null
-                        && (jpClass.getClassName()).equals(name)) {
-
-                    javapClass = jpClass;
-                    break;
-                }
-            }
+        if (javapCoverage) {
+            // Set line coverage according to the chosen Javap mode
+            setJavapLineCoverage(javapClass);
         }
 
         Collections.sort(methods);
@@ -164,7 +171,32 @@ public class ClassCoverage extends AbstractCoverage {
     }
 
     /**
-     * @return true if the class doesn't contain neither methods or fields
+     * Set the line coverage based on the Javap structure.
+     *
+     * @param javapClass represents the javap output for the current class.
+     * @see com.sun.tdk.jcov.report.javap.JavapClass
+     */
+    private void setJavapLineCoverage(JavapClass javapClass) {
+        // update Class LineCoverage
+        this.lineCoverage.clear();
+        for (MethodCoverage methodCoverage : methods) {
+            List<JavapLine> javapLines = javapClass.getMethod(methodCoverage.getName(), methodCoverage.getSignature());
+            if (javapLines != null) {
+                methodCoverage.clearLineCoverage();
+                DataMethod dataMethod = methodCoverage.getDataMethod().clearLineTable();
+                for (JavapCodeLine javapCodeLine : javapLines.stream().
+                        filter(l -> l instanceof JavapCodeLine).
+                        map(l -> (JavapCodeLine) l).toList()) {
+                    dataMethod.addLineEntry(javapCodeLine.getCodeNumber(), javapCodeLine.getLineNumber());
+                }
+                methodCoverage.setLineCoverage();
+            }
+            this.lineCoverage.processLineCoverage(methodCoverage.getLineCoverage());
+        }
+    }
+
+    /**
+     * @return true if the class doesn't contain neither methods nor fields
      */
     public boolean isEmpty() {
         return methods.isEmpty() && fields.isEmpty();
@@ -179,7 +211,9 @@ public class ClassCoverage extends AbstractCoverage {
      * <b>protected</b>
      * @see ClassCoverage#getAccess()
      */
-    public boolean isPublicAPI() { return modifiers.isPublic() || modifiers.isProtected(); }
+    public boolean isPublicAPI() {
+        return modifiers.isPublic() || modifiers.isProtected();
+    }
 
     /**
      * <p> Use getAccess() method to check for more specific modifiers.
@@ -333,8 +367,13 @@ public class ClassCoverage extends AbstractCoverage {
         return source;
     }
 
-    public boolean isJavapSource() {
-        return javapSource;
+    /**
+     * Return whether the coverage of the Javap sources is selected.
+     *
+     * @return true if the coverage of javap sources is selected.
+     */
+    public boolean isJavapCoverage() {
+        return javapCoverage;
     }
 
     public JavapClass getJavapClass() {
@@ -364,16 +403,16 @@ public class ClassCoverage extends AbstractCoverage {
         return lineCoverage.isLineCovered(lineNum);
     }
 
-    public boolean isLineInAnc(int lineNum){
+    public boolean isLineInAnc(int lineNum) {
         return lineCoverage.isLineAnc(lineNum);
     }
 
-    public void setAncInfo(String ancInfo){
+    public void setAncInfo(String ancInfo) {
         isInAnc = (ancInfo != null && !ancInfo.isEmpty());
         this.ancInfo = ancInfo;
     }
 
-    public String getAncInfo(){
+    public String getAncInfo() {
         return ancInfo;
     }
 
@@ -411,7 +450,7 @@ public class ClassCoverage extends AbstractCoverage {
                         }
                         return new CoverageData(1, 0, 1);
                     }
-                    if (method.count <= 0 && !method.isMethodInAnc()){
+                    if (method.count <= 0 && !method.isMethodInAnc()) {
                         allMethodsInANC = false;
                     }
                 }
@@ -428,7 +467,7 @@ public class ClassCoverage extends AbstractCoverage {
                         covered.add(method.getData(column, testNumber));
                     } else {
                         CoverageData mcov = method.getData(column, testNumber);
-                        covered.add(new CoverageData(0, mcov.getAnc() ,mcov.getTotal()));
+                        covered.add(new CoverageData(0, mcov.getAnc(), mcov.getTotal()));
                     }
                 }
                 return covered;
@@ -501,8 +540,7 @@ public class ClassCoverage extends AbstractCoverage {
             File f = new File(source_paths[i] + source_name);
             if (f.exists()) {
                 return f.getAbsolutePath();
-            }
-            else{
+            } else {
                 if (clz.getModuleName() != null) {
                     if (source_paths[i].contains("#module")) {
                         f = new File(source_paths[i].replaceAll("\\#module", clz.getModuleName()) + source_name);
@@ -520,6 +558,7 @@ public class ClassCoverage extends AbstractCoverage {
         }
         return clz.getSource(); // not found
     }
+
     static final String pref = "<UNKNOWN_SOURCE/";
     static final String suff = ">";
 }
