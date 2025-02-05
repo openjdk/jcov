@@ -28,8 +28,6 @@ import com.sun.tdk.jcov.JREInstr;
 import com.sun.tdk.jcov.runtime.PropertyFinder;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -228,10 +226,10 @@ public class OverriddenClassWriter extends ClassWriter {
         ClassInfo classInfo;
 
         if (loader instanceof JREInstr.StaticJREInstrClassLoader) {
-            InputStream in = getInputStreamForName(clName, loader, false, ".class");
+            InputStream in = getInputStreamForName(clName, loader, ".class");
 
             if (in == null) {
-                in = getInputStreamForName(clName, ClassLoader.getSystemClassLoader(), false, ".class");
+                in = getInputStreamForName(clName, ClassLoader.getSystemClassLoader(), ".class");
 
                 if (in == null) {
                     throw new IOException("Can't read class " + clName + " from classloader " + loader);
@@ -255,7 +253,7 @@ public class OverriddenClassWriter extends ClassWriter {
             return classInfo;
         }
 
-        InputStream in = getInputStreamForName(clName, ClassLoader.getSystemClassLoader(), false, ".class");
+        InputStream in = getInputStreamForName(clName, ClassLoader.getSystemClassLoader(), ".class");
         String superClassName = null;
         String[] interfaceNames = null;
         if (in == null){
@@ -279,11 +277,11 @@ public class OverriddenClassWriter extends ClassWriter {
 
         if (in == null && superClassName == null) {
 
-            in = getInputStreamForName(clName, ClassLoader.getSystemClassLoader(), false, ".clazz");
+            in = getInputStreamForName(clName, ClassLoader.getSystemClassLoader(), ".clazz");
 
             if (in == null) {
                 if (!ClassLoader.getSystemClassLoader().equals(loader)) {
-                    in = getInputStreamForName(clName, loader, false, ".class");
+                    in = getInputStreamForName(clName, loader, ".class");
                     if (in != null) {
                         ClassReader cr = new OffsetLabelingClassReader(in);
                         classInfo = new ClassInfo(cr.getSuperName(), cr.getInterfaces());
@@ -320,10 +318,9 @@ public class OverriddenClassWriter extends ClassWriter {
      *
      * @param name
      * @param loader
-     * @param priveleged if false - will try to use doPriveleged() mode
      * @return
      */
-    private static InputStream getInputStreamForName(final String name, final ClassLoader loader, boolean priveleged, final String ext) {
+    private static InputStream getInputStreamForName(final String name, final ClassLoader loader, final String ext) {
         try {
             InputStream in = loader.getResourceAsStream(name + ext);
             if (in != null) {
@@ -339,16 +336,6 @@ public class OverriddenClassWriter extends ClassWriter {
                 if (in != null) return in;
             } catch (Throwable ignore) {}
         }
-
-        // trying to get class with priveleges
-        if (!priveleged) {
-            return AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
-                public InputStream run() {
-                    return getInputStreamForName(name, loader, true, ext);
-                }
-            });
-        }
-
         return null;
     }
 

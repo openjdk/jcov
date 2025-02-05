@@ -1146,7 +1146,7 @@ public class CoverageReport implements ReportGenerator {
         if (showFields) {
             for (FieldCoverage fcov : fieldList) {
                 int startLine = fcov.getStartLine();
-                methodsForLine.put(new Integer(startLine), fcov);
+                methodsForLine.put(Integer.valueOf(startLine), fcov);
                 logger.log(Level.FINE, "{0}-{1}", new Object[]{fcov.getName(), startLine});
             }
             generateMemberTable(pw, theClass, "field", fieldList, isGenerate, theClass.isJavapCoverage());
@@ -1744,7 +1744,7 @@ public class CoverageReport implements ReportGenerator {
         boolean badNumber = false;
         double dvalue = 0;
         try {
-            dvalue = new Double(value.replace(',', '.')).doubleValue();
+            dvalue = Double.valueOf(value.replace(',', '.'));
             rest = 100d - (dvalue);
         } catch (NumberFormatException e) {
             badNumber = true;
@@ -1793,7 +1793,7 @@ public class CoverageReport implements ReportGenerator {
     }
 
     private String getRelativePath(String path) {
-        if (path != null && !path.equals("")) {
+        if (path != null && !path.isEmpty()) {
             // java.awt.event - ../../../
             return path.replace('.', '/').replaceAll("\\w+", "..") + "/";
         } else {
