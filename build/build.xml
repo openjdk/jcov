@@ -30,7 +30,7 @@
     <property file="release.properties"/>
     <property file="build.properties"/>
     <import file="check-dependecies.xml"/>
-    
+
     <property environment="env"/>
 
     <!-- Build area -->
@@ -122,7 +122,7 @@
         <mkdir dir="${jcov.src.update}/com/sun/tdk/jcov/tools"/>
         <echo file="${jcov.src.update}/com/sun/tdk/jcov/tools/JcovVersion.java">
             /*
-            * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+            * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
             * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
             *
             * This code is free software; you can redistribute it and/or modify it
