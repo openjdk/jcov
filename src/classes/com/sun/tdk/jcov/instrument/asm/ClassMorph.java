@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -358,20 +358,20 @@ public class ClassMorph {
 //        adler.update(classfileBuffer, 0, classfileBuffer.length);
 //        long checksum = adler.getValue();
 //        return checksum;
+        int cp_count = ((classfileBuffer[i] & 0xFF) << 8) | (classfileBuffer[i + 1] & 0xFF);
 
         int i = 0;
         i += 4;//skip magic
         i += 4;//skip minor/major version
-        int cp_count = ((classfileBuffer[i] & 0xFF) << 8) | (classfileBuffer[i + 1] & 0xFF);
         i += 2;//skip constant pool count
 
         // Need to cache UTF8 values and their indexes to be able to resolve
         // method and attribute names
 //        TreeMap<Integer, String> cp_utf8_cache = new TreeMap();
-        HashMap<Integer, String> cp_utf8_cache = new HashMap(); // faster get
+        HashMap<Integer, String> cp_utf8_cache = new HashMap(cp_count); // faster get
 
         //Process constant pool
-        for (int j = 0; j < cp_count - 1; j++) {
+        for (int cp_index = 0; cp_index < cp_count - 1; cp_index++) {
             int cp_type = classfileBuffer[i++];
             switch (cp_type) {
                 case 1://utf8
@@ -382,7 +382,7 @@ public class ClassMorph {
 //                    System.arraycopy(classfileBuffer, i, value, 0, utf8_length); // jdk1.5 support
                     // String is immutable. No need to copy arrays
                     String sval = new String(classfileBuffer, i, utf8_length, Charset.forName("UTF-8"));
-                    cp_utf8_cache.put(j + 1, sval);
+                    cp_utf8_cache.put(cp_index + 1, sval);
                     i += utf8_length;
                     break;
                 case 3://integer
@@ -391,7 +391,7 @@ public class ClassMorph {
                     break;
                 case 5://long
                 case 6://double
-                    j++;
+                    cp_index++;
                     i += 8;
                     break;
                 case 7://class
@@ -414,6 +414,7 @@ public class ClassMorph {
                 case 16: // methodtype
                     i += 2;
                     break;
+                case 17: // dynamic
                 case 18: // invokedynamic
                     i += 4;
                     break;
@@ -422,8 +423,7 @@ public class ClassMorph {
                     i += 4;
                     break;
                 default:
-                    logger.log(Level.SEVERE, "SHOULD NOT OCCUR: unknown cp_type: {0}", cp_type);
-                    break;
+                    logger.log(Level.SEVERE, "SHOULD NOT OCCUR: unknown cp_type: %d of cp_entry: %d".formatted(cp_type, cp_index));
             }
         }
 
