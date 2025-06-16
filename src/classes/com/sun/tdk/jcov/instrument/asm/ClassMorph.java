@@ -358,9 +358,8 @@ public class ClassMorph {
 //        adler.update(classfileBuffer, 0, classfileBuffer.length);
 //        long checksum = adler.getValue();
 //        return checksum;
-        int cp_count = ((classfileBuffer[i] & 0xFF) << 8) | (classfileBuffer[i + 1] & 0xFF);
-
         int i = 0;
+        int cp_count = ((classfileBuffer[i] & 0xFF) << 8) | (classfileBuffer[i + 1] & 0xFF);
         i += 4;//skip magic
         i += 4;//skip minor/major version
         i += 2;//skip constant pool count
