@@ -352,4 +352,16 @@ MILESTONE="${build.milestone}"
             </classpath>
         </testng>
     </target>
+
+    <property name="tests" value="test/unit"/>
+
+    <target name="test-jtreg" depends="build-jcov,build-network.saver,build-file.saver">
+        <exec executable="${jtreg.home}/bin/jtreg" dir="..">
+            <arg value="-workDir:${result.dir}/JTwork"/>
+            <arg value="-reportDir:${result.dir}/JTreport"/>
+            <arg value="-cpa:${build.dir}/jcov.jar:${build.dir}/jcov_file_saver.jar"/>
+            <arg value="-v1"/>
+            <arg value="${tests}"/>
+        </exec>
+    </target>
 </project>
