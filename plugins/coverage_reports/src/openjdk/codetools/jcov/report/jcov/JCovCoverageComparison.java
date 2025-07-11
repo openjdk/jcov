@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,9 +99,9 @@ public class JCovCoverageComparison implements FileCoverage {
                         String id = className + "#" + methodName;
                         var isOldMethod = oldSource == null || oldMethodsCache.containsKey(id);
                         DataMethod oldMethod = isOldMethod ? oldMethodsCache.get(id) : null;
-                        var newLineCoverage = new MethodCoverage(newMethod, true).getLineCoverage();
+                        var newLineCoverage = new MethodCoverage(newMethod, false).getLineCoverage();
                         var oldLineCoverage = isOld && isOldMethod ?
-                                new MethodCoverage(oldMethod, true).getLineCoverage() : null;
+                                new MethodCoverage(oldMethod, false).getLineCoverage() : null;
                         if(newFileSource.size() < newLineCoverage.lastLine() - 1) {
                             System.err.println("Wrong source for method " + className + "." + methodName);
                             System.err.println("    " + newLineCoverage.lastLine() + " lines expected but only " +
@@ -113,7 +113,7 @@ public class JCovCoverageComparison implements FileCoverage {
                                 repeatedLines = IntStream.range(0, newMethodSource.size()).toArray();
                             } else if (oldFileSource != null) {
                                 var oldMethodSource = isOld && isOldMethod ? methodSource(oldFileSource,
-                                        new MethodCoverage(oldMethod, true).getLineCoverage()) : null;
+                                        new MethodCoverage(oldMethod, false).getLineCoverage()) : null;
                                 repeatedLines = repeatedLines(oldMethodSource, newMethodSource, newLineCoverage);
                             } else repeatedLines = new int[0];
                             for (int ln : repeatedLines)
