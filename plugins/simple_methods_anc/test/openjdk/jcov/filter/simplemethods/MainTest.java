@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,65 @@
  */
 package openjdk.jcov.filter.simplemethods;
 
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 public class MainTest {
+
+    Path classesDir;
+    Path classesJar;
+    @BeforeClass
+    void copyByteCode() throws IOException {
+        List<Class> testClasses =
+                List.of(DelegatorsTest.class, EmptyMethodsTest.class,
+                        GettersTest.class, Scanner.class, SettersTest.class, ThrowersTest.class);
+        classesDir = Files.createTempDirectory(MainTest.class.getName());
+        testClasses.forEach(c -> {
+            String fn = c.getName().replace('.', '/') + ".class";
+            try (var in = c.getClassLoader()
+                    .getResourceAsStream(fn)) {
+                Path newFile = classesDir.resolve(fn);
+                Files.createDirectories(newFile.getParent());
+                Files.copy(in, newFile);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+        classesJar = Files.createTempFile(MainTest.class.getName(), ".jar");
+        try (var jar = new JarOutputStream(Files.newOutputStream(classesJar))) {
+            testClasses.forEach(c -> {
+                String fn = c.getName().replace('.', '/') + ".class";
+                try {
+                    jar.putNextEntry(new JarEntry(fn));
+                    try (BufferedInputStream in = new BufferedInputStream(c.getClassLoader().getResourceAsStream(fn))) {
+                        byte[] buffer = new byte[1024];
+                        while (true) {
+                            int count = in.read(buffer);
+                            if (count == -1)
+                                break;
+                            jar.write(buffer, 0, count);
+                        }
+                        jar.closeEntry();
+                    }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+        }
+    }
 
     @Test
     public void testJRTFS() throws IOException, URISyntaxException {
@@ -68,12 +114,11 @@ public class MainTest {
 
     @Test
     public void testDir() throws IOException, URISyntaxException {
-        String dir = System.getProperty("test.classes");
         Path delegators = Files.createTempFile("delegators", ".lst");
         System.out.println("testDir output file: " + delegators.toAbsolutePath().toString());
         Scanner.main(new String[]{
                 "--delegators", delegators.toAbsolutePath().toString(),
-                "file://" + dir
+                "file://" + classesDir
         });
         assertTrue(Files.lines(delegators).anyMatch(l ->
                 l.equals(DelegatorsTest.class.getName().replace('.', '/') + "#foo(I)I")));
@@ -82,12 +127,11 @@ public class MainTest {
 
     @Test
     public void testJAR() throws IOException, URISyntaxException {
-        String jar = System.getProperty("test.jar");
         Path setters = Files.createTempFile("setters", ".lst");
         System.out.println("testJAR output file: " + setters.toAbsolutePath().toString());
         Scanner.main(new String[]{
                 "--setters", setters.toAbsolutePath().toString(),
-                "jar:file:" + jar});
+                "jar:file:" + classesJar});
         assertTrue(Files.lines(setters).anyMatch(l ->
                 l.equals(SettersTest.class.getName().replace('.', '/') + "#setField(I)V")));
     }
@@ -113,7 +157,6 @@ public class MainTest {
 
     @Test
     public void testTwoFilters() throws IOException, URISyntaxException {
-        String dir = System.getProperty("test.classes");
         Path setters = Files.createTempFile("setters2_", ".lst");
         Path getters = Files.createTempFile("getters2_", ".lst");
         System.out.println("testDir output file: " + setters.toAbsolutePath().toString());
@@ -121,7 +164,7 @@ public class MainTest {
         Scanner.main(new String[]{
                 "--setters", setters.toAbsolutePath().toString(),
                 "--getters", getters.toAbsolutePath().toString(),
-                "file://" + dir
+                "file://" + classesDir
         });
         assertTrue(Files.lines(setters).anyMatch(l ->
                 l.equals(SettersTest.class.getName().replace('.', '/') + "#setField(I)V")));
@@ -129,5 +172,35 @@ public class MainTest {
                 l.equals(GettersTest.class.getName().replace('.', '/') + "#getField()I")));
         Files.delete(setters);
         Files.delete(getters);
+    }
+
+    @AfterClass
+    void deleteByteCode() throws IOException {
+        if (Files.exists(classesDir))
+            Files.walkFileTree(classesDir, new FileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                    return FileVisitResult.TERMINATE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        if (Files.exists(classesJar))
+            Files.delete(classesJar);
     }
 }

@@ -45,7 +45,8 @@ public class JCovLoadTest {
     static void init() throws FileFormatException, IOException {
         var xmlName = JCovLoadTest.class.getName().replace('.', '/');
         xmlName = "/" + xmlName.substring(0, xmlName.lastIndexOf('/')) + "/ObjectInputStream.xml";
-        coverage = new JCovLineCoverage(DataRoot.read(GitDifFilterTest.cp(xmlName).toString()), new SourceHierarchy() {
+        DataRoot data = DataRoot.read(GitDifFilterTest.cp(xmlName).toString());
+        coverage = new JCovLineCoverage(data, new SourceHierarchy() {
             @Override
             public List<String> readFile(String file) throws IOException {
                 return null;

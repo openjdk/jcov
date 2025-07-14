@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class JCovLineCoverage implements FileCoverage {
         var result = new HashMap<Integer, Boolean>();
         for (DataMethod m : cls.getMethods()) if (m instanceof DataMethodWithBlocks) {
             //TODO there is a copy-paste in other classes
-            var lc = new MethodCoverage(m, true).getLineCoverage();
+            var lc = new MethodCoverage(m, false).getLineCoverage();
             for (int i = (int)lc.firstLine(); i <= lc.lastLine(); i++) {
                 if (lc.isCode(i)) {
                     if (result.get(i) == null || !result.get(i).booleanValue())
