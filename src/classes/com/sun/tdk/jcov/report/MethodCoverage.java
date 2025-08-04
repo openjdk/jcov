@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,16 +56,25 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
     private boolean isInAnc = false;
     protected String ancInfo;
 
-    public MethodCoverage(DataMethod method, boolean countBlocks) {
-        this(method, countBlocks, null, null);
+    /**
+     * Creates a new MethodCoverage instance for the given DataMethod.
+     *
+     * @param method the DataMethod for which to create the MethodCoverage instance
+     * @param isJavapCoverage a boolean indicating whether the coverage is based on Javap output
+     */
+    public MethodCoverage(DataMethod method, boolean isJavapCoverage) {
+        this(method, isJavapCoverage, null, null);
     }
 
     /**
-     * <p> Creates new MethodCoverage instance </p>
+     * <p> Creates a new MethodCoverage instance for the given DataMethod. </p>
      *
-     * @param method
+     * @param method the DataMethod for which to create the MethodCoverage instance
+     * @param isJavapCoverage a boolean indicating whether the coverage is based on Javap output
+     * @param ancFilters an array of AncFilter objects used to filter out certain blocks or branches
+     * @param ancReason a string representing the reason for excluding certain blocks or branches
      */
-    public MethodCoverage(DataMethod method, boolean javapCoverage, AncFilter[] ancFilters, String ancReason) {
+    public MethodCoverage(DataMethod method, boolean isJavapCoverage, AncFilter[] ancFilters, String ancReason) {
         this.dataMethod = method;
         access = method.getAccess();
         modifiersString = Arrays.deepToString(method.getAccessFlags());
@@ -80,13 +89,18 @@ public class MethodCoverage extends MemberCoverage implements Iterable<ItemCover
         ancInfo = ancReason;
 
         detectItems(method, items, isInAnc, ancFilters);
-        if( !javapCoverage ) {
+        if( !isJavapCoverage ) {
             setLineCoverage();
         } // else Javap line coverage is calculated in ClassCoverage.setJavapLineCoverage(JavapClass javapClass)
     }
 
     /**
-     * Sets the line coverage for the method.
+     * Sets the line coverage for the method based on the line table information
+     * associated with the underlying DataMethod. It processes the line table
+     * and updates the line coverage accordingly. If an item is covered, it
+     * marks the corresponding lines as hit. If an item is not covered and is
+     * marked as 'in Anc' (Ancillary), it marks the corresponding lines as
+     * ancillary. It also sets the source line for each item if not already set.
      */
     public void setLineCoverage() {
         List<LineEntry> lineTable = dataMethod.getLineTable();
