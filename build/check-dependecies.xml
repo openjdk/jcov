@@ -74,7 +74,18 @@
 
     <target name="verify-dependencies" depends="download-dependencies, download-javatest, verify-asm, verify-asm-tree, verify-asm-util"/>
 
-    <target name="download-dependencies">
+    <target name="check-dependencies-downloaded">
+        <condition property="asm.downloaded">
+            <and>
+                <available file="${asm.jar}"/>
+                <available file="${asm.tree.jar}"/>
+                <available file="${asm.util.jar}"/>
+            </and>
+        </condition>
+        <available file="${javatestjar}" property="javatest.downloaded"/>
+    </target>
+
+    <target name="download-dependencies" unless="asm.downloaded" depends="check-dependencies-downloaded">
         <mkdir dir="${deps.dir}"/>
         <basename property="asm.jar.filename" file="${asm.jar}"/>
         <basename property="asm.tree.jar.filename" file="${asm.tree.jar}"/>
@@ -84,18 +95,29 @@
         <get src="https://repository.ow2.org/nexus/content/repositories/releases/org/ow2/asm/asm-util/${asm.version}/${asm.util.jar.filename}" dest="${asm.util.jar}" skipexisting="true"/>
     </target>
 
-   <target name="download-javatest" if="javatest.present" description="build jtobserver jar">
+    <target name="download-javatest" if="javatest.present" unless="javatest.downloaded" description="build jtobserver jar" depends="check-dependencies-downloaded">
         <mkdir dir="${deps.dir}"/>
         <basename property="javatestjar.filename" file="${javatestjar}"/>
-       <get src="https://ci.adoptium.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtharness/${javatestjar.filename}" dest="${javatestjar}" skipexisting="true"/>
-   </target>
+        <get src="https://ci.adoptium.net/view/Dependencies/job/dependency_pipeline/lastSuccessfulBuild/artifact/jtharness/${javatestjar.filename}" dest="${javatestjar}" skipexisting="true"/>
+    </target>
 
-    <target name="download-test-dependencies">
+    <target name="check-test-dependencies-downloaded">
+        <available file="${testngjar}" property="testng.downloaded"/>
+        <available file="${jcommanderjar}" property="jcommander.downloaded"/>
+    </target>
+
+    <target name="download-testng" unless="testng.downloaded" depends="check-test-dependencies-downloaded">
         <mkdir dir="${deps.dir}"/>
         <basename property="testngjar.filename" file="${testngjar}"/>
+        <get src="https://repo1.maven.org/maven2/org/testng/testng/${testngver}/${testngjar.filename}" dest="${testngjar}" skipexisting="true"/>
+    </target>
+
+    <target name="download-jcommander" unless="jcommander.downloaded" depends="check-test-dependencies-downloaded">
+        <mkdir dir="${deps.dir}"/>
         <basename property="jcommanderjar.filename" file="${jcommanderjar}"/>
-       <get src="https://repo1.maven.org/maven2/org/testng/testng/${testngver}/${testngjar.filename}" dest="${testngjar}" skipexisting="true"/>
-       <get src="https://repo1.maven.org/maven2/com/beust/jcommander/${jcommanderver}/${jcommanderjar.filename}" dest="${jcommanderjar}" skipexisting="true"/>
-   </target>
+        <get src="https://repo1.maven.org/maven2/com/beust/jcommander/${jcommanderver}/${jcommanderjar.filename}" dest="${jcommanderjar}" skipexisting="true"/>
+    </target>
+
+    <target name="download-test-dependencies" depends="download-testng,download-jcommander"/>
 
 </project>
