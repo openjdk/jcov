@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014,2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014,2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,8 +100,9 @@ public class JavapClass {
                 }
 
                 // try to find class in javap output
-                if (textLine.contains("class") && textLine.contains("{")) {
-                    parsePackageAndClassNames(textLine);
+                int classNameInd = isClassOrInterfaceLine(textLine);
+                if (classNameInd != -1) {
+                    parsePackageAndClassNames(textLine.substring(classNameInd).replaceFirst("[\\s].*", ""));
                 }
                 // try to find method in javap output
                 if (textLine.contains("(") && (textLine.contains(");") || textLine.contains(") throws"))) {
@@ -133,8 +134,57 @@ public class JavapClass {
         }
     }
 
+    final private static String[] JavaClassTokens = new String[]{"class", "interface"};
     final private static Pattern codeLinePattern = Pattern.compile("^\\s*\\d+:.*");
     final private static Pattern switchPattern = Pattern.compile("^\\s*\\d+:\\s+\\d+$");
+
+    /**
+     * Checks if the given line is a class or interface declaration line in the Javap output.
+     *
+     * @param line the line to be checked
+     * @return the index of the character after the class or interface keyword
+     * if the line is a class or interface declaration, -1 otherwise
+     */
+    private static int isClassOrInterfaceLine(String line) {
+        int ind = -1;
+        if (line != null) {
+            for (String s : JavaClassTokens) {
+                int i = line.indexOf(s);
+                if (i != -1 && line.indexOf('{') > 0) {
+                    ind = i + s.length() + 1;
+                    break;
+                }
+            }
+        }
+        return ind;
+    }
+
+    /**
+     * Extracts the package name and class name from the given Javap class name.
+     *
+     * The method removes any generic type information from the class name,
+     * then splits the remaining string into package name and class name based on the last occurrence of '.'.
+     *
+     * If '.' is not found or is the first character, the class name is set to the input string and
+     * the package name is set to an empty string.
+     *
+     * @param javapClassName the Javap class name to be parsed
+     */
+    private void parsePackageAndClassNames(String javapClassName) {
+        int i = javapClassName.indexOf('<');
+        if (i != -1) {
+            javapClassName = javapClassName.substring(0, i);
+        }
+
+        i = javapClassName.lastIndexOf('.');
+        if (i > 0) {
+            this.packageName = javapClassName.substring(0, i);
+            this.className = javapClassName.substring(i + 1);
+        } else {
+            this.className = javapClassName;
+            this.packageName = "";
+        }
+    }
 
     /**
      * Check whether the line is a code line
@@ -149,33 +199,6 @@ public class JavapClass {
             return !switchPattern.matcher(line).find();
         }
         return false;
-    }
-
-    final private static String[] JavaClassTokens = new String[]{"implements", "extends", "{"};
-
-    private void parsePackageAndClassNames(String textLine) {
-
-        for (String s : JavaClassTokens) {
-            if (textLine.contains(s)) {
-                textLine = textLine.substring(0, textLine.indexOf(s));
-            }
-        }
-
-        textLine = textLine.substring(textLine.indexOf("class") + 5).trim();
-
-        int ind = textLine.indexOf('<');
-        if (ind != -1) {
-            textLine = textLine.substring(0, ind);
-        }
-
-        ind = textLine.lastIndexOf('.');
-        if (ind > 0) {
-            packageName = textLine.substring(0, ind);
-            className = textLine.substring(ind + 1);
-        } else {
-            className = textLine;
-            packageName = "";
-        }
     }
 
     private String parseStaticBlockString() {

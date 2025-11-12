@@ -164,13 +164,13 @@
     <target name="compile"  depends="prepare, build-date"
             description="compile main tools">
 
-        <javac includeantruntime="false" encoding="iso-8859-1" debug="true" target="8" source="8"
+        <javac includeantruntime="false" encoding="iso-8859-1" debug="true"
                srcdir="${jcov.src.update}"
                destdir="${jcov.classes}"
                classpath="${jcov.classpath}">
         </javac>
 
-        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="8" source="8"
+        <javac includeantruntime="true" encoding="iso-8859-1" debug="true"
                srcdir="${src.dir}"
                destdir="${jcov.classes}"
                classpath="${jcov.classpath}">
@@ -236,7 +236,7 @@
                 </tokenfilter>
             </filterchain>
         </copy>
-        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="8" source="8"
+        <javac includeantruntime="true" encoding="iso-8859-1" debug="true"
                srcdir="${jcov.filesaver.src}"
                sourcepath=""
                classpath="${jcov.filesaver.classes}"
@@ -270,7 +270,7 @@
                 </tokenfilter>
             </filterchain>
         </copy>
-        <javac includeantruntime="true" encoding="iso-8859-1" debug="true" target="8" source="8"
+        <javac includeantruntime="true" encoding="iso-8859-1" debug="true"
                srcdir="${jcov.networksaver.src}"
                sourcepath=""
                classpath="${jcov.networksaver.classes}"
@@ -289,8 +289,6 @@
         <mkdir dir="${jcov.jtobserver.classes}"/>
         <javac includeantruntime="false" encoding="iso-8859-1"
                debug="no"
-               target="8"
-               source="8"
                srcdir="${src.dir}"
                sourcepath=""
                destdir="${jcov.jtobserver.classes}" classpath="${javatestjar}">
@@ -334,8 +332,6 @@ MILESTONE="${build.milestone}"
         <mkdir dir="${result.dir}/test/classes" />
         <javac includeantruntime="false" encoding="iso-8859-1"
                debug="no"
-               target="8"
-               source="8"
                srcdir="${test.src.dir}"
                sourcepath="${test.src.dir}"
                classpath="${testngjar}:${build.dir}/jcov.jar"
