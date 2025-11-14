@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,13 +150,25 @@ public class JavapRepGen {
         for (File classFile : classFiles) {
             JavapClass javapClass = new JavapClass();
             javapClass.parseJavapFile(classFile.getAbsolutePath(), null);
-            classes.put(javapClass.getClassName(), javapClass);
+            String className = javapClass.getClassName();
+            if (className.isEmpty()) {
+                JavapRepGen.printErrorMsg("Failed to extract class or interface name from javap output: \"javap -c %s\"".
+                        formatted(classFile.getAbsolutePath()));
+            } else {
+                classes.put(className, javapClass);
+            }
         }
 
         for (String classFileInJar : classFilesInJar) {
             JavapClass javapClass = new JavapClass();
             javapClass.parseJavapFile(classFileInJar, rootFile.getAbsolutePath());
-            classes.put(javapClass.getClassName(), javapClass);
+            String className = javapClass.getClassName();
+            if (className.isEmpty()) {
+                JavapRepGen.printErrorMsg("Failed to extract class or interface name from javap output: \"javap -c %s:%s\"".
+                        formatted(rootFile.getAbsolutePath(), classFileInJar));
+            } else {
+                classes.put(className, javapClass);
+            }
         }
 
         //reading block and branch coverage and mark lines in javap classes.

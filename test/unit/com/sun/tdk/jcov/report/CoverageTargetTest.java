@@ -40,10 +40,14 @@ import static org.testng.Assert.assertTrue;
 public class CoverageTargetTest extends ReportTest {
 
     private String testClassName = CoverageTarget.class.getName();
+    private String intfCoverageName = ICoverage.class.getName();
+    private String intfTargetName = ITarget.class.getName();
 
     @BeforeClass
     void setup() throws Exception {
         String[] copyClasses = {testClassName,
+                intfCoverageName,
+                intfTargetName,
                 testClassName + "$DummyResource",
                 testClassName + "$InnerClass",
                 testClassName + "$Supplier"};
@@ -62,7 +66,23 @@ public class CoverageTargetTest extends ReportTest {
         new RepGen().run(params.toArray(new String[0]));
         assertTrue(Files.isDirectory(report));
         Path classHtml = report.resolve(testClassName.replace('.', '/') + ".html");
-        assertTrue(Files.readAllLines(classHtml).stream().anyMatch(l -> l.contains("<b>84</b>%(42/50)")));
+        assertTrue(Files.readAllLines(classHtml).stream().anyMatch(l -> l.contains("<b>82</b>%(41/50)")));
     }
 
-}
+    @Test
+    void javapReport() throws IOException {
+        Path report = test_dir.resolve("report.javap");
+        List<String> params = new ArrayList<>();
+        params.add("-javap");
+        params.add(test_dir.toString());
+        params.add("-o");
+        params.add(report.toString());
+        params.add(result.toString());
+        new RepGen().run(params.toArray(new String[0]));
+        assertTrue(Files.isDirectory(report));
+        Path classHtml = report.resolve(intfCoverageName.replace('.', '/') + ".html");
+        assertTrue(Files.readAllLines(classHtml).stream().anyMatch(l -> l.contains("<b>100</b>%(2/2)")));
+        classHtml = report.resolve(intfTargetName.replace('.', '/') + ".html");
+        assertTrue(Files.readAllLines(classHtml).stream().anyMatch(l -> l.contains("<b>100</b>%(16/16)")));
+    }
+ }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,26 +26,17 @@ package com.sun.tdk.jcov.insert;
 
 import com.sun.tdk.jcov.instrument.asm.OverriddenClassWriter;
 import com.sun.tdk.jcov.util.Utils;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+
+import java.io.*;
 import java.net.URI;
 import java.nio.file.*;
+import java.nio.file.FileSystem;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.zip.CRC32;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
+import java.util.zip.*;
 
 import static com.sun.tdk.jcov.util.Utils.FILE_TYPE;
 import static com.sun.tdk.jcov.util.Utils.FILE_TYPE.*;
@@ -54,10 +45,11 @@ import static com.sun.tdk.jcov.util.Utils.isClassFile;
 /**
  * The class is resposible to deal with class files and hierarchies of files, such as directories, jars, zips, modules.
  * The actual logic of bytecode instrumentation is left for subclasses of this class.
- * @see #instrument(byte[], int)
- * @see #finishWork()
+ *
  * @author Dmitry Fazunenko
  * @author Alexey Fedorchenko
+ * @see #instrument(byte[], int)
+ * @see #finishWork()
  */
 public abstract class AbstractUniversalInstrumenter {
 
@@ -209,6 +201,10 @@ public abstract class AbstractUniversalInstrumenter {
             if (outFile == null) {
                 outFile = f;
                 f.delete();
+            }
+            if (outFile.isDirectory()) {
+                // if outFile is a directory, then use the original file name
+                outFile = new File(outFile, f.getName());
             }
 
             // create "super" directories if necessary
@@ -800,5 +796,5 @@ public abstract class AbstractUniversalInstrumenter {
             }
         }
         in.close();
-        }
+    }
 }

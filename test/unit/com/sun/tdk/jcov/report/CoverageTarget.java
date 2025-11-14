@@ -24,12 +24,12 @@
  */
 package com.sun.tdk.jcov.report;
 
-public class CoverageTarget {
+public class CoverageTarget implements ICoverage, ITarget {
 
     public static void main(String[] args) {
         CoverageTarget target = new CoverageTarget();
 
-        target.testBranching(5);
+        target.testBranching(SIZES[0]);
         target.testLoop(3);
         target.testSwitch("c");
         target.testExceptionHandling(true);
@@ -40,7 +40,7 @@ public class CoverageTarget {
 
     public int testBranching(int x) {
         if (x > 10) {
-            return x * 2;
+            return x * size();
         } else if (x > 5) {
             return x + 10;
         } else {
@@ -51,14 +51,14 @@ public class CoverageTarget {
     public int testLoop(int n) {
         int result = 0;
         for (int i = 0; i < n; i++) {
-            if (i % 2 == 0) {
+            if (i % size() == 0) {
                 result += i;
             } else {
                 result -= i;
             }
         }
         int i = 0;
-        while (i < 2) {
+        while (i < size()) {
             result += i;
             i++;
         }
