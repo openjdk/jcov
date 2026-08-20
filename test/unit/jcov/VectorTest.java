@@ -22,15 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+/*
+ * Used from TestNameDecoratorTest.
+ */
 package jcov;
 
 import org.testng.annotations.Test;
 
-/**
- * Exists solely as the test run by the nested jtreg invocation in
- * {@link CompositeObserverTest}.
- */
-public class EmptyJTRegTest {
+import java.util.Vector;
+
+import static org.testng.Assert.assertEquals;
+
+public class VectorTest {
+
     @Test
-    void test() {}
+    void test() {
+        assertEquals(new Vector<String>().size(), 0);
+    }
 }

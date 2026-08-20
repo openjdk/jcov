@@ -56,7 +56,7 @@ public class CompositeObserverTest {
                 "-observerDir:" + observer + java.io.File.pathSeparator + testObserver,
                 "-J-Djtreg.observers.to.chain=jcov.TestObserver,jcov.TestObserver",
                 "-J-Djcov.testObserver.files=" + output,
-                emptyTest().toString());
+                Path.of(System.getProperty("test.src"), "jcov/VectorTest.java").toString());
         builder.environment().put("JAVA_HOME", System.getProperty("java.home"));
         Process process = builder.inheritIO().start();
         assertEquals(process.waitFor(), 0);
@@ -65,8 +65,8 @@ public class CompositeObserverTest {
         List<String> callbacks2 = Files.readAllLines(output.resolve("2.log"));
         List<String> expected = List.of(
                 "startingTestRun(" + System.getProperty("test.src") + ")",
-                "startingTest(jcov/EmptyJTRegTest.java)",
-                "finishedTest(jcov/EmptyJTRegTest.java)",
+                "startingTest(jcov/VectorTest.java)",
+                "finishedTest(jcov/VectorTest.java)",
                 "finishedTesting()",
                 "finishedTesting(4)",
                 "finishedTestRun(true)");
@@ -76,9 +76,5 @@ public class CompositeObserverTest {
 
     private Path classPath(Class<?> clazz) throws URISyntaxException {
         return Path.of(clazz.getProtectionDomain().getCodeSource().getLocation().toURI());
-    }
-
-    private Path emptyTest() {
-        return Path.of(System.getProperty("test.src"), "jcov", "EmptyJTRegTest.java");
     }
 }

@@ -76,6 +76,7 @@
         <include name="com/sun/tdk/jcov/runtime/JCovSocketSaver.*"/>
         <include name="com/sun/tdk/jcov/runtime/JCovSESocketSaver.*"/>
         <include name="com/sun/tdk/jcov/runtime/JCovSaver.*"/>
+        <include name="com/sun/tdk/jcov/runtime/TestNameDecorator.*"/>
         <include name="com/sun/tdk/jcov/runtime/NetworkSatelliteDecorator.*"/>
         <include name="com/sun/tdk/jcov/runtime/SaverDecorator.*"/>
     </patternset>
